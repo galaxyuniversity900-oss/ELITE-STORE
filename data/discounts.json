@@ -14,7 +14,7 @@
   "quantity_rules": [
     {
       "id": "buy-2-save-5",
-      "active": false,
+      "active": true,
       "scope": "cart",
       "min_units": 2,
       "type": "percentage",
@@ -23,7 +23,7 @@
     },
     {
       "id": "buy-3-save-10",
-      "active": false,
+      "active": true,
       "scope": "cart",
       "min_units": 3,
       "type": "percentage",
