@@ -1,0 +1,447 @@
+{
+  "version": 1,
+  "currency": "EGP",
+  "products": [
+    {
+      "id": "mes1",
+      "title": "جينز أزرق كلاسيك",
+      "category": "جينز",
+      "price": 599,
+      "desc": "قصة يومية مريحة",
+      "badge": "جينز كلاسيك",
+      "motionTag": "3D Tilt + FLIP",
+      "active": true,
+      "visual": {
+        "type": "jeans",
+        "color": "#1e3a8a",
+        "accent": "#93c5fd"
+      },
+      "media": {
+        "cover": "",
+        "images": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "mes2",
+      "title": "جينز أسود واسع",
+      "category": "جينز",
+      "price": 749,
+      "desc": "ستايل واسع ولمسة عصرية",
+      "badge": "Baggy Fit",
+      "motionTag": "Spotlight + Arc Clone",
+      "active": true,
+      "visual": {
+        "type": "jeans",
+        "color": "#18181b",
+        "accent": "#d4af37"
+      },
+      "media": {
+        "cover": "",
+        "images": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "mes3",
+      "title": "جينز أزرق واسع",
+      "category": "جينز",
+      "price": 749,
+      "desc": "دينيم أزرق بقصة واسعة",
+      "badge": "Wide Denim",
+      "motionTag": "Direction-Aware Hover",
+      "active": true,
+      "visual": {
+        "type": "jeans",
+        "color": "#1d4ed8",
+        "accent": "#e6ccb2"
+      },
+      "media": {
+        "cover": "",
+        "images": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "mes4",
+      "title": "جاكت جينز رمادي مطبوع",
+      "category": "جاكت",
+      "price": 1399,
+      "desc": "ستايل جريء بتفاصيل مميزة",
+      "badge": "Printed Denim",
+      "motionTag": "3D Card Flip + SVG Draw",
+      "active": true,
+      "visual": {
+        "type": "jacket",
+        "color": "#3f3f46",
+        "accent": "#d4af37"
+      },
+      "media": {
+        "cover": "",
+        "images": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "mes5",
+      "title": "جاكت كريمي كلاسيك",
+      "category": "جاكت",
+      "price": 999,
+      "desc": "قطعة أنيقة للإطلالات الهادئة",
+      "badge": "إطلالة هادئة",
+      "motionTag": "Squash & Stretch",
+      "active": true,
+      "visual": {
+        "type": "jacket",
+        "color": "#d6c7b2",
+        "accent": "#78350f"
+      },
+      "media": {
+        "cover": "",
+        "images": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "mes6",
+      "title": "جاكت رمادي كلاسيك",
+      "category": "جاكت",
+      "price": 999,
+      "desc": "تصميم بسيط وسهل التنسيق",
+      "badge": "كلاسيك",
+      "motionTag": "Holographic Glare",
+      "active": true,
+      "visual": {
+        "type": "jacket",
+        "color": "#52525b",
+        "accent": "#f5ebe0"
+      },
+      "media": {
+        "cover": "",
+        "images": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "mes7",
+      "title": "معطف أسود كلاسيك",
+      "category": "جاكت",
+      "price": 999,
+      "desc": "أساسي لخزانة الشتاء",
+      "badge": "Winter Coat",
+      "motionTag": "Spring Overshoot",
+      "active": true,
+      "visual": {
+        "type": "jacket",
+        "color": "#09090b",
+        "accent": "#d4af37"
+      },
+      "media": {
+        "cover": "",
+        "images": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "mes8",
+      "title": "هودي أسود MES",
+      "category": "هودي",
+      "price": 749,
+      "desc": "راحة يومية بتصميم نظيف",
+      "badge": "الأكثر مبيعاً",
+      "motionTag": "Signature MES Hoodie",
+      "active": true,
+      "visual": {
+        "type": "hoodie",
+        "color": "#111115",
+        "accent": "#d4af37"
+      },
+      "media": {
+        "cover": "",
+        "images": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "mes9",
+      "title": "هودي رمادي بطباعة",
+      "category": "هودي",
+      "price": 649,
+      "desc": "ستايل ستريت وير",
+      "badge": "Streetwear",
+      "motionTag": "Liquid Filter Hover",
+      "active": true,
+      "visual": {
+        "type": "hoodie",
+        "color": "#4b5563",
+        "accent": "#f5ebe0"
+      },
+      "media": {
+        "cover": "",
+        "images": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "mes10",
+      "title": "هودي أسود بطباعة",
+      "category": "هودي",
+      "price": 649,
+      "desc": "إطلالة داكنة ومميزة",
+      "badge": "Graphic Print",
+      "motionTag": "Parabolic Arc Clone",
+      "active": true,
+      "visual": {
+        "type": "hoodie",
+        "color": "#18181b",
+        "accent": "#38bdf8"
+      },
+      "media": {
+        "cover": "",
+        "images": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "mes11",
+      "title": "جاكت شمواه نبيتي",
+      "category": "جاكت",
+      "price": 1299,
+      "desc": "لون غني وتفاصيل فاخرة",
+      "badge": "شمواه فاخر",
+      "motionTag": "Luxury Suede + 3D Flip",
+      "active": true,
+      "visual": {
+        "type": "jacket",
+        "color": "#6b1d2f",
+        "accent": "#d4af37"
+      },
+      "media": {
+        "cover": "",
+        "images": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "mes12",
+      "title": "جاكت شمواه بني",
+      "category": "جاكت",
+      "price": 1349,
+      "desc": "ملمس ناعم وقصة عصرية",
+      "badge": "شمواه أصلي",
+      "motionTag": "Spotlight Radial Glow",
+      "active": true,
+      "visual": {
+        "type": "jacket",
+        "color": "#5c3a21",
+        "accent": "#f5ebe0"
+      },
+      "media": {
+        "cover": "",
+        "images": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "mes13",
+      "title": "جاكت جلد بني بجيوب",
+      "category": "جاكت",
+      "price": 1199,
+      "desc": "تصميم عملي بجيوب أمامية",
+      "badge": "جلد بجيوب",
+      "motionTag": "Tactile Press Scale",
+      "active": true,
+      "visual": {
+        "type": "jacket",
+        "color": "#451a03",
+        "accent": "#d4af37"
+      },
+      "media": {
+        "cover": "",
+        "images": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "mes14",
+      "title": "بنطلون رياضي رمادي",
+      "category": "بناطيل",
+      "price": 550,
+      "desc": "راحة وحركة طوال اليوم",
+      "badge": "Comfort Fit",
+      "motionTag": "Elastic Bounce",
+      "active": true,
+      "visual": {
+        "type": "pants",
+        "color": "#6b7280",
+        "accent": "#f5ebe0"
+      },
+      "media": {
+        "cover": "",
+        "images": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "mes15",
+      "title": "هودي بني",
+      "category": "هودي",
+      "price": 749,
+      "desc": "لون دافئ وسهل التنسيق",
+      "badge": "Warm Tone",
+      "motionTag": "Origin-Aware Modal",
+      "active": true,
+      "visual": {
+        "type": "hoodie",
+        "color": "#543310",
+        "accent": "#e6ccb2"
+      },
+      "media": {
+        "cover": "",
+        "images": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "mes16",
+      "title": "سويت شيرت أسود",
+      "category": "هودي",
+      "price": 550,
+      "desc": "سعر المنتج يحتاج تأكيد عبر واتساب",
+      "badge": "تأكيد واتساب",
+      "motionTag": "WhatsApp Instant Sync",
+      "priceNote": "يؤكد عند الطلب",
+      "active": true,
+      "visual": {
+        "type": "hoodie",
+        "color": "#171717",
+        "accent": "#a1a1aa"
+      },
+      "media": {
+        "cover": "",
+        "images": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "mes17",
+      "title": "جاكت جلد بني بسوستة",
+      "category": "جاكت",
+      "price": 1099,
+      "desc": "ستايل كلاسيكي بلمسة جلد",
+      "badge": "Leather Zip",
+      "motionTag": "3D Perspective Tilt",
+      "active": true,
+      "visual": {
+        "type": "jacket",
+        "color": "#5c2d16",
+        "accent": "#d4af37"
+      },
+      "media": {
+        "cover": "",
+        "images": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "mes18",
+      "title": "هودي أبيض ثلجي",
+      "category": "هودي",
+      "price": 749,
+      "desc": "إطلالة فاتحة وعصرية",
+      "badge": "Snow White",
+      "motionTag": "Glow & Shimmer",
+      "active": true,
+      "visual": {
+        "type": "hoodie",
+        "color": "#e4e4e7",
+        "accent": "#18181b"
+      },
+      "media": {
+        "cover": "",
+        "images": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "mes19",
+      "title": "بنطلون رياضي أسود",
+      "category": "بناطيل",
+      "price": 550,
+      "desc": "قطعة أساسية للراحة",
+      "badge": "Essential",
+      "motionTag": "FLIP Grid Transition",
+      "active": true,
+      "visual": {
+        "type": "pants",
+        "color": "#18181b",
+        "accent": "#d4af37"
+      },
+      "media": {
+        "cover": "",
+        "images": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "mes20",
+      "title": "جاكت جلد أسود بسوستة",
+      "category": "جاكت",
+      "price": 1099,
+      "desc": "تصميم أسود أنيق",
+      "badge": "Biker Leather",
+      "motionTag": "Direction-Aware Reveal",
+      "active": true,
+      "visual": {
+        "type": "jacket",
+        "color": "#09090b",
+        "accent": "#e4e4e7"
+      },
+      "media": {
+        "cover": "",
+        "images": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "mes21",
+      "title": "جاكت جلد أسود بياقة بنية",
+      "category": "جاكت",
+      "price": 1299,
+      "desc": "تفاصيل متباينة وشكل مميز",
+      "badge": "Contrast Collar",
+      "motionTag": "Dual-Tone 3D Flip",
+      "active": true,
+      "visual": {
+        "type": "jacket",
+        "color": "#18181b",
+        "accent": "#b45309"
+      },
+      "media": {
+        "cover": "",
+        "images": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "mes22",
+      "title": "سويت شيرت أسود سادة",
+      "category": "هودي",
+      "price": 549,
+      "desc": "تصميم أساسي أنيق باللون الأسود، مناسب للإطلالات اليومية",
+      "badge": "Minimal Basic",
+      "motionTag": "Micro-Interaction Ready",
+      "active": true,
+      "visual": {
+        "type": "hoodie",
+        "color": "#0f0f12",
+        "accent": "#d4af37"
+      },
+      "media": {
+        "cover": "",
+        "images": [],
+        "videos": []
+      }
+    }
+  ]
+}
