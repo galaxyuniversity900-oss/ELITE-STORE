@@ -871,7 +871,7 @@
 
         <div class="relative h-56 rounded-2xl bg-gradient-to-br from-[#d4af37]/25 via-black to-zinc-900 border border-[#d4af37]/50 flex flex-col items-center justify-center p-4 overflow-hidden">
           <div class="text-xs text-[#f5ebe0] font-bold mb-1">🎉 مبروك! كود خصم إضافي 200 ج.م عند الطلب</div>
-          <div class="font-mono-tech text-2xl font-black text-[#d4af37] tracking-widest bg-zinc-950 px-4 py-2 rounded-xl border border-[#d4af37] mb-3">
+          <div id="store-coupon-code" class="font-mono-tech text-2xl font-black text-[#d4af37] tracking-widest bg-zinc-950 px-4 py-2 rounded-xl border border-[#d4af37] mb-3">
             MESVIP200
           </div>
           <button id="copy-coupon-btn" type="button" class="px-4 py-1.5 rounded-xl bg-[#d4af37] hover:bg-[#e6ccb2] text-black font-black text-xs flex items-center gap-1.5">
@@ -1159,6 +1159,7 @@
         <span class="text-zinc-400">الإجمالي (شامل خصم الكوبون إن وجد):</span>
         <span id="cart-total-price" class="text-xl font-black text-[#d4af37] font-mono-tech tabular-nums">749 ج.م</span>
       </div>
+      <div id="cart-discount-summary" hidden class="text-[11px] text-emerald-400 font-bold"></div>
 
       <button id="optimistic-checkout-btn" type="button" class="w-full py-3 rounded-2xl bg-gradient-to-r from-[#d4af37] to-[#e6ccb2] hover:opacity-95 text-black font-black text-sm shadow-lg transition-all">
         💬 تأكيد وإرسال الطلب عبر واتساب (Optimistic UI + Confetti)
@@ -1173,6 +1174,7 @@
       <div>
         <strong class="text-white tracking-wider">MES STORE</strong> — ملابس رجالي · ستايل عصري · اختياراتك تبدأ من هنا · الطلبات والاستفسارات عبر واتساب
       </div>
+      <div id="store-contact-links" class="w-full text-xs text-zinc-400 flex flex-wrap gap-2"></div>
       <div class="flex items-center gap-3">
         <button id="toggle-reduced-motion-btn" type="button" class="px-3 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-zinc-300">
           ♿ وضع تقليل الحركة (Reduced Motion): غير مفعّل
@@ -1310,6 +1312,136 @@
         { id: 'mes21', title: 'جاكت جلد أسود بياقة بنية', category: 'جاكت', price: 1299, desc: 'تفاصيل متباينة وشكل مميز', badge: 'Contrast Collar', motionTag: 'Dual-Tone 3D Flip', svgIcon: makeGarmentSvg('jacket', '#18181b', '#b45309') },
         { id: 'mes22', title: 'سويت شيرت أسود سادة', category: 'هودي', price: 549, desc: 'تصميم أساسي أنيق باللون الأسود، مناسب للإطلالات اليومية', badge: 'Minimal Basic', motionTag: 'Micro-Interaction Ready', svgIcon: makeGarmentSvg('hoodie', '#0f0f12', '#d4af37') }
       ];
+
+      function storeSafeText(value) {
+        return String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+      }
+      function storeWhatsAppNumber() {
+        return String(STORE_CONTACT.whatsapp_number || '').replace(/[^0-9]/g, '');
+      }
+      function storeRuleIsCurrent(rule) {
+        if (!rule || rule.active !== true) return false;
+        const now = Date.now();
+        if (rule.starts_at && now < Date.parse(rule.starts_at)) return false;
+        if (rule.ends_at && now > Date.parse(rule.ends_at)) return false;
+        return true;
+      }
+      function storeDiscountForCart() {
+        const units = cartItems.reduce((sum, item) => sum + Number(item.qty || 0), 0);
+        const rawTotal = cartItems.reduce((sum, item) => sum + Number(item.price || 0) * Number(item.qty || 0), 0);
+        let best = { amount: 0, label: '' };
+        for (const rule of (STORE_DISCOUNTS.quantity_rules || [])) {
+          if (!storeRuleIsCurrent(rule) || units < Number(rule.min_units || 1)) continue;
+          let eligible = cartItems;
+          if (rule.scope === 'product') {
+            const ids = Array.isArray(rule.product_ids) ? rule.product_ids : [rule.product_id].filter(Boolean);
+            eligible = cartItems.filter(item => ids.includes(item.id));
+          } else if (rule.scope === 'category') {
+            const categories = Array.isArray(rule.categories) ? rule.categories : [rule.category].filter(Boolean);
+            eligible = cartItems.filter(item => categories.includes(item.category));
+          } else if (rule.scope !== 'cart') continue;
+          const eligibleUnits = eligible.reduce((sum, item) => sum + Number(item.qty || 0), 0);
+          if (!eligibleUnits) continue;
+          const subtotal = eligible.reduce((sum, item) => sum + Number(item.price || 0) * Number(item.qty || 0), 0);
+          let amount = 0;
+          if (rule.type === 'percentage') amount = subtotal * Math.max(0, Math.min(100, Number(rule.value) || 0)) / 100;
+          else if (rule.type === 'fixed_amount') amount = eligibleUnits * Math.max(0, Number(rule.value) || 0);
+          else if (rule.type === 'fixed_price') amount = eligible.reduce((sum, item) => sum + Math.max(0, Number(item.price) - Number(rule.value)) * Number(item.qty || 0), 0);
+          amount = Math.min(subtotal, Math.max(0, amount));
+          if (amount > best.amount) best = { amount, label: rule.description || ('خصم الكمية: ' + rule.min_units + ' وحدات') };
+        }
+        return best;
+      }
+      function getProductDiscountHint(product) {
+        const rules = (STORE_DISCOUNTS.quantity_rules || []).filter(rule => {
+          if (!storeRuleIsCurrent(rule)) return false;
+          if (rule.scope === 'product') return (rule.product_ids || [rule.product_id]).filter(Boolean).includes(product.id);
+          if (rule.scope === 'category') return (rule.categories || [rule.category]).filter(Boolean).includes(product.category);
+          return false;
+        }).sort((a,b) => Number(a.min_units || 1) - Number(b.min_units || 1));
+        return rules.length ? '<span class="block text-[10px] text-emerald-400 mt-1">' + storeSafeText(rules[0].description || ('خصم عند شراء ' + rules[0].min_units + ' وحدات')) + '</span>' : '';
+      }
+      async function loadStoreConfiguration() {
+        const readJson = async path => {
+          const response = await fetch(new URL('./' + path, document.baseURI), { cache: 'no-store' });
+          if (!response.ok) throw new Error(path + ' (' + response.status + ')');
+          return response.json();
+        };
+        try {
+          const contact = await readJson('data/contact.json');
+          if (contact && contact.version === 1) STORE_CONTACT = contact;
+          const wa = storeWhatsAppNumber();
+          const footer = document.getElementById('store-contact-links');
+          if (footer) {
+            const links = [];
+            if (wa) links.push('<a class="text-[#d4af37] hover:underline" target="_blank" rel="noopener" href="https://wa.me/' + wa + '">واتساب المتجر</a>');
+            if (STORE_CONTACT.phone) links.push('<a class="hover:underline" href="tel:' + storeSafeText(STORE_CONTACT.phone) + '">' + storeSafeText(STORE_CONTACT.phone) + '</a>');
+            if (STORE_CONTACT.email) links.push('<a class="hover:underline" href="mailto:' + storeSafeText(STORE_CONTACT.email) + '">' + storeSafeText(STORE_CONTACT.email) + '</a>');
+            if (STORE_CONTACT.address) links.push('<span>' + storeSafeText(STORE_CONTACT.address) + '</span>');
+            if (STORE_CONTACT.instagram_url && /^https:\/\//i.test(STORE_CONTACT.instagram_url)) links.push('<a target="_blank" rel="noopener" href="' + storeSafeText(STORE_CONTACT.instagram_url) + '">Instagram</a>');
+            if (STORE_CONTACT.facebook_url && /^https:\/\//i.test(STORE_CONTACT.facebook_url)) links.push('<a target="_blank" rel="noopener" href="' + storeSafeText(STORE_CONTACT.facebook_url) + '">Facebook</a>');
+            if (STORE_CONTACT.tiktok_url && /^https:\/\//i.test(STORE_CONTACT.tiktok_url)) links.push('<a target="_blank" rel="noopener" href="' + storeSafeText(STORE_CONTACT.tiktok_url) + '">TikTok</a>');
+            footer.innerHTML = links.join(' <span class="text-zinc-600">·</span> ') +
+              (STORE_CONTACT.working_hours ? '<span class="block mt-1">' + storeSafeText(STORE_CONTACT.working_hours) + '</span>' : '') +
+              (STORE_CONTACT.footer_note ? '<span class="block mt-1">' + storeSafeText(STORE_CONTACT.footer_note) + '</span>' : '');
+          }
+        } catch (error) { console.warn('Store contact settings unavailable:', error.message); }
+        try {
+          const discounts = await readJson('data/discounts.json');
+          if (discounts && discounts.version === 1) {
+            STORE_DISCOUNTS = {
+              coupons: Array.isArray(discounts.coupons) ? discounts.coupons : [],
+              quantity_rules: Array.isArray(discounts.quantity_rules) ? discounts.quantity_rules : []
+            };
+          }
+        } catch (error) { console.warn('Store discount settings unavailable:', error.message); }
+        try {
+          const registry = await readJson('data/sections/index.json');
+          if (registry && registry.version === 1 && Array.isArray(registry.sections)) {
+            const entries = await Promise.all(registry.sections.map(async section => {
+              try { return [section.id, await readJson('data/sections/' + section.file)]; }
+              catch (error) { console.warn('Section settings unavailable:', section.id); return [section.id, null]; }
+            }));
+            STORE_SECTIONS = Object.fromEntries(entries.filter(entry => entry[1] && entry[1].version === 1));
+            const sectionTargets = {
+              home: 'hero-showcase',
+              categories: 'visual-categories-showroom',
+              catalog: 'products-grid-section'
+            };
+            Object.entries(sectionTargets).forEach(([key,id]) => {
+              const config = STORE_SECTIONS[key];
+              const element = document.getElementById(id);
+              if (element && config && config.enabled === false) element.hidden = true;
+            });
+            const footerConfig = STORE_SECTIONS.footer;
+            const footerElement = document.querySelector('footer');
+            if (footerElement && footerConfig && footerConfig.enabled === false) footerElement.hidden = true;
+          }
+        } catch (error) { console.warn('Store section settings unavailable:', error.message); }
+        const coupon = (STORE_DISCOUNTS.coupons || []).find(item => item.code === 'MESVIP200');
+        const codeElement = document.getElementById('store-coupon-code');
+        if (codeElement && coupon) codeElement.textContent = coupon.code;
+        if (coupon && coupon.active === false) {
+          const couponButton = document.getElementById('copy-coupon-btn');
+          if (couponButton) couponButton.disabled = true;
+        }
+        renderProducts(false);
+        renderCartDrawer();
+      }
+      function applyStoreCoupon(code) {
+        const coupon = (STORE_DISCOUNTS.coupons || []).find(item => item.code === code && item.active === true && storeRuleIsCurrent(item));
+        if (!coupon) return { ok: false, message: 'كود الخصم غير متاح حالياً.' };
+        const units = cartItems.reduce((sum, item) => sum + Number(item.qty || 0), 0);
+        if (units < Number(coupon.min_units || 1)) return { ok: false, message: 'هذا الكود يحتاج إلى ' + coupon.min_units + ' وحدات على الأقل.' };
+        const subtotal = cartItems.reduce((sum, item) => sum + Number(item.price || 0) * Number(item.qty || 0), 0);
+        let amount = 0;
+        if (coupon.type === 'percentage') amount = subtotal * Math.max(0, Math.min(100, Number(coupon.value) || 0)) / 100;
+        else if (coupon.type === 'fixed_amount') amount = Math.max(0, Number(coupon.value) || 0);
+        else return { ok: false, message: 'نوع الكوبون غير مدعوم.' };
+        activeCouponCode = coupon.code;
+        discountAmount = Math.min(subtotal, amount);
+        return { ok: true, message: coupon.description || 'تم تفعيل الخصم.' };
+      }
 
       // Product data and media are loaded from the editable GitHub catalogue.
       function normalizeCatalogPath(value) {
@@ -1532,6 +1664,10 @@
       let wishlistIds = new Set(['mes8', 'mes11']);
       let cartItems = [{ ...PRODUCTS[7], size: 'L', qty: 1 }];
       let discountAmount = 0;
+      let activeCouponCode = '';
+      let STORE_CONTACT = {};
+      let STORE_DISCOUNTS = { coupons: [], quantity_rules: [] };
+      let STORE_SECTIONS = {};
       let soundEnabled = true;
       let audioCtx = null;
 
@@ -1735,6 +1871,7 @@
                     <span class="text-lg font-black text-[#f5ebe0] font-mono-tech tabular-nums">${p.price.toLocaleString()}</span>
                     <span class="text-xs text-[#d4af37] font-bold mr-0.5">ج.م</span>
                     ${p.priceNote ? `<span class="text-[10px] text-amber-400 block">${p.priceNote}</span>` : ''}
+                    ${getProductDiscountHint(p)}
                   </div>
                   <button type="button" data-quick-id="${p.id}" class="quick-view-btn text-[11px] font-bold text-[#e6ccb2] hover:underline">
                     🔍 معاينة سريعة
@@ -1965,7 +2102,17 @@
         }
 
         const rawTotal = cartItems.reduce((s, i) => s + i.price * i.qty, 0);
-        const finalTotal = Math.max(0, rawTotal - discountAmount);
+        const quantityDiscount = storeDiscountForCart();
+        const couponDiscount = Math.min(discountAmount, Math.max(0, rawTotal - quantityDiscount.amount));
+        const finalTotal = Math.max(0, rawTotal - quantityDiscount.amount - couponDiscount);
+        const discountSummary = document.getElementById('cart-discount-summary');
+        if (discountSummary) {
+          const labels = [];
+          if (quantityDiscount.amount > 0) labels.push(storeSafeText(quantityDiscount.label) + ': ' + quantityDiscount.amount.toLocaleString() + ' ج.م');
+          if (couponDiscount > 0) labels.push('كوبون ' + storeSafeText(activeCouponCode) + ': ' + couponDiscount.toLocaleString() + ' ج.م');
+          discountSummary.textContent = labels.length ? 'تم تطبيق: ' + labels.join(' · ') : '';
+          discountSummary.hidden = !labels.length;
+        }
         animateNumberValue(cartTotalPrice, lastTotalAmount, finalTotal, 420, ' ج.م');
         lastTotalAmount = finalTotal;
 
@@ -2011,6 +2158,8 @@
         const name = document.getElementById('wa-customer-name').value.trim() || 'عميل MES المميز';
         const phone = document.getElementById('wa-customer-phone').value.trim() || '010XXXXXXXX';
         const addr = document.getElementById('wa-customer-address').value.trim() || 'القاهرة - الدفع عند الاستلام';
+        const quantityDiscount = storeDiscountForCart();
+        const couponDiscount = Math.min(discountAmount, Math.max(0, cartItems.reduce((sum, item) => sum + item.price * item.qty, 0) - quantityDiscount.amount));
         const itemsSummary = cartItems.map(i => `• ${i.title} (مقاس ${i.size}) × ${i.qty} = ${i.price * i.qty} ج.م`).join('<br/>');
         const preview = document.getElementById('wa-order-preview');
         preview.classList.remove('hidden');
@@ -2020,6 +2169,34 @@
           <div>${itemsSummary || '• طقم MES الكامل'}</div>
           <div class="font-mono-tech font-bold text-[#d4af37]">الإجمالي عند الاستلام: ${lastTotalAmount.toLocaleString()} ج.م</div>
         `;
+        if (quantityDiscount.amount > 0 || couponDiscount > 0) {
+          const discountLine = document.createElement('div');
+          discountLine.textContent = 'إجمالي الخصومات: ' + (quantityDiscount.amount + couponDiscount).toLocaleString() + ' ج.م';
+          preview.appendChild(discountLine);
+        }
+        const waNumber = storeWhatsAppNumber();
+        if (waNumber) {
+          const orderText = [
+            'طلب جديد من ' + (STORE_CONTACT.store_name || 'MES STORE'),
+            'العميل: ' + name,
+            'هاتف العميل: ' + phone,
+            'العنوان: ' + addr,
+            ...cartItems.map(item => item.title + ' | مقاس ' + item.size + ' | عدد ' + item.qty + ' | ' + (item.price * item.qty).toLocaleString() + ' جنيه'),
+            'الإجمالي: ' + lastTotalAmount.toLocaleString() + ' جنيه'
+          ].join('\\n');
+          const waLink = document.createElement('a');
+          waLink.href = 'https://wa.me/' + waNumber + '?text=' + encodeURIComponent(orderText);
+          waLink.target = '_blank';
+          waLink.rel = 'noopener';
+          waLink.className = 'inline-flex mt-2 px-3 py-2 rounded-lg bg-emerald-600 text-white font-bold';
+          waLink.textContent = 'إرسال الطلب إلى واتساب المتجر';
+          preview.appendChild(waLink);
+        } else {
+          const missingNumber = document.createElement('div');
+          missingNumber.className = 'mt-2 text-amber-300';
+          missingNumber.textContent = 'أضف رقم واتساب المتجر في data/contact.json لتفعيل إرسال الطلبات.';
+          preview.appendChild(missingNumber);
+        }
         const rect = e.currentTarget.getBoundingClientRect();
         spawnParticles(rect.left + rect.width / 2, rect.top, '#d4af37', 45);
         notifyDynamicIsland('💬 تم تجهيز طلب واتساب بنجاح مع احتفالية الجزيئات الذهبية!');
@@ -2464,13 +2641,17 @@
 
       document.getElementById('copy-coupon-btn').addEventListener('click', (e) => {
         playSynthSound('success');
-        discountAmount = 200;
+        const couponResult = applyStoreCoupon(document.getElementById('store-coupon-code').textContent.trim());
+        if (!couponResult.ok) {
+          notifyDynamicIsland(couponResult.message);
+          return;
+        }
         renderCartDrawer();
         document.getElementById('copy-coupon-icon').textContent = '✅';
-        document.getElementById('copy-coupon-text').textContent = 'تم تفعيل خصم 200 ج.م في السلة!';
+        document.getElementById('copy-coupon-text').textContent = couponResult.message;
         const r = e.currentTarget.getBoundingClientRect();
         spawnParticles(r.left + r.width / 2, r.top, '#d4af37', 32);
-        notifyDynamicIsland('🎉 تم خصم 200 ج.م من إجمالي سلة MES STORE فوراً!');
+        notifyDynamicIsland('🎉 ' + couponResult.message);
       });
 
       // Before / After Slider
@@ -2507,6 +2688,7 @@
             <p class="text-xs text-zinc-300 leading-relaxed">${prod.desc} — مصمم بقصة عصرية مريحة وخياطة مزدوجة متينة تناسب الخروجات اليومية والإطلالات الشتوية الأنيقة.</p>
             <div class="flex items-baseline gap-2">
               <span class="text-3xl font-black text-[#d4af37] font-mono-tech">${prod.price.toLocaleString()} ج.م</span>
+              ${getProductDiscountHint(prod)}
               <span class="text-xs text-emerald-400 font-bold">✔ متوفر في المخزون · الدفع عند الاستلام</span>
             </div>
             <div class="p-3 rounded-xl bg-black/70 border border-zinc-800 text-xs text-zinc-300 space-y-1">
@@ -3718,6 +3900,7 @@
       gmApplySavedCards().catch(()=>{});
       renderCartDrawer();
       loadStoreCatalog();
+      loadStoreConfiguration();
     })();
   </script>
 </body>
