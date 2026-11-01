@@ -60,3 +60,63 @@ No build step or npm dependency is required for the current single-file storefro
 ## Existing store
 
 The original single-file storefront remains in `ELITE.html`. Existing product data, prices, sizes, cart, wishlist, and checkout interactions are retained.
+
+
+## Editable product catalogue and media library
+
+Product information is maintained separately from the storefront in `data/products.json`. The storefront loads this file when it opens and keeps its built-in product list as a fallback if the catalogue cannot be fetched.
+
+### Change a product price or details on GitHub
+
+1. Open `data/products.json` in the repository.
+2. Select **Edit this file**.
+3. Find the product by its stable ID, such as `mes11`.
+4. Change the numeric `price`, `title`, `desc`, `badge`, or `category`.
+5. Commit the change.
+
+Prices are in Egyptian pounds (EGP). Keep `price` numeric: write `1299`, not `1,299 ج.م`.
+
+Set `active` to `false` to hide a product without deleting its record. Set it back to `true` to display it again. New records can be added by copying a product object and assigning a unique ID, for example `mes23`. Category filters are generated from the catalogue, including new categories.
+
+### Replace or add product photographs and videos
+
+Upload the actual files to `assets/products/<product-id>/` on GitHub. For example:
+
+```
+assets/products/mes11/
+  cover.webp
+  detail-1.webp
+  detail-2.webp
+  preview.mp4
+```
+
+Then edit the same product's `media` fields in `data/products.json`:
+
+```json
+"media": {
+  "cover": "assets/products/mes11/cover.webp",
+  "images": [
+    "assets/products/mes11/detail-1.webp",
+    "assets/products/mes11/detail-2.webp"
+  ],
+  "videos": [
+    "assets/products/mes11/preview.mp4"
+  ]
+}
+```
+
+- `cover` is used as the main product photograph.
+- `images` holds additional gallery images shown in quick view.
+- `videos` holds playable product videos shown in quick view.
+- To replace a photo, upload a new filename (such as `cover-v2.webp`) and update the JSON path. Using a new filename avoids browser/CDN cache confusion and prevents a motion mask made for the old photograph from being reused.
+- To remove a gallery item or video, remove its path from the relevant array.
+- Use optimized WebP/JPG/PNG images and short MP4 (H.264) or WebM videos.
+- Relative paths under `assets/products/` and HTTPS URLs are supported.
+
+The repository contains no real per-product photo set yet. Until you upload each product's own files, the existing built-in visual fallback remains in use; the catalogue does not fabricate product photographs.
+
+### Publish changes
+
+A GitHub commit updates the repository immediately. Visitors see the update after the configured hosting workflow finishes deploying the commit and the host/browser cache refreshes. A GitHub commit by itself does not guarantee instant delivery to visitors.
+
+For large video files, use a video CDN or a hosting service and put its HTTPS URL in `media.videos`. Keep the GitHub repository focused on optimized photos and small assets.
