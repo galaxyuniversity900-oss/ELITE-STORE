@@ -2373,6 +2373,7 @@
             </button>
           </div>
         `;
+        if(typeof gmMountQuickView==='function') gmMountQuickView(prod);
         qvBackdrop.classList.remove('hidden');
         qvBackdrop.classList.add('flex');
         requestAnimationFrame(() => {
@@ -2387,6 +2388,7 @@
       }
 
       function closeQuickViewModal() {
+        if(typeof gmStopQuickView==='function') gmStopQuickView();
         qvBackdrop.classList.add('opacity-0');
         qvModal.classList.remove('scale-100');
         qvModal.classList.add('scale-90');
@@ -3311,7 +3313,7 @@
         const f=e.target.files&&e.target.files[0]; if(!f)return;
         if(!f.type.startsWith('image/')){gmSetStatus('الملف ليس صورة مدعومة.');return;}
         if(f.size>15*1024*1024){gmSetStatus('حجم الصورة يتجاوز 15MB.');return;}
-        const url=URL.createObjectURL(f); gmLoadImageURL(url);
+        const url=URL.createObjectURL(f); gmLoadImageURL(url,()=>URL.revokeObjectURL(url));
       });
       document.getElementById('gm-auto-mask').addEventListener('click',()=>{
         if(!gmImageReady)return;
@@ -3343,10 +3345,10 @@
         document.getElementById('gm-sleeves').checked=true;document.getElementById('gm-body').checked=true;document.getElementById('gm-edges').checked=true;
         gmImageReady=false;gmCtx.clearRect(0,0,gmCanvas.width,gmCanvas.height);gmMaskCtx.clearRect(0,0,gmMaskCanvas.width,gmMaskCanvas.height);
         gmGet(product.id).then(rec=>{
-          if(rec){gmLoadImageURL(rec.original);document.getElementById('gm-category').value=rec.category;document.getElementById('gm-speed').value=rec.settings.speed;document.getElementById('gm-intensity').value=rec.settings.intensity;
+          if(rec){document.getElementById('gm-category').value=rec.category;document.getElementById('gm-speed').value=rec.settings.speed;document.getElementById('gm-intensity').value=rec.settings.intensity;
             ['sleeves','body','edges'].forEach(k=>document.getElementById('gm-'+k).checked=rec.settings[k]);
             document.getElementById('gm-speed-value').textContent=rec.settings.speed+'%';document.getElementById('gm-intensity-value').textContent=rec.settings.intensity+'%';
-            const maskImg=new Image();maskImg.onload=()=>{gmMaskCtx.clearRect(0,0,gmMaskCanvas.width,gmMaskCanvas.height);gmMaskCtx.drawImage(maskImg,0,0,gmMaskCanvas.width,gmMaskCanvas.height);gmDrawEditor();};maskImg.src=rec.mask;
+            gmLoadImageURL(rec.original,()=>{const maskImg=new Image();maskImg.onload=()=>{gmMaskCtx.clearRect(0,0,gmMaskCanvas.width,gmMaskCanvas.height);gmMaskCtx.drawImage(maskImg,0,0,gmMaskCanvas.width,gmMaskCanvas.height);gmDrawEditor();};maskImg.src=rec.mask;});
             gmSetStatus('تم تحميل إعداد الحركة المحفوظ. يمكنك تعديله أو معاينته.');
           }else gmSetStatus('ارفع صورة المنتج الأصلية للبدء. لا توجد صورة فعلية مرفقة بهذا المنتج حالياً.');
         }).catch(()=>gmSetStatus('تعذر فتح التخزين المحلي في هذا المتصفح.'));
@@ -3386,7 +3388,7 @@
         const w=ctx.canvas.width,h=ctx.canvas.height;
         const type=profileName||document.getElementById('gm-category').value,profile=gmProfiles[type]||gmProfiles.generic;
         const amp=(settings.intensity/100)*Math.min(w,h)*.027,phase=time*profile.frequency*(settings.speed/77);
-        const cols=12,rows=14,src=[],dst=[];
+        const cols=8,rows=10,src=[],dst=[];
         for(let y=0;y<=rows;y++)for(let x=0;x<=cols;x++){
           const nx=x/cols,ny=y/rows,px=nx*w,py=ny*h;
           let dx=0,dy=0,side=nx<.5?-1:1;
@@ -3446,7 +3448,7 @@
       function gmRenderStored(ctx,assets,time,profileName){
         const rec=assets.record,w=ctx.canvas.width,h=ctx.canvas.height;ctx.clearRect(0,0,w,h);ctx.drawImage(assets.bg,0,0,w,h);
         const p=gmProfiles[profileName]||gmProfiles.generic,st=rec.settings,amp=(st.intensity/100)*Math.min(w,h)*.027,phase=time*p.frequency*(st.speed/77);
-        const cols=10,rows=12,src=[],dst=[];
+        const cols=7,rows=9,src=[],dst=[];
         for(let y=0;y<=rows;y++)for(let x=0;x<=cols;x++){
           const nx=x/cols,ny=y/rows,px=nx*w,py=ny*h,side=nx<.5?-1:1;
           const edge=Math.max(0,Math.min(1,(Math.abs(nx-.5)*2-.30)/.70)),lower=Math.max(0,Math.min(1,(ny-.42)/.58));
@@ -3473,6 +3475,21 @@
         const gmObserver=new IntersectionObserver(entries=>entries.forEach(e=>{const id=e.target.dataset.gmCardId,entry=gmCardCanvases.get(id);if(entry)entry.visible=e.isIntersecting;}),{rootMargin:'120px'});
         const oldApply=gmApplySavedCards;
         gmApplySavedCards=async function(){await oldApply();document.querySelectorAll('.gm-card-canvas').forEach(c=>{const wrap=c.closest('[id^="prod-visual-"]');if(wrap){c.dataset.gmCardId=wrap.id.replace('prod-visual-','');gmObserver.observe(c);}});};
+      }
+
+      let gmQuickViewRaf=0;
+      function gmStopQuickView(){if(gmQuickViewRaf)cancelAnimationFrame(gmQuickViewRaf);gmQuickViewRaf=0;}
+      async function gmMountQuickView(product){
+        gmStopQuickView();
+        try{
+          const assets=await gmGetAssets(product.id);if(!assets)return;
+          const stage=qvBody.querySelector('.h-72');if(!stage)return;
+          stage.innerHTML='';
+          const c=document.createElement('canvas');c.width=480;c.height=Math.round(480*assets.record.height/assets.record.width);
+          c.style.width='100%';c.style.height='100%';c.style.objectFit='contain';stage.appendChild(c);
+          const render=now=>{if(!c.isConnected)return;gmRenderStored(c.getContext('2d'),assets,now/1000,gmProfileFor(product));gmQuickViewRaf=requestAnimationFrame(render);};
+          gmQuickViewRaf=requestAnimationFrame(render);
+        }catch(e){}
       }
       function gmCardLoop(now){
         gmCardCanvases.forEach(entry=>{if(entry.visible&&entry.canvas.isConnected&&!document.body.classList.contains('reduced-motion'))gmRenderStored(entry.canvas.getContext('2d'),entry.assets,now/1000,entry.profile);});
