@@ -219,3 +219,10 @@ Use `data/sections/index.json` to see the section IDs and their matching files i
 - `footer.json`: show/hide the footer.
 
 Set `enabled` to `false` to hide a supported section. Commit the JSON edit to update the repository; the live website changes after its hosting deployment and cache refresh.
+
+
+### Checkout configuration
+
+The `data/sections/checkout.json` file controls the checkout drawer, the shipping note, and the displayed payment-method list. Edit `payment_methods` as a list of customer-facing labels, for example `["الدفع عند الاستلام", "تحويل بنكي"]`. Only list payment methods the store actually accepts.
+
+The checkout sends the order to the WhatsApp number in `data/contact.json`. Enter and verify that number before publishing or accepting real orders.
