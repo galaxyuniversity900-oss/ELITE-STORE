@@ -14,7 +14,7 @@ const required = [
   'gmInpaintBackground', 'gmAffineTriangle', 'gmRenderStored',
   'gmApplySavedCards', 'gmMountQuickView', 'product-motion',
   'data/products.json', 'loadStoreCatalog', 'renderProductVisual',
-  'renderProductGallery', "categoryFilterGroup.addEventListener('click')", 'sourceUrl'
+  'renderProductGallery', "categoryFilterGroup.addEventListener('click',", 'sourceUrl'
 ];
 for (const token of required) assert.ok(html.includes(token), 'Missing integration token: ' + token);
 
