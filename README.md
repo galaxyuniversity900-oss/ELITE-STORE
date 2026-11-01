@@ -226,3 +226,37 @@ Set `enabled` to `false` to hide a supported section. Commit the JSON edit to up
 The `data/sections/checkout.json` file controls the checkout drawer, the shipping note, and the displayed payment-method list. Edit `payment_methods` as a list of customer-facing labels, for example `["الدفع عند الاستلام", "تحويل بنكي"]`. Only list payment methods the store actually accepts.
 
 The checkout sends the order to the WhatsApp number in `data/contact.json`. Enter and verify that number before publishing or accepting real orders.
+
+
+## Monorepo and backend foundation
+
+The repository now includes the initial shared platform foundation alongside the existing storefront. The existing ELITE.html storefront and its data files remain in place; this infrastructure work does not replace the customer-facing site.
+
+- Root npm workspace and Turborepo task pipeline: package.json, turbo.json.
+- PostgreSQL data model and Prisma Client: prisma/schema.prisma.
+- Shared database workspace: packages/database/package.json.
+- Local PostgreSQL and Redis services: infra/docker/docker-compose.yml.
+- Environment template: .env.example.
+- GitHub Actions validation: .github/workflows/ci.yml.
+
+### Local database setup
+
+1. Install Node.js 20.19+ and Docker Compose.
+2. Copy .env.example to .env and replace both example passwords with long random values. Update DATABASE_URL to use the same PostgreSQL password.
+3. Start infrastructure from the repository root:
+
+   docker compose --env-file .env -f infra/docker/docker-compose.yml up -d
+
+4. Install dependencies and generate the Prisma client:
+
+   npm install
+   npm run db:validate
+   npm run db:generate
+
+5. For a development database migration, run npm run db:migrate. For a disposable/local schema sync only, npm run db:push is also available.
+
+Do not commit the real .env file or production credentials.
+
+### Current implementation boundary
+
+This commit establishes the workspace tooling, database schema, local infrastructure, and CI validation. It does not claim that the Next.js customer app, NestJS API, or separate admin application have been implemented yet. Those applications should be introduced as real workspace packages in subsequent implementation stages, then connected to the shared Prisma client and deployment pipeline. The current storefront remains the existing static application until that migration is deliberately implemented and verified.
