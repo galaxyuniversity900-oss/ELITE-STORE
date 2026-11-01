@@ -43,7 +43,7 @@ The pack includes the original image, mask, and reconstructed background as data
 - This is a **2.5D image-mesh effect**, not a full 3D garment reconstruction or a physically accurate invisible-human simulation.
 - One front-facing photograph cannot reveal the back of a garment or unseen folds. Avoid large rotations or claims of unseen geometry.
 - The automatic mask helper is color-difference based and works best on plain studio backgrounds. It is not an AI segmentation model. Use the manual brush/eraser to correct the mask.
-- Background reconstruction is an approximate local diffusion fill. It works best on plain/soft backgrounds; complex scenes need a proper AI inpainting/segmentation service.
+- Background reconstruction uses a fast nearest-boundary color propagation fill. It works best on plain/soft backgrounds; complex scenes need a proper AI inpainting/segmentation service.
 - The current repository is a static HTML storefront. There is no server-side image service or multi-user asset database in this change.
 
 ### Local validation
