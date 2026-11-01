@@ -3513,7 +3513,7 @@
       }
       function gmRenderStored(ctx,assets,time,profileName){
         const rec=assets.record,w=ctx.canvas.width,h=ctx.canvas.height;ctx.clearRect(0,0,w,h);ctx.drawImage(assets.bg,0,0,w,h);
-        const p=gmProfiles[profileName]||gmProfiles.generic,st=rec.settings,amp=(st.intensity/100)*Math.min(w,h)*.027,phase=time*p.frequency*(st.speed/77);
+        const p=gmProfiles[rec.category]||gmProfiles[profileName]||gmProfiles.generic,st=rec.settings,amp=(st.intensity/100)*Math.min(w,h)*.027,phase=time*p.frequency*(st.speed/77);
         const sw=assets.garmentCanvas.width,sh=assets.garmentCanvas.height;
         const cols=7,rows=9,src=[],dst=[];
         for(let y=0;y<=rows;y++)for(let x=0;x<=cols;x++){
@@ -3533,7 +3533,7 @@
           const id=visual.id.replace('prod-visual-','');let assets;
           try{assets=await gmGetAssets(id);}catch(e){continue;}if(!assets)continue;
           const p=PRODUCTS.find(x=>x.id===id);if(!p)continue;
-          visual.innerHTML='';const c=document.createElement('canvas');c.width=480;c.height=360;c.className='gm-card-canvas';c.setAttribute('aria-label','معاينة حركة '+p.title);visual.appendChild(c);
+          visual.innerHTML='';const c=document.createElement('canvas');c.width=480;c.height=Math.max(1,Math.round(480*assets.record.height/assets.record.width));c.className='gm-card-canvas';c.setAttribute('aria-label','معاينة حركة '+p.title);visual.appendChild(c);
           const badge=document.createElement('span');badge.className='motion-badge absolute bottom-1.5 right-1.5';badge.textContent='GARMENT MOTION';visual.appendChild(badge);
           gmCardCanvases.set(id,{canvas:c,assets,profile:gmProfileFor(p),visible:true});
         }
