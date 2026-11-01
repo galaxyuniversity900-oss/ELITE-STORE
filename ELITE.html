@@ -279,6 +279,22 @@
       animation-iteration-count: 1 !important;
       transition-duration: 0.05s !important;
     }
+  
+/* MES Garment Motion Engine — isolated product-image animation */
+#gm-studio{position:fixed;inset:0;z-index:260;background:rgba(0,0,0,.88);backdrop-filter:blur(14px);display:none;align-items:center;justify-content:center;padding:14px}
+#gm-studio.open{display:flex}
+.gm-panel{width:min(1100px,100%);max-height:94vh;overflow:auto;background:#0b0b0f;border:1px solid rgba(212,175,55,.45);border-radius:22px;box-shadow:0 30px 100px #000}
+.gm-stage{background:#050505;border:1px solid #333;border-radius:16px;overflow:hidden;min-height:260px;display:grid;place-items:center}
+#gm-editor-canvas{width:100%;max-height:65vh;object-fit:contain;touch-action:none;cursor:crosshair}
+.gm-control{background:#141419;border:1px solid #333;border-radius:12px;padding:10px;color:#eee}
+.gm-button{border:1px solid #4b4532;background:#211d12;color:#f5e7bd;border-radius:10px;padding:9px 12px;font-size:12px;font-weight:800}
+.gm-button.primary{background:#d4af37;color:#111;border-color:#d4af37}
+.gm-button.active{background:#d4af37;color:#111}
+.gm-card-canvas{width:100%;height:100%;object-fit:contain;display:block}
+.gm-admin-btn{width:100%;margin-top:8px;border:1px solid rgba(212,175,55,.45);background:rgba(212,175,55,.10);color:#f5ebe0;border-radius:10px;padding:8px;font-size:11px;font-weight:800}
+.gm-status{font-size:11px;color:#d4af37;min-height:18px}
+@media(prefers-reduced-motion:reduce){.gm-card-canvas{animation:none!important}}
+
   </style>
 </head>
 <body class="hide-motion-badges selection:bg-[#d4af37] selection:text-black">
@@ -1166,6 +1182,53 @@
     </div>
   </footer>
 
+
+  <!-- MES STORE Garment Motion Studio: image-specific, background-locked animation -->
+  <section id="gm-studio" aria-modal="true" role="dialog" aria-labelledby="gm-title">
+    <div class="gm-panel text-white" dir="rtl">
+      <div class="p-4 md:p-5 border-b border-zinc-800 flex items-center justify-between gap-3">
+        <div><div class="text-[10px] tracking-widest text-[#d4af37] font-mono-tech">MES STORE · GARMENT MOTION ENGINE</div><h2 id="gm-title" class="text-lg md:text-xl font-black">استوديو حركة الملابس</h2><p id="gm-product-name" class="text-xs text-zinc-400 mt-1">اختر صورة المنتج لبدء المعالجة</p></div>
+        <button id="gm-close" class="gm-button">✕ إغلاق</button>
+      </div>
+      <div class="p-4 grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-4">
+        <div class="space-y-3">
+          <div class="gm-stage"><canvas id="gm-editor-canvas" width="720" height="720"></canvas></div>
+          <div class="flex flex-wrap gap-2">
+            <label class="gm-button cursor-pointer">رفع صورة المنتج <input id="gm-image-upload" type="file" accept="image/*" class="hidden"></label>
+            <button id="gm-auto-mask" class="gm-button">تحديد تلقائي للخلفية البسيطة</button>
+            <button id="gm-clear-mask" class="gm-button">مسح التحديد</button>
+            <button id="gm-preview-toggle" class="gm-button active">▶ معاينة الحركة</button>
+          </div>
+          <p class="text-[11px] text-zinc-400 leading-6">حدد الملابس بالفرشاة البيضاء. امسح التحديد الزائد بالممحاة. التحديد التلقائي مناسب للخلفيات الموحدة؛ الصور المعقدة تحتاج تصحيحاً يدوياً أو ربط AI Segmentation.</p>
+          <div id="gm-status" class="gm-status">ارفع صورة حقيقية للمنتج. الرسومات الحالية في المتجر لا تحتوي على بيانات قماش كافية لمحاكاة الملابس.</div>
+        </div>
+        <div class="space-y-3">
+          <div class="gm-control space-y-2">
+            <label class="block text-xs font-bold">فئة الملابس</label>
+            <select id="gm-category" class="w-full bg-black border border-zinc-700 rounded-lg p-2 text-sm">
+              <option value="jacket">جاكت / معطف</option><option value="hoodie">هودي / سويت شيرت</option><option value="trousers">جينز / بنطلون</option><option value="shirt">قميص</option><option value="tshirt">تيشيرت</option><option value="dress">فستان</option><option value="generic">قطعة أخرى</option>
+            </select>
+            <div class="flex justify-between text-xs"><label for="gm-brush">حجم الفرشاة</label><b id="gm-brush-value">28 px</b></div>
+            <input id="gm-brush" type="range" min="5" max="100" value="28" class="w-full">
+            <div class="grid grid-cols-2 gap-2"><button id="gm-paint-mode" class="gm-button active">＋ تحديد الملابس</button><button id="gm-erase-mode" class="gm-button">－ ممحاة</button></div>
+          </div>
+          <div class="gm-control space-y-3">
+            <div><div class="flex justify-between text-xs"><label for="gm-speed">سرعة الحركة</label><b id="gm-speed-value">77%</b></div><input id="gm-speed" type="range" min="10" max="100" value="77" class="w-full"></div>
+            <div><div class="flex justify-between text-xs"><label for="gm-intensity">شدة الحركة</label><b id="gm-intensity-value">63%</b></div><input id="gm-intensity" type="range" min="5" max="80" value="63" class="w-full"></div>
+            <label class="flex items-center gap-2 text-xs"><input id="gm-sleeves" type="checkbox" checked> تحريك الأكمام</label>
+            <label class="flex items-center gap-2 text-xs"><input id="gm-body" type="checkbox" checked> تحريك الجسم والقماش</label>
+            <label class="flex items-center gap-2 text-xs"><input id="gm-edges" type="checkbox" checked> تحريك الأطراف</label>
+          </div>
+          <div class="gm-control space-y-2">
+            <button id="gm-save" class="gm-button primary w-full">حفظ الحركة لهذا المنتج</button>
+            <button id="gm-delete" class="gm-button w-full">حذف إعداد الحركة المحفوظ</button>
+            <p class="text-[10px] text-zinc-500 leading-5">الحفظ محلي على نفس المتصفح والجهاز عبر IndexedDB. لا تنتقل صور المنتجات تلقائياً إلى زوار الموقع أو أجهزة أخرى؛ يلزم تخزين خادمي عند النشر.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- =====================================================================
        COMPLETE INTERACTIVE ENGINE (ALL 22 MES PRODUCTS + 32 CATEGORIES)
        ===================================================================== -->
@@ -1535,6 +1598,8 @@
                   </button>
                 </div>
 
+
+                <button type="button" data-gm-open="${p.id}" class="gm-admin-btn">🧥 إعداد / معاينة حركة الملابس</button>
                 <button type="button" data-add-id="${p.id}" class="add-to-cart-btn ripple-btn w-full py-2 rounded-xl bg-gradient-to-r from-[#d4af37] to-[#e6ccb2] hover:opacity-95 text-black font-black text-xs flex items-center justify-center gap-1.5 shadow-md active:scale-95 transition-transform">
                   <span>🛍️ أضف لطلب واتساب (Arc Clone)</span>
                 </button>
@@ -1633,6 +1698,16 @@
           btn.addEventListener('click', () => {
             const prod = PRODUCTS.find(p => p.id === btn.dataset.quickId);
             if (prod) openQuickViewModal(prod);
+          });
+        });
+
+
+        // Garment Motion Studio (isolated from cart, size and wishlist handlers)
+        document.querySelectorAll('[data-gm-open]').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const prod = PRODUCTS.find(p => p.id === btn.dataset.gmOpen);
+            if (prod) gmOpenStudio(prod);
           });
         });
 
@@ -3113,8 +3188,277 @@
         notifyDynamicIsland(`📏 تم ضبط مقاس المتجر بالكامل على ${rec} تلقائياً!`);
       });
 
+
+      // -------------------------------------------------------------------
+      // MES GARMENT MOTION ENGINE — per-product image segmentation + mesh
+      // -------------------------------------------------------------------
+      const GM_DB_NAME = 'mes-store-garment-motion-v1';
+      const GM_STORE_NAME = 'product-motion';
+      const gmCanvas = document.getElementById('gm-editor-canvas');
+      const gmCtx = gmCanvas.getContext('2d', { willReadFrequently: true });
+      const gmStudio = document.getElementById('gm-studio');
+      const gmStatus = document.getElementById('gm-status');
+      const gmMaskCanvas = document.createElement('canvas');
+      const gmMaskCtx = gmMaskCanvas.getContext('2d');
+      const gmImage = new Image();
+      let gmCurrentProduct = null, gmImageReady = false, gmPainting = false;
+      let gmBrushMode = 'paint', gmPreviewing = true, gmLastPoint = null;
+      let gmSavedCache = new Map(), gmCardCanvases = new Map();
+      const gmProfiles = {
+        jacket:{sleeves:true,body:true,edges:true,frequency:2.1,kind:'upper'},
+        hoodie:{sleeves:true,body:true,edges:true,frequency:1.8,kind:'upper'},
+        shirt:{sleeves:true,body:true,edges:false,frequency:1.65,kind:'upper'},
+        tshirt:{sleeves:true,body:true,edges:false,frequency:1.5,kind:'upper'},
+        trousers:{sleeves:false,body:true,edges:true,frequency:2.0,kind:'lower'},
+        dress:{sleeves:true,body:true,edges:true,frequency:1.45,kind:'flow'},
+        generic:{sleeves:true,body:true,edges:true,frequency:1.5,kind:'generic'}
+      };
+      function gmOpenDB(){
+        return new Promise((resolve,reject)=>{
+          const req=indexedDB.open(GM_DB_NAME,1);
+          req.onupgradeneeded=()=>{if(!req.result.objectStoreNames.contains(GM_STORE_NAME))req.result.createObjectStore(GM_STORE_NAME,{keyPath:'id'});};
+          req.onsuccess=()=>resolve(req.result); req.onerror=()=>reject(req.error);
+        });
+      }
+      async function gmDBAction(mode,fn){
+        const db=await gmOpenDB();
+        return new Promise((resolve,reject)=>{
+          const tx=db.transaction(GM_STORE_NAME,mode), store=tx.objectStore(GM_STORE_NAME);
+          let req; try{req=fn(store);}catch(e){db.close();reject(e);return;}
+          tx.oncomplete=()=>{db.close();resolve(req&&req.result);};
+          tx.onerror=()=>{db.close();reject(tx.error);};
+          tx.onabort=()=>{db.close();reject(tx.error||new Error('IndexedDB transaction aborted'));};
+        });
+      }
+      const gmGet=id=>gmDBAction('readonly',st=>st.get(id));
+      const gmPut=record=>gmDBAction('readwrite',st=>st.put(record));
+      const gmDelete=id=>gmDBAction('readwrite',st=>st.delete(id));
+      function gmSetStatus(msg){if(gmStatus)gmStatus.textContent=msg;}
+      function gmProfileFor(product){
+        const c=(product.category+' '+product.title).toLowerCase();
+        if(/جينز|بنطلون|بناطيل|pants|jeans/.test(c))return 'trousers';
+        if(/هودي|سويت|hoodie|sweat/.test(c))return 'hoodie';
+        if(/تيشيرت|t-shirt|tshirt/.test(c))return 'tshirt';
+        if(/قميص|shirt/.test(c))return 'shirt';
+        if(/فستان|dress/.test(c))return 'dress';
+        if(/جاكت|معطف|jacket|coat/.test(c))return 'jacket';
+        return 'generic';
+      }
+      function gmFitCanvas(w,h){
+        const scale=Math.min(1,1000/Math.max(w,h));
+        const nw=Math.max(1,Math.round(w*scale)), nh=Math.max(1,Math.round(h*scale));
+        gmCanvas.width=gmMaskCanvas.width=nw; gmCanvas.height=gmMaskCanvas.height=nh;
+        gmMaskCtx.clearRect(0,0,nw,nh);
+        gmImage.onload=()=>{gmCtx.clearRect(0,0,nw,nh);gmCtx.drawImage(gmImage,0,0,nw,nh);gmImageReady=true;gmPreviewing=false;gmDrawEditor();gmSetStatus('الصورة جاهزة. حدد مساحة الملابس بالفرشاة أو جرّب التحديد التلقائي.');};
+      }
+      function gmLoadImageURL(url){
+        gmImageReady=false; gmImage.onload=null; gmImage.src=url;
+        if(gmImage.complete&&gmImage.naturalWidth)gmFitCanvas(gmImage.naturalWidth,gmImage.naturalHeight);
+        else gmImage.onload=()=>gmFitCanvas(gmImage.naturalWidth,gmImage.naturalHeight);
+      }
+      function gmDrawEditor(){
+        if(!gmImageReady)return;
+        gmCtx.clearRect(0,0,gmCanvas.width,gmCanvas.height);
+        gmCtx.drawImage(gmImage,0,0,gmCanvas.width,gmCanvas.height);
+        const overlay=document.createElement('canvas'); overlay.width=gmCanvas.width; overlay.height=gmCanvas.height;
+        const o=overlay.getContext('2d'); o.drawImage(gmMaskCanvas,0,0); o.globalCompositeOperation='source-in'; o.fillStyle='rgba(212,175,55,.55)'; o.fillRect(0,0,overlay.width,overlay.height);
+        gmCtx.drawImage(overlay,0,0);
+        if(gmPreviewing)gmDrawMotion(gmCtx,gmImage,gmMaskCanvas,performance.now()/1000,gmReadSettings(),true);
+      }
+      function gmReadSettings(){
+        return {speed:Number(document.getElementById('gm-speed').value),intensity:Number(document.getElementById('gm-intensity').value),
+          sleeves:document.getElementById('gm-sleeves').checked,body:document.getElementById('gm-body').checked,edges:document.getElementById('gm-edges').checked};
+      }
+      function gmPointerPoint(e){
+        const r=gmCanvas.getBoundingClientRect();
+        return {x:(e.clientX-r.left)*gmCanvas.width/r.width,y:(e.clientY-r.top)*gmCanvas.height/r.height};
+      }
+      function gmStroke(a,b){
+        const brush=Number(document.getElementById('gm-brush').value);
+        gmMaskCtx.save(); gmMaskCtx.lineCap='round'; gmMaskCtx.lineJoin='round'; gmMaskCtx.lineWidth=brush;
+        gmMaskCtx.globalCompositeOperation=gmBrushMode==='paint'?'source-over':'destination-out';
+        gmMaskCtx.strokeStyle='rgba(255,255,255,1)'; gmMaskCtx.beginPath(); gmMaskCtx.moveTo(a.x,a.y); gmMaskCtx.lineTo(b.x,b.y); gmMaskCtx.stroke();
+        if(a.x===b.x&&a.y===b.y){gmMaskCtx.beginPath();gmMaskCtx.arc(a.x,a.y,brush/2,0,Math.PI*2);gmMaskCtx.fillStyle='white';gmMaskCtx.fill();}
+        gmMaskCtx.restore(); gmDrawEditor();
+      }
+      gmCanvas.addEventListener('pointerdown',e=>{if(!gmImageReady)return;gmPainting=true;gmLastPoint=gmPointerPoint(e);gmCanvas.setPointerCapture(e.pointerId);gmStroke(gmLastPoint,gmLastPoint);});
+      gmCanvas.addEventListener('pointermove',e=>{if(!gmPainting)return;const p=gmPointerPoint(e);gmStroke(gmLastPoint,p);gmLastPoint=p;});
+      ['pointerup','pointercancel','lostpointercapture'].forEach(ev=>gmCanvas.addEventListener(ev,()=>{gmPainting=false;gmLastPoint=null;}));
+      document.getElementById('gm-image-upload').addEventListener('change',e=>{
+        const f=e.target.files&&e.target.files[0]; if(!f)return;
+        if(!f.type.startsWith('image/')){gmSetStatus('الملف ليس صورة مدعومة.');return;}
+        if(f.size>15*1024*1024){gmSetStatus('حجم الصورة يتجاوز 15MB.');return;}
+        const url=URL.createObjectURL(f); gmLoadImageURL(url);
+      });
+      document.getElementById('gm-auto-mask').addEventListener('click',()=>{
+        if(!gmImageReady)return;
+        const w=gmCanvas.width,h=gmCanvas.height,im=gmCtx.getImageData(0,0,w,h),d=im.data;
+        const pts=[[0,0],[w-1,0],[0,h-1],[w-1,h-1],[Math.floor(w/2),0],[Math.floor(w/2),h-1]];
+        let rr=0,gg=0,bb=0;pts.forEach(p=>{const i=(p[1]*w+p[0])*4;rr+=d[i];gg+=d[i+1];bb+=d[i+2];});
+        rr/=pts.length;gg/=pts.length;bb/=pts.length;
+        const md=gmMaskCtx.createImageData(w,h),m=md.data;
+        for(let i=0;i<d.length;i+=4){const dist=Math.hypot(d[i]-rr,d[i+1]-gg,d[i+2]-bb);if(dist>58){m[i]=m[i+1]=m[i+2]=255;m[i+3]=255;}}
+        gmMaskCtx.putImageData(md,0,0);gmDrawEditor();gmSetStatus('تم إنشاء تحديد أولي من اختلاف ألوان الخلفية. راجع الحواف وصححها بالفرشاة والممحاة.');
+      });
+      document.getElementById('gm-clear-mask').addEventListener('click',()=>{gmMaskCtx.clearRect(0,0,gmMaskCanvas.width,gmMaskCanvas.height);gmDrawEditor();gmSetStatus('تم مسح التحديد.');});
+      document.getElementById('gm-paint-mode').addEventListener('click',()=>{gmBrushMode='paint';document.getElementById('gm-paint-mode').classList.add('active');document.getElementById('gm-erase-mode').classList.remove('active');});
+      document.getElementById('gm-erase-mode').addEventListener('click',()=>{gmBrushMode='erase';document.getElementById('gm-erase-mode').classList.add('active');document.getElementById('gm-paint-mode').classList.remove('active');});
+      document.getElementById('gm-brush').addEventListener('input',e=>document.getElementById('gm-brush-value').textContent=e.target.value+' px');
+      ['speed','intensity'].forEach(k=>document.getElementById('gm-'+k).addEventListener('input',e=>document.getElementById('gm-'+k+'-value').textContent=e.target.value+'%'));
+      ['sleeves','body','edges'].forEach(k=>document.getElementById('gm-'+k).addEventListener('change',()=>{if(gmPreviewing)gmDrawEditor();}));
+      document.getElementById('gm-preview-toggle').addEventListener('click',e=>{gmPreviewing=!gmPreviewing;e.currentTarget.textContent=gmPreviewing?'Ⅱ إيقاف المعاينة':'▶ معاينة الحركة';e.currentTarget.classList.toggle('active',gmPreviewing);gmDrawEditor();});
+      document.getElementById('gm-category').addEventListener('change',()=>{if(gmPreviewing)gmDrawEditor();});
+      function gmOpenStudio(product){
+        gmCurrentProduct=product; gmStudio.classList.add('open'); document.getElementById('gm-product-name').textContent=product.title+' · '+product.category;
+        document.getElementById('gm-category').value=gmProfileFor(product);
+        document.getElementById('gm-speed').value=77;document.getElementById('gm-intensity').value=63;
+        document.getElementById('gm-speed-value').textContent='77%';document.getElementById('gm-intensity-value').textContent='63%';
+        document.getElementById('gm-sleeves').checked=true;document.getElementById('gm-body').checked=true;document.getElementById('gm-edges').checked=true;
+        gmImageReady=false;gmCtx.clearRect(0,0,gmCanvas.width,gmCanvas.height);gmMaskCtx.clearRect(0,0,gmMaskCanvas.width,gmMaskCanvas.height);
+        gmGet(product.id).then(rec=>{
+          if(rec){gmLoadImageURL(rec.original);document.getElementById('gm-category').value=rec.category;document.getElementById('gm-speed').value=rec.settings.speed;document.getElementById('gm-intensity').value=rec.settings.intensity;
+            ['sleeves','body','edges'].forEach(k=>document.getElementById('gm-'+k).checked=rec.settings[k]);
+            document.getElementById('gm-speed-value').textContent=rec.settings.speed+'%';document.getElementById('gm-intensity-value').textContent=rec.settings.intensity+'%';
+            const maskImg=new Image();maskImg.onload=()=>{gmMaskCtx.clearRect(0,0,gmMaskCanvas.width,gmMaskCanvas.height);gmMaskCtx.drawImage(maskImg,0,0,gmMaskCanvas.width,gmMaskCanvas.height);gmDrawEditor();};maskImg.src=rec.mask;
+            gmSetStatus('تم تحميل إعداد الحركة المحفوظ. يمكنك تعديله أو معاينته.');
+          }else gmSetStatus('ارفع صورة المنتج الأصلية للبدء. لا توجد صورة فعلية مرفقة بهذا المنتج حالياً.');
+        }).catch(()=>gmSetStatus('تعذر فتح التخزين المحلي في هذا المتصفح.'));
+      }
+      document.getElementById('gm-close').addEventListener('click',()=>gmStudio.classList.remove('open'));
+      gmStudio.addEventListener('click',e=>{if(e.target===gmStudio)gmStudio.classList.remove('open');});
+      function gmInpaintBackground(imageCanvas,maskCanvas){
+        const w=imageCanvas.width,h=imageCanvas.height,ctx=imageCanvas.getContext('2d'),src=ctx.getImageData(0,0,w,h),md=maskCanvas.getContext('2d').getImageData(0,0,w,h);
+        const data=src.data,mask=md.data,known=new Uint8Array(w*h);
+        for(let p=0;p<w*h;p++)known[p]=mask[p*4+3]<40?1:0;
+        let unresolved=0;for(let p=0;p<w*h;p++)if(!known[p])unresolved++;
+        for(let pass=0;pass<90&&unresolved;pass++){
+          const updates=[];
+          for(let y=1;y<h-1;y++)for(let x=1;x<w-1;x++){const p=y*w+x;if(known[p])continue;
+            let r=0,g=0,b=0,n=0;const ns=[p-1,p+1,p-w,p+w];
+            for(const q of ns)if(known[q]){r+=data[q*4];g+=data[q*4+1];b+=data[q*4+2];n++;}
+            if(n)updates.push([p,r/n,g/n,b/n]);
+          }
+          if(!updates.length)break;
+          updates.forEach(v=>{const p=v[0];data[p*4]=v[1];data[p*4+1]=v[2];data[p*4+2]=v[3];data[p*4+3]=255;known[p]=1;unresolved--;});
+        }
+        let cr=0,cg=0,cb=0,cn=0;[[0,0],[w-1,0],[0,h-1],[w-1,h-1]].forEach(v=>{const p=(v[1]*w+v[0])*4;cr+=data[p];cg+=data[p+1];cb+=data[p+2];cn++;});
+        for(let p=0;p<w*h;p++)if(!known[p]){data[p*4]=cr/cn;data[p*4+1]=cg/cn;data[p*4+2]=cb/cn;data[p*4+3]=255;}
+        ctx.putImageData(src,0,0);return imageCanvas;
+      }
+      function gmAffineTriangle(ctx,img,s0,s1,s2,d0,d1,d2){
+        const den=s0.x*(s1.y-s2.y)+s1.x*(s2.y-s0.y)+s2.x*(s0.y-s1.y);if(Math.abs(den)<.001)return;
+        const a=(d0.x*(s1.y-s2.y)+d1.x*(s2.y-s0.y)+d2.x*(s0.y-s1.y))/den;
+        const c=(d0.x*(s2.x-s1.x)+d1.x*(s0.x-s2.x)+d2.x*(s1.x-s0.x))/den;
+        const e=(d0.x*(s1.x*s2.y-s2.x*s1.y)+d1.x*(s2.x*s0.y-s0.x*s2.y)+d2.x*(s0.x*s1.y-s1.x*s0.y))/den;
+        const b=(d0.y*(s1.y-s2.y)+d1.y*(s2.y-s0.y)+d2.y*(s0.y-s1.y))/den;
+        const d=(d0.y*(s2.x-s1.x)+d1.y*(s0.x-s2.x)+d2.y*(s1.x-s0.x))/den;
+        const f=(d0.y*(s1.x*s2.y-s2.x*s1.y)+d1.y*(s2.x*s0.y-s0.x*s2.y)+d2.y*(s0.x*s1.y-s1.x*s0.y))/den;
+        ctx.save();ctx.beginPath();ctx.moveTo(d0.x,d0.y);ctx.lineTo(d1.x,d1.y);ctx.lineTo(d2.x,d2.y);ctx.closePath();ctx.clip();ctx.setTransform(a,b,c,d,e,f);ctx.drawImage(img,0,0);ctx.restore();
+      }
+      function gmDrawMotion(ctx,img,maskCanvas,time,settings,editorMode){
+        const w=ctx.canvas.width,h=ctx.canvas.height;
+        const garment=document.createElement('canvas');garment.width=w;garment.height=h;
+        const gc=garment.getContext('2d');gc.drawImage(img,0,0,w,h);gc.globalCompositeOperation='destination-in';gc.drawImage(maskCanvas,0,0,w,h);
+        const type=document.getElementById('gm-category').value,profile=gmProfiles[type]||gmProfiles.generic;
+        const amp=(settings.intensity/100)*Math.min(w,h)*.027,phase=time*profile.frequency*(settings.speed/77);
+        const cols=12,rows=14,src=[],dst=[];
+        for(let y=0;y<=rows;y++)for(let x=0;x<=cols;x++){
+          const nx=x/cols,ny=y/rows,px=nx*w,py=ny*h;
+          let dx=0,dy=0,side=nx<.5?-1:1;
+          const edge=Math.max(0,Math.min(1,(Math.abs(nx-.5)*2-.30)/.70));
+          const lower=Math.max(0,Math.min(1,(ny-.42)/.58));
+          if(profile.kind==='lower'){
+            dx=side*amp*.55*Math.sin(phase+ny*7+side)*lower;
+            dy=amp*.18*Math.sin(phase+ny*5)*lower;
+          }else if(profile.kind==='flow'){
+            dx=side*amp*Math.sin(phase+ny*4+nx*3)*edge;
+            dy=amp*.30*Math.sin(phase+ny*5)*Math.max(0,(ny-.25)/.75);
+          }else{
+            const sleeve=settings.sleeves?Math.max(0,Math.min(1,(Math.abs(nx-.5)-.18)/.32))*Math.max(0,Math.min(1,(ny-.15)/.45)):0;
+            const body=settings.body?Math.max(0,1-Math.abs(nx-.5)*1.8)*Math.max(0,Math.min(1,(ny-.15)/.7)):0;
+            dx=side*amp*(sleeve*.65*Math.sin(phase+ny*4+side)+body*.13*Math.sin(phase+ny*3));
+            dy=amp*.18*Math.cos(phase+nx*3)*body;
+          }
+          if(!settings.edges)dx*=1-edge*.7;
+          const point={x:px,y:py};src.push(point);dst.push({x:px+dx,y:py+dy});
+        }
+        ctx.save();ctx.globalAlpha=1;
+        for(let y=0;y<rows;y++)for(let x=0;x<cols;x++){
+          const i=y*(cols+1)+x,j=i+1,k=i+cols+1,l=k+1;
+          gmAffineTriangle(ctx,garment,src[i],src[j],src[k],dst[i],dst[j],dst[k]);
+          gmAffineTriangle(ctx,garment,src[j],src[l],src[k],dst[j],dst[l],dst[k]);
+        }
+        ctx.restore();
+      }
+      async function gmBuildRecord(){
+        const w=gmCanvas.width,h=gmCanvas.height;if(!gmImageReady||!w||!h)throw new Error('ارفع صورة أولاً');
+        const maskData=gmMaskCtx.getImageData(0,0,w,h).data;let selected=0;for(let i=3;i<maskData.length;i+=4)if(maskData[i]>40)selected++;
+        if(selected<Math.max(80,w*h*.002))throw new Error('حدد مساحة الملابس أولاً بالفرشاة أو التحديد التلقائي.');
+        const originalCanvas=document.createElement('canvas');originalCanvas.width=w;originalCanvas.height=h;originalCanvas.getContext('2d').drawImage(gmImage,0,0,w,h);
+        const cleanCanvas=document.createElement('canvas');cleanCanvas.width=w;cleanCanvas.height=h;cleanCanvas.getContext('2d').drawImage(originalCanvas,0,0);gmInpaintBackground(cleanCanvas,gmMaskCanvas);
+        const settings=gmReadSettings(),mask=gmMaskCanvas.toDataURL('image/png');
+        return {id:gmCurrentProduct.id,productTitle:gmCurrentProduct.title,category:document.getElementById('gm-category').value,
+          settings:settings,original:originalCanvas.toDataURL('image/jpeg',.92),mask:mask,background:cleanCanvas.toDataURL('image/jpeg',.92),
+          width:w,height:h,updatedAt:new Date().toISOString(),engineVersion:'1.0.0-mes'};
+      }
+      document.getElementById('gm-save').addEventListener('click',async()=>{
+        try{gmSetStatus('جارٍ تجهيز الخلفية الثابتة وطبقة الملابس...');const rec=await gmBuildRecord();await gmPut(rec);gmSavedCache.delete(rec.id);gmSetStatus('تم حفظ إعداد الحركة محلياً. ستظهر معاينة الحركة على بطاقة المنتج بعد تحديثها.');gmStudio.classList.remove('open');gmApplySavedCards();}
+        catch(e){gmSetStatus(e.message||'تعذر حفظ المنتج.');}
+      });
+      document.getElementById('gm-delete').addEventListener('click',async()=>{
+        if(!gmCurrentProduct)return;await gmDelete(gmCurrentProduct.id);gmSavedCache.delete(gmCurrentProduct.id);gmCardCanvases.delete(gmCurrentProduct.id);gmSetStatus('تم حذف إعداد الحركة المحفوظ لهذا المنتج.');gmStudio.classList.remove('open');
+        const el=document.getElementById('prod-visual-'+gmCurrentProduct.id);if(el){const p=PRODUCTS.find(x=>x.id===gmCurrentProduct.id);el.innerHTML=p.svgIcon+'<span class="motion-badge absolute bottom-1.5 right-1.5">'+p.motionTag+'</span>';}
+      });
+      async function gmImageFromURL(url){return new Promise((resolve,reject)=>{const im=new Image();im.onload=()=>resolve(im);im.onerror=reject;im.src=url;});}
+      async function gmGetAssets(id){
+        if(gmSavedCache.has(id))return gmSavedCache.get(id);
+        const rec=await gmGet(id);if(!rec)return null;
+        const assets={record:rec,bg:await gmImageFromURL(rec.background),garment:await gmImageFromURL(rec.original),mask:await gmImageFromURL(rec.mask)};
+        const garmentCanvas=document.createElement('canvas');garmentCanvas.width=rec.width;garmentCanvas.height=rec.height;
+        const gctx=garmentCanvas.getContext('2d');gctx.drawImage(assets.garment,0,0);gctx.globalCompositeOperation='destination-in';gctx.drawImage(assets.mask,0,0,rec.width,rec.height);assets.garmentCanvas=garmentCanvas;
+        gmSavedCache.set(id,assets);return assets;
+      }
+      function gmRenderStored(ctx,assets,time,profileName){
+        const rec=assets.record,w=ctx.canvas.width,h=ctx.canvas.height;ctx.clearRect(0,0,w,h);ctx.drawImage(assets.bg,0,0,w,h);
+        const p=gmProfiles[profileName]||gmProfiles.generic,st=rec.settings,amp=(st.intensity/100)*Math.min(w,h)*.027,phase=time*p.frequency*(st.speed/77);
+        const cols=10,rows=12,src=[],dst=[];
+        for(let y=0;y<=rows;y++)for(let x=0;x<=cols;x++){
+          const nx=x/cols,ny=y/rows,px=nx*w,py=ny*h,side=nx<.5?-1:1;
+          const edge=Math.max(0,Math.min(1,(Math.abs(nx-.5)*2-.30)/.70)),lower=Math.max(0,Math.min(1,(ny-.42)/.58));
+          let dx=0,dy=0;
+          if(p.kind==='lower'){dx=side*amp*.55*Math.sin(phase+ny*7+side)*lower;dy=amp*.18*Math.sin(phase+ny*5)*lower;}
+          else if(p.kind==='flow'){dx=side*amp*Math.sin(phase+ny*4+nx*3)*edge;dy=amp*.30*Math.sin(phase+ny*5)*Math.max(0,(ny-.25)/.75);}
+          else{const sleeve=st.sleeves?Math.max(0,Math.min(1,(Math.abs(nx-.5)-.18)/.32))*Math.max(0,Math.min(1,(ny-.15)/.45)):0;const body=st.body?Math.max(0,1-Math.abs(nx-.5)*1.8)*Math.max(0,Math.min(1,(ny-.15)/.7)):0;dx=side*amp*(sleeve*.65*Math.sin(phase+ny*4+side)+body*.13*Math.sin(phase+ny*3));dy=amp*.18*Math.cos(phase+nx*3)*body;}
+          if(!st.edges)dx*=1-edge*.7;src.push({x:px,y:py});dst.push({x:px+dx,y:py+dy});
+        }
+        for(let y=0;y<rows;y++)for(let x=0;x<cols;x++){const i=y*(cols+1)+x,j=i+1,k=i+cols+1,l=k+1;gmAffineTriangle(ctx,assets.garmentCanvas,src[i],src[j],src[k],dst[i],dst[j],dst[k]);gmAffineTriangle(ctx,assets.garmentCanvas,src[j],src[l],src[k],dst[j],dst[l],dst[k]);}
+      }
+      async function gmApplySavedCards(){
+        const cards=Array.from(document.querySelectorAll('[id^="prod-visual-"]'));
+        for(const visual of cards){
+          const id=visual.id.replace('prod-visual-','');let assets;
+          try{assets=await gmGetAssets(id);}catch(e){continue;}if(!assets)continue;
+          const p=PRODUCTS.find(x=>x.id===id);if(!p)continue;
+          visual.innerHTML='';const c=document.createElement('canvas');c.width=480;c.height=360;c.className='gm-card-canvas';c.setAttribute('aria-label','معاينة حركة '+p.title);visual.appendChild(c);
+          const badge=document.createElement('span');badge.className='motion-badge absolute bottom-1.5 right-1.5';badge.textContent='GARMENT MOTION';visual.appendChild(badge);
+          gmCardCanvases.set(id,{canvas:c,assets,profile:gmProfileFor(p),visible:true});
+        }
+      }
+      if('IntersectionObserver'in window){
+        const gmObserver=new IntersectionObserver(entries=>entries.forEach(e=>{const id=e.target.dataset.gmCardId,entry=gmCardCanvases.get(id);if(entry)entry.visible=e.isIntersecting;}),{rootMargin:'120px'});
+        const oldApply=gmApplySavedCards;
+        gmApplySavedCards=async function(){await oldApply();document.querySelectorAll('.gm-card-canvas').forEach(c=>{const wrap=c.closest('[id^="prod-visual-"]');if(wrap){c.dataset.gmCardId=wrap.id.replace('prod-visual-','');gmObserver.observe(c);}});};
+      }
+      function gmCardLoop(now){
+        gmCardCanvases.forEach(entry=>{if(entry.visible&&entry.canvas.isConnected&&!document.body.classList.contains('reduced-motion'))gmRenderStored(entry.canvas.getContext('2d'),entry.assets,now/1000,entry.profile);});
+        requestAnimationFrame(gmCardLoop);
+      }
+      requestAnimationFrame(gmCardLoop);
+      gmApplySavedCards().catch(()=>{});
+
       // Initial Render
       renderProducts(false);
+      gmApplySavedCards().catch(()=>{});
       renderCartDrawer();
     })();
   </script>
