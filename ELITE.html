@@ -866,11 +866,11 @@
         <div>
           <div class="motion-badge mb-1.5">Scratch-Off Mask + Copy Checkmark Morph</div>
           <h3 class="text-lg font-black text-white">اخدش البطاقة الذهبية لخصم خاص على طلبك</h3>
-          <p class="text-xs text-zinc-400">اكتشف مفاجأتك.</p>
+          <p id="store-coupon-description" class="text-xs text-zinc-400">اكتشف مفاجأتك.</p>
         </div>
 
         <div class="relative h-56 rounded-2xl bg-gradient-to-br from-[#d4af37]/25 via-black to-zinc-900 border border-[#d4af37]/50 flex flex-col items-center justify-center p-4 overflow-hidden">
-          <div class="text-xs text-[#f5ebe0] font-bold mb-1">🎉 مبروك! كود خصم إضافي 200 ج.م عند الطلب</div>
+          <div id="store-coupon-headline" class="text-xs text-[#f5ebe0] font-bold mb-1">🎉 خصم خاص على طلبك</div>
           <div id="store-coupon-code" class="font-mono-tech text-2xl font-black text-[#d4af37] tracking-widest bg-zinc-950 px-4 py-2 rounded-xl border border-[#d4af37] mb-3">
             MESVIP200
           </div>
@@ -1172,7 +1172,7 @@
   <footer class="border-t border-zinc-800/80 bg-[#050507] py-8 px-4 mt-12">
     <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4 text-xs text-zinc-400">
       <div>
-        <strong class="text-white tracking-wider">MES STORE</strong> — ملابس رجالي · ستايل عصري · اختياراتك تبدأ من هنا · الطلبات والاستفسارات عبر واتساب
+        <strong id="store-footer-name" class="text-white tracking-wider">MES STORE</strong> — ملابس رجالي · ستايل عصري · اختياراتك تبدأ من هنا · الطلبات والاستفسارات عبر واتساب
       </div>
       <div id="store-contact-links" class="w-full text-xs text-zinc-400 flex flex-wrap gap-2"></div>
       <div class="flex items-center gap-3">
@@ -1371,6 +1371,8 @@
           const contact = await readJson('data/contact.json');
           if (contact && contact.version === 1) STORE_CONTACT = contact;
           const wa = storeWhatsAppNumber();
+          const footerName = document.getElementById('store-footer-name');
+          if (footerName && STORE_CONTACT.store_name) footerName.textContent = STORE_CONTACT.store_name;
           const footer = document.getElementById('store-contact-links');
           if (footer) {
             const links = [];
@@ -1417,7 +1419,9 @@
             const sectionTargets = {
               home: 'hero-showcase',
               categories: 'visual-categories-showroom',
-              catalog: 'products-grid-section'
+              catalog: 'products-grid-section',
+              offers: 'interactive-tricks-section',
+              checkout: 'cart-drawer'
             };
             Object.entries(sectionTargets).forEach(([key,id]) => {
               const config = STORE_SECTIONS[key];
@@ -1427,13 +1431,28 @@
             const footerConfig = STORE_SECTIONS.footer;
             const footerElement = document.querySelector('footer');
             if (footerElement && footerConfig && footerConfig.enabled === false) footerElement.hidden = true;
+            const checkoutConfig = STORE_SECTIONS.checkout || {};
+            const checkoutButton = document.getElementById('optimistic-checkout-btn');
+            if (checkoutButton && checkoutConfig.enabled === false) checkoutButton.disabled = true;
+            const checkoutNote = document.querySelector('#cart-drawer [data-checkout-note]');
+            if (checkoutNote && checkoutConfig.shipping_note) checkoutNote.textContent = checkoutConfig.shipping_note;
           }
         } catch (error) { console.warn('Store section settings unavailable:', error.message); }
-        const coupon = (STORE_DISCOUNTS.coupons || []).find(item => item.code === 'MESVIP200');
+        const coupon = (STORE_DISCOUNTS.coupons || []).find(item => item.active === true && storeRuleIsCurrent(item));
         const codeElement = document.getElementById('store-coupon-code');
-        if (codeElement && coupon) codeElement.textContent = coupon.code;
-        if (coupon && coupon.active === false) {
-          const couponButton = document.getElementById('copy-coupon-btn');
+        const couponButton = document.getElementById('copy-coupon-btn');
+        const couponCard = codeElement ? codeElement.closest('.rounded-3xl') : null;
+        const couponHeadline = document.getElementById('store-coupon-headline');
+        const couponDescription = document.getElementById('store-coupon-description');
+        if (coupon) {
+          if (codeElement) codeElement.textContent = coupon.code;
+          if (couponHeadline) couponHeadline.textContent = coupon.type === 'percentage'
+            ? 'خصم ' + Number(coupon.value) + '% على طلبك'
+            : 'خصم ' + Number(coupon.value).toLocaleString() + ' ج.م على طلبك';
+          if (couponDescription) couponDescription.textContent = coupon.description || 'استخدم الكود عند إتمام الطلب.';
+          if (couponButton) couponButton.disabled = false;
+        } else {
+          if (couponCard) couponCard.hidden = true;
           if (couponButton) couponButton.disabled = true;
         }
         renderProducts(false);
