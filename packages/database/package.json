@@ -1,0 +1,10 @@
+{
+  "name": "@mes-store/database",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Shared Prisma database schema and generated client",
+  "scripts": {
+    "generate": "prisma generate --schema=../../prisma/schema.prisma",
+    "validate": "prisma validate --schema=../../prisma/schema.prisma"
+  }
+}
