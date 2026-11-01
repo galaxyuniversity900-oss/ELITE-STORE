@@ -10,6 +10,7 @@ The engine is integrated into the existing `ELITE.html` product cards and quick-
 
 - Per-product image upload (JPG, PNG, WebP; 15 MB maximum).
 - Manual garment mask painting and erasing, plus a simple uniform-background color-difference selection helper.
+- Optional AI segmentation adapter: configure an external endpoint that accepts multipart field `image` and returns a PNG mask or JSON `{ "mask": "data:image/png;base64,..." }` / `{ "maskUrl": "https://.../mask.png" }`. The endpoint must allow browser CORS. No AI inference server or model weights are bundled.
 - Static background reconstruction for the selected garment area, then a transparent garment layer.
 - Category-specific 2.5D mesh deformation profiles: jacket/coat, hoodie/sweatshirt, jeans/trousers, shirt, T-shirt, dress, and generic.
 - User controls for speed, intensity, sleeves, body, and garment edges. Defaults are speed 77 and intensity 63.
@@ -42,7 +43,7 @@ The pack includes the original image, mask, and reconstructed background as data
 
 - This is a **2.5D image-mesh effect**, not a full 3D garment reconstruction or a physically accurate invisible-human simulation.
 - One front-facing photograph cannot reveal the back of a garment or unseen folds. Avoid large rotations or claims of unseen geometry.
-- The automatic mask helper is color-difference based and works best on plain studio backgrounds. It is not an AI segmentation model. Use the manual brush/eraser to correct the mask.
+- The built-in automatic mask helper is color-difference based and works best on plain studio backgrounds. Actual AI segmentation requires configuring the optional external endpoint in the editor; no AI model or server is bundled. Use the manual brush/eraser to correct any model output.
 - Background reconstruction uses a fast nearest-boundary color propagation fill. It works best on plain/soft backgrounds; complex scenes need a proper AI inpainting/segmentation service.
 - The current repository is a static HTML storefront. There is no server-side image service or multi-user asset database in this change.
 
