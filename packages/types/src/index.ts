@@ -8,7 +8,7 @@ export interface ProductSummary {
   description?: string | null;
   price: string;
   currency: CurrencyCode;
-  stockQuantity: number;
+  stockQuantity: number | null;
   images: Array<{ id: string; url: string; alt?: string | null; isPrimary: boolean }>;
   category?: { id: string; name: string; slug: string } | null;
 }
