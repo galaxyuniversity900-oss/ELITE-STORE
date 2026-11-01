@@ -172,3 +172,50 @@ Each part of the storefront has its own editable JSON file under `data/sections/
 | `index.json` | Registry of the section configuration files |
 
 The storefront loads the section registry and the individual files. The home, category and catalogue headings, category labels, product gallery/video visibility, and footer visibility are connected to their corresponding settings. Keep each file's `version` at `1` and preserve valid JSON when editing.
+
+
+## Contact details, section settings and discount management
+
+### Store contact details
+
+Edit `data/contact.json` on GitHub. These values are loaded by the storefront and update the footer and WhatsApp order destination:
+
+- `store_name`: store name shown in the footer and order message.
+- `whatsapp_number`: WhatsApp number in international digits, without `+` or spaces (for Egypt, start with `20`, not the leading domestic zero).
+- `phone`, `email`, `address`, `working_hours`.
+- `instagram_url`, `facebook_url`, `tiktok_url`: full HTTPS profile links.
+- `footer_note`: short footer message.
+
+The WhatsApp number is intentionally blank until the store owner enters the correct number. Orders cannot be directed to the store until it is configured.
+
+### Discounts are calculated from live catalogue prices and quantities
+
+Edit `data/discounts.json`. The storefront calculates the eligible discount from the current product prices in `data/products.json` multiplied by the quantities in the cart. Do not enter a manually calculated cart total.
+
+Supported quantity rule fields:
+
+- `active`: enable or disable the rule.
+- `scope`: `cart`, `product`, or `category`.
+- `min_units`: minimum eligible units required.
+- `type`: `percentage`, `fixed_amount` (per eligible unit), or `fixed_price` (set the eligible unit price to `value`).
+- `value`: percentage or EGP amount, depending on the rule type.
+- `product_ids` / `categories`: optional eligibility filters for product/category rules.
+- `starts_at` / `ends_at`: optional ISO date-time limits.
+
+The starter rules are enabled: 5% off from 2 cart units, and 10% off from 3 cart units. When multiple quantity rules qualify, the largest eligible quantity discount is selected. An eligible coupon can then apply as an additional discount, capped so the final total cannot go below zero.
+
+Coupons support `percentage` and `fixed_amount`, `min_units`, `active`, `starts_at`, and `ends_at`. The promotional coupon card displays the first currently active coupon in the file. Change its code/value/description there; do not hard-code discount amounts in the storefront.
+
+### Section-by-section settings
+
+Use `data/sections/index.json` to see the section IDs and their matching files in `data/sections/`. Each section file can be edited independently:
+
+- `home.json`: hero title and subtitle; enable/disable the home hero.
+- `catalog.json`: catalogue heading and section visibility.
+- `categories.json`: category heading, labels and visibility.
+- `offers.json`: show/hide the offers and interactive promotions section.
+- `product-details.json`: show/hide product image galleries and videos.
+- `checkout.json`: show/hide checkout and edit the checkout shipping note.
+- `footer.json`: show/hide the footer.
+
+Set `enabled` to `false` to hide a supported section. Commit the JSON edit to update the repository; the live website changes after its hosting deployment and cache refresh.
