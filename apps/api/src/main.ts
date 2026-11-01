@@ -1,4 +1,6 @@
 import 'reflect-metadata';
+import { config } from 'dotenv';
+config({ path: process.env.ENV_FILE ?? '../../.env' });
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import helmet from 'helmet';
