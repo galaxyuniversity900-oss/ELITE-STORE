@@ -3367,16 +3367,11 @@
           if(mask[p*4+3]<40){known[p]=1;queue[tail++]=p;}
         }
         while(head<tail){
-          const p=queue[head++],x=p%w,y=(p-x)/w;
-          const neighbors=[];
-          if(x>0)neighbors.push(p-1);if(x<w-1)neighbors.push(p+1);
-          if(y>0)neighbors.push(p-w);if(y<h-1)neighbors.push(p+w);
-          for(const q of neighbors){
-            if(known[q])continue;
-            const a=p*4,b=q*4;
-            data[b]=data[a];data[b+1]=data[a+1];data[b+2]=data[a+2];data[b+3]=255;
-            known[q]=1;queue[tail++]=q;
-          }
+          const p=queue[head++],x=p%w,y=(p-x)/w,a=p*4;
+          if(x>0){const q=p-1;if(!known[q]){const b=q*4;data[b]=data[a];data[b+1]=data[a+1];data[b+2]=data[a+2];data[b+3]=255;known[q]=1;queue[tail++]=q;}}
+          if(x<w-1){const q=p+1;if(!known[q]){const b=q*4;data[b]=data[a];data[b+1]=data[a+1];data[b+2]=data[a+2];data[b+3]=255;known[q]=1;queue[tail++]=q;}}
+          if(y>0){const q=p-w;if(!known[q]){const b=q*4;data[b]=data[a];data[b+1]=data[a+1];data[b+2]=data[a+2];data[b+3]=255;known[q]=1;queue[tail++]=q;}}
+          if(y<h-1){const q=p+w;if(!known[q]){const b=q*4;data[b]=data[a];data[b+1]=data[a+1];data[b+2]=data[a+2];data[b+3]=255;known[q]=1;queue[tail++]=q;}}
         }
         ctx.putImageData(src,0,0);return imageCanvas;
       }
