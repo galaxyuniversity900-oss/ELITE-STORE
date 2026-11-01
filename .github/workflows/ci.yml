@@ -18,6 +18,7 @@ jobs:
   validate:
     name: Validate, test and build workspace
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -51,6 +52,32 @@ jobs:
 
       - name: Build all applications
         run: npm run build
+
+      - name: Validate Docker Compose configuration
+        env:
+          POSTGRES_PASSWORD: ci-postgres-password
+          REDIS_PASSWORD: ci-redis-password
+        run: docker compose -f infra/docker/docker-compose.yml config --quiet
+
+      - name: Start full Docker stack
+        env:
+          POSTGRES_PASSWORD: ci-postgres-password
+          REDIS_PASSWORD: ci-redis-password
+        run: docker compose -f infra/docker/docker-compose.yml up -d --build
+
+      - name: Smoke test API and web containers
+        run: |
+          curl --fail --retry 30 --retry-delay 2 --retry-connrefused http://localhost:4000/api/health
+          curl --fail --retry 10 --retry-delay 2 --retry-connrefused http://localhost:4000/api/products
+          curl --fail --retry 20 --retry-delay 2 --retry-connrefused http://localhost:3000/ | grep -q "MES STORE"
+
+      - name: Show container logs on failure
+        if: failure()
+        run: docker compose -f infra/docker/docker-compose.yml logs --no-color
+
+      - name: Stop Docker stack
+        if: always()
+        run: docker compose -f infra/docker/docker-compose.yml down -v
 
       - name: Verify garment motion engine
         run: node scripts/verify-garment-motion.mjs
