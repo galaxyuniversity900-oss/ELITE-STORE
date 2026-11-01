@@ -241,6 +241,7 @@ The repository now contains the original static storefront plus a working TypeSc
 - `infra/docker`: Dockerfiles and Compose services for PostgreSQL, Redis, API, and web.
 - `turbo.json`: workspace task graph and build caching.
 - `.github/workflows/ci.yml`: schema validation, generated client, type checks, tests, and builds.
+- `.github/workflows/deploy.yml`: automatic GitHub Pages deployment of the existing static storefront after changes reach `main`. The Next.js and NestJS services are built and containerized separately; GitHub Pages does not host those server applications.
 
 The existing `ELITE.html`, product catalogue JSON, discounts, contact settings, and motion engine remain in the repository. The Next.js application does not replace the existing storefront.
 
