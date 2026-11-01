@@ -36,7 +36,7 @@ export class CartService {
       where: { cartId_productId: { cartId: cart.id, productId } },
     });
     const nextQuantity = (existing?.quantity ?? 0) + quantity;
-    if (nextQuantity > product.stockQuantity) {
+    if (product.stockQuantity !== null && nextQuantity > product.stockQuantity) {
       throw new BadRequestException('Requested quantity exceeds available stock');
     }
     if (existing) {
@@ -60,7 +60,7 @@ export class CartService {
       include: { product: true },
     });
     if (!item) throw new NotFoundException('Cart item not found');
-    if (quantity > item.product.stockQuantity) {
+    if (item.product.stockQuantity !== null && quantity > item.product.stockQuantity) {
       throw new BadRequestException('Requested quantity exceeds available stock');
     }
     await this.prisma.cartItem.update({ where: { id: itemId }, data: { quantity } });
