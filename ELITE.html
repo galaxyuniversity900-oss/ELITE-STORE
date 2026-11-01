@@ -485,7 +485,7 @@
             <h1 id="hero-kinetic-title" class="text-4xl sm:text-6xl font-black leading-tight tracking-tight cursor-pointer select-none">
               <span id="scramble-headline" class="mes-gold-text">ستايلك مش شبه حد.</span>
             </h1>
-            <p class="text-base sm:text-lg text-zinc-300 leading-relaxed max-w-2xl">
+            <p id="hero-subtitle" class="text-base sm:text-lg text-zinc-300 leading-relaxed max-w-2xl">
               اختار القطعة اللي تعبر عنك. <strong class="text-[#f5ebe0]">جواكت، هوديز وبناطيل</strong> بتفاصيل عصرية وإطلالة مختلفة كل يوم. اطلب بسهولة عبر واتساب مع ميزة <strong class="text-[#d4af37]">الدفع عند الاستلام</strong>.
             </p>
           </div>
@@ -561,7 +561,7 @@
       <div class="flex flex-wrap items-end justify-between gap-4">
         <div>
           <div class="text-xs font-mono-tech tracking-[0.25em] text-[#d4af37] uppercase">SEASONAL LOOKBOOK · 2026</div>
-          <h2 class="text-2xl sm:text-3xl font-black text-white mt-1">أقسام MES STORE الرئيسية</h2>
+          <h2 id="store-categories-title" class="text-2xl sm:text-3xl font-black text-white mt-1">أقسام MES STORE الرئيسية</h2>
         </div>
         <button id="open-size-calc-btn" type="button" class="magnetic-btn ripple-btn px-4 py-2.5 rounded-2xl bg-zinc-900 hover:bg-zinc-800 border border-[#d4af37]/50 text-[#f5ebe0] text-xs font-black flex items-center gap-2">
           <span>📏 حاسبة المقاس الذكية (اعرف مقاسك بالوزن والطول)</span>
@@ -668,7 +668,7 @@
               
               
             </div>
-            <h2 class="text-2xl sm:text-3xl font-black text-white">اختار إطلالتك — جميع منتجات MES STORE (22 قطعة)</h2>
+            <h2 id="store-catalog-title" class="text-2xl sm:text-3xl font-black text-white">اختار إطلالتك — جميع منتجات MES STORE (22 قطعة)</h2>
             <p class="text-xs text-zinc-400">تصفح المنتجات واختر المقاس (`S / M / L / XL / XXL`) والكمية، أو اقلب البطاقة 3D لمشاهدة تفاصيل الخامة.</p>
           </div>
 
@@ -1341,7 +1341,7 @@
             eligible = cartItems.filter(item => categories.includes(item.category));
           } else if (rule.scope !== 'cart') continue;
           const eligibleUnits = eligible.reduce((sum, item) => sum + Number(item.qty || 0), 0);
-          if (!eligibleUnits) continue;
+          if (!eligibleUnits || eligibleUnits < Number(rule.min_units || 1)) continue;
           const subtotal = eligible.reduce((sum, item) => sum + Number(item.price || 0) * Number(item.qty || 0), 0);
           let amount = 0;
           if (rule.type === 'percentage') amount = subtotal * Math.max(0, Math.min(100, Number(rule.value) || 0)) / 100;
@@ -1403,6 +1403,17 @@
               catch (error) { console.warn('Section settings unavailable:', section.id); return [section.id, null]; }
             }));
             STORE_SECTIONS = Object.fromEntries(entries.filter(entry => entry[1] && entry[1].version === 1));
+            const homeSettings = STORE_SECTIONS.home || {};
+            const heroTitle = document.getElementById('scramble-headline');
+            const heroSubtitle = document.getElementById('hero-subtitle');
+            if (heroTitle && homeSettings.hero_title) heroTitle.textContent = homeSettings.hero_title;
+            if (heroSubtitle && homeSettings.hero_subtitle) heroSubtitle.textContent = homeSettings.hero_subtitle;
+            const categorySettings = STORE_SECTIONS.categories || {};
+            const categoryTitle = document.getElementById('store-categories-title');
+            if (categoryTitle && categorySettings.title) categoryTitle.textContent = categorySettings.title;
+            const catalogSettings = STORE_SECTIONS.catalog || {};
+            const catalogTitle = document.getElementById('store-catalog-title');
+            if (catalogTitle && catalogSettings.title) catalogTitle.textContent = catalogSettings.title;
             const sectionTargets = {
               home: 'hero-showcase',
               categories: 'visual-categories-showroom',
@@ -1476,9 +1487,10 @@
       function renderProductGallery(product) {
         const media = product.media || {};
         const cover = getProductCover(product);
-        const images = [...new Set([cover, ...(Array.isArray(media.images) ? media.images : [])].filter(Boolean))]
+        const detailSettings = STORE_SECTIONS['product-details'] || {};
+        const images = detailSettings.show_gallery === false ? [] : [...new Set([cover, ...(Array.isArray(media.images) ? media.images : [])].filter(Boolean))]
           .map(resolveCatalogMedia).filter(Boolean);
-        const videos = (Array.isArray(media.videos) ? media.videos : []).map(resolveCatalogMedia).filter(Boolean);
+        const videos = detailSettings.show_videos === false ? [] : (Array.isArray(media.videos) ? media.videos : []).map(resolveCatalogMedia).filter(Boolean);
         const thumbnails = images.slice(1, 8).map((source, index) =>
           '<img src="' + escapeStoreAttribute(source) + '" alt="' + escapeStoreAttribute(product.title) +
           ' - ' + (index + 2) + '" loading="lazy" class="h-20 w-20 shrink-0 rounded-xl border border-zinc-700 object-cover">').join('');
@@ -1493,7 +1505,7 @@
         const group = document.getElementById('category-filter-group');
         if (!group) return;
         const visible = PRODUCTS.filter(product => product.active !== false);
-        const labels = { 'جاكت':'🧥 الجواكت والمعاطف', 'هودي':'👕 هوديز وسويت شيرت', 'جينز':'👖 جينز', 'بناطيل':'🏃 بناطيل رياضية' };
+        const labels = { 'جاكت':'🧥 الجواكت والمعاطف', 'هودي':'👕 هوديز وسويت شيرت', 'جينز':'👖 جينز', 'بناطيل':'🏃 بناطيل رياضية', ...((STORE_SECTIONS.categories || {}).labels || {}) };
         const categories = [...new Set(visible.map(product => product.category).filter(Boolean))]
           .sort((a, b) => a.localeCompare(b, 'ar'));
         group.innerHTML =
