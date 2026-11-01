@@ -290,8 +290,8 @@
 .gm-button{border:1px solid #4b4532;background:#211d12;color:#f5e7bd;border-radius:10px;padding:9px 12px;font-size:12px;font-weight:800}
 .gm-button.primary{background:#d4af37;color:#111;border-color:#d4af37}
 .gm-button.active{background:#d4af37;color:#111}
-.gm-card-canvas{width:100%;height:100%;object-fit:contain;display:block}
-.gm-admin-btn{width:100%;margin-top:8px;border:1px solid rgba(212,175,55,.45);background:rgba(212,175,55,.10);color:#f5ebe0;border-radius:10px;padding:8px;font-size:11px;font-weight:800}
+.gm-card-canvas{width:100%;height:100%;object-fit:contain;display:block}body.gm-admin .gm-admin-btn{display:block}
+.gm-admin-btn{display:none;width:100%;margin-top:8px;border:1px solid rgba(212,175,55,.45);background:rgba(212,175,55,.10);color:#f5ebe0;border-radius:10px;padding:8px;font-size:11px;font-weight:800}
 .gm-status{font-size:11px;color:#d4af37;min-height:18px}
 @media(prefers-reduced-motion:reduce){.gm-card-canvas{animation:none!important}}
 
@@ -1221,8 +1221,10 @@
           </div>
           <div class="gm-control space-y-2">
             <button id="gm-save" class="gm-button primary w-full">حفظ الحركة لهذا المنتج</button>
+            <button id="gm-export" class="gm-button w-full">تنزيل ملف النشر JSON</button>
+            <label class="gm-button block text-center cursor-pointer">استيراد ملف منتج منشور <input id="gm-import" type="file" accept="application/json,.json" class="hidden"></label>
             <button id="gm-delete" class="gm-button w-full">حذف إعداد الحركة المحفوظ</button>
-            <p class="text-[10px] text-zinc-500 leading-5">الحفظ محلي على نفس المتصفح والجهاز عبر IndexedDB. لا تنتقل صور المنتجات تلقائياً إلى زوار الموقع أو أجهزة أخرى؛ يلزم تخزين خادمي عند النشر.</p>
+            <p class="text-[10px] text-zinc-500 leading-5">الحفظ محلي على نفس المتصفح والجهاز عبر IndexedDB. الحفظ المحلي خاص بهذا المتصفح. للنشر على جميع الزوار، نزّل JSON وضعه في assets/garment-motion/ باسم معرف المنتج مثل mes11.json.</p>
           </div>
         </div>
       </div>
@@ -3194,6 +3196,7 @@
       // -------------------------------------------------------------------
       // MES GARMENT MOTION ENGINE — per-product image segmentation + mesh
       // -------------------------------------------------------------------
+      if(new URLSearchParams(location.search).get('gm-admin')==='1')document.body.classList.add('gm-admin');
       const GM_DB_NAME = 'mes-store-garment-motion-v1';
       const GM_STORE_NAME = 'product-motion';
       const gmCanvas = document.getElementById('gm-editor-canvas');
@@ -3432,6 +3435,27 @@
         try{gmSetStatus('جارٍ تجهيز الخلفية الثابتة وطبقة الملابس...');const rec=await gmBuildRecord();await gmPut(rec);gmSavedCache.delete(rec.id);gmSetStatus('تم حفظ إعداد الحركة محلياً. ستظهر معاينة الحركة على بطاقة المنتج بعد تحديثها.');gmStudio.classList.remove('open');gmApplySavedCards();}
         catch(e){gmSetStatus(e.message||'تعذر حفظ المنتج.');}
       });
+
+      document.getElementById('gm-export').addEventListener('click',async()=>{
+        try{
+          const rec=gmImageReady?await gmBuildRecord():await gmGet(gmCurrentProduct.id);
+          if(!rec)throw new Error('لا توجد بيانات محفوظة للتصدير.');
+          const blob=new Blob([JSON.stringify(rec)],{type:'application/json'});
+          const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=rec.id+'.json';a.click();
+          setTimeout(()=>URL.revokeObjectURL(url),1500);
+          gmSetStatus('تم تنزيل ملف النشر. ارفعه إلى assets/garment-motion/'+rec.id+'.json داخل المستودع.');
+        }catch(e){gmSetStatus(e.message||'تعذر تصدير الملف.');}
+      });
+      document.getElementById('gm-import').addEventListener('change',async e=>{
+        const f=e.target.files&&e.target.files[0];if(!f)return;
+        try{
+          const rec=JSON.parse(await f.text());
+          if(!rec.id||!rec.original||!rec.background||!rec.mask||!rec.settings||!rec.width||!rec.height)throw new Error('ملف النشر غير مكتمل.');
+          await gmPut(rec);gmSavedCache.delete(rec.id);await gmApplySavedCards();
+          gmSetStatus('تم استيراد حزمة '+rec.id+' بنجاح.');
+        }catch(err){gmSetStatus(err.message||'تعذر استيراد الملف.');}
+        e.target.value='';
+      });
       document.getElementById('gm-delete').addEventListener('click',async()=>{
         if(!gmCurrentProduct)return;await gmDelete(gmCurrentProduct.id);gmSavedCache.delete(gmCurrentProduct.id);gmCardCanvases.delete(gmCurrentProduct.id);gmSetStatus('تم حذف إعداد الحركة المحفوظ لهذا المنتج.');gmStudio.classList.remove('open');
         const el=document.getElementById('prod-visual-'+gmCurrentProduct.id);if(el){const p=PRODUCTS.find(x=>x.id===gmCurrentProduct.id);el.innerHTML=p.svgIcon+'<span class="motion-badge absolute bottom-1.5 right-1.5">'+p.motionTag+'</span>';}
@@ -3439,7 +3463,15 @@
       async function gmImageFromURL(url){return new Promise((resolve,reject)=>{const im=new Image();im.onload=()=>resolve(im);im.onerror=reject;im.src=url;});}
       async function gmGetAssets(id){
         if(gmSavedCache.has(id))return gmSavedCache.get(id);
-        const rec=await gmGet(id);if(!rec)return null;
+        let rec=await gmGet(id);
+        if(!rec){
+          try{
+            const remoteURL=new URL('assets/garment-motion/'+id+'.json',document.baseURI);
+            const response=await fetch(remoteURL,{cache:'no-cache'});
+            if(response.ok){rec=await response.json();if(rec&&rec.id===id&&rec.background&&rec.original&&rec.mask&&rec.settings)await gmPut(rec);else rec=null;}
+          }catch(e){}
+        }
+        if(!rec)return null;
         const assets={record:rec,bg:await gmImageFromURL(rec.background),garment:await gmImageFromURL(rec.original),mask:await gmImageFromURL(rec.mask)};
         const garmentCanvas=document.createElement('canvas');garmentCanvas.width=rec.width;garmentCanvas.height=rec.height;
         const gctx=garmentCanvas.getContext('2d');gctx.drawImage(assets.garment,0,0);gctx.globalCompositeOperation='destination-in';gctx.drawImage(assets.mask,0,0,rec.width,rec.height);assets.garmentCanvas=garmentCanvas;
