@@ -1,0 +1,48 @@
+name: Monorepo CI
+
+on:
+  push:
+    branches: [main, "feature/**"]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: monorepo-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Validate workspace and database schema
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Validate Prisma schema
+        env:
+          DATABASE_URL: postgresql://ci:ci@localhost:5432/mes_store?schema=public
+        run: npm run db:validate
+
+      - name: Generate Prisma Client
+        run: npm run db:generate
+
+      - name: Validate JSON configuration
+        run: |
+          node -e "for (const f of ['package.json','turbo.json']) JSON.parse(require('fs').readFileSync(f,'utf8')); console.log('Workspace JSON: OK')"
+          node -e "for (const f of ['data/products.json','data/contact.json','data/discounts.json','data/sections/index.json']) JSON.parse(require('fs').readFileSync(f,'utf8')); console.log('Store data JSON: OK')"
+
+      - name: Verify garment motion engine
+        run: node scripts/verify-garment-motion.mjs
