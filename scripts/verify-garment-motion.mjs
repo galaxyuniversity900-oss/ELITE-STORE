@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 
 const html = readFileSync(new URL('../ELITE.html', import.meta.url), 'utf8');
 const catalogue = JSON.parse(readFileSync(new URL('../data/products.json', import.meta.url), 'utf8'));
-const scripts = [...html.matchAll(/<script>([\\s\\S]*?)<\\/script>/g)];
+const scripts = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)];
 assert.equal(scripts.length, 1, 'Expected one main inline application script');
 new vm.Script(scripts[0][1], { filename: 'ELITE.html:inline-script' });
 
@@ -13,12 +13,12 @@ const required = [
   'gm-preview-toggle', 'gm-ai-segment', 'gm-save', 'gm-export', 'gm-import',
   'gmInpaintBackground', 'gmAffineTriangle', 'gmRenderStored',
   'gmApplySavedCards', 'gmMountQuickView', 'product-motion',
-  "data/products.json", 'loadStoreCatalog', 'renderProductVisual',
-  'renderProductGallery', 'categoryFilterGroup.addEventListener', 'sourceUrl'
+  'data/products.json', 'loadStoreCatalog', 'renderProductVisual',
+  'renderProductGallery', "categoryFilterGroup.addEventListener('click')", 'sourceUrl'
 ];
 for (const token of required) assert.ok(html.includes(token), 'Missing integration token: ' + token);
 
-const productIds = [...html.matchAll(/\\{ id: 'mes\\d+'/g)].map(match => match[0]);
+const productIds = [...html.matchAll(/\{ id: 'mes\d+'/g)].map(match => match[0]);
 assert.equal(productIds.length, 22, 'Expected all 22 original built-in fallback product records');
 assert.equal(catalogue.version, 1, 'Unsupported product catalogue version');
 assert.equal(catalogue.currency, 'EGP', 'Expected EGP catalogue currency');
