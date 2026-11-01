@@ -120,3 +120,8 @@ The repository contains no real per-product photo set yet. Until you upload each
 A GitHub commit updates the repository immediately. Visitors see the update after the configured hosting workflow finishes deploying the commit and the host/browser cache refreshes. A GitHub commit by itself does not guarantee instant delivery to visitors.
 
 For large video files, use a video CDN or a hosting service and put its HTTPS URL in `media.videos`. Keep the GitHub repository focused on optimized photos and small assets.
+
+
+## Storefront entry point
+
+The repository root now includes `index.html`, which forwards visitors to `ELITE.html`. When GitHub Pages is enabled with the repository root as its publishing source, the repository's main URL can open the storefront without requiring visitors to type the HTML filename.
