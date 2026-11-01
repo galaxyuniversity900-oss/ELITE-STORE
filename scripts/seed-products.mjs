@@ -33,6 +33,7 @@ async function main() {
       slug: String(item.id).toLowerCase(),
       description: item.desc ? String(item.desc) : null,
       price: String(Number(item.price)),
+      stockQuantity: Number.isInteger(item.stockQuantity) && item.stockQuantity >= 0 ? item.stockQuantity : null,
       currency: source.currency || 'EGP',
       status: item.active === false ? ProductStatus.ARCHIVED : ProductStatus.ACTIVE,
       categoryId: category.id,
