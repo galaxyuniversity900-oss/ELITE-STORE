@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 const storefrontUrl = process.env.NEXT_PUBLIC_STOREFRONT_URL ?? 'https://galaxyuniversity900-oss.github.io/ELITE-STORE/ELITE.html';
 const apiUrl = process.env.API_INTERNAL_URL ?? 'http://localhost:4000/api';
 
