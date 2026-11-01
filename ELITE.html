@@ -1311,6 +1311,141 @@
         { id: 'mes22', title: 'سويت شيرت أسود سادة', category: 'هودي', price: 549, desc: 'تصميم أساسي أنيق باللون الأسود، مناسب للإطلالات اليومية', badge: 'Minimal Basic', motionTag: 'Micro-Interaction Ready', svgIcon: makeGarmentSvg('hoodie', '#0f0f12', '#d4af37') }
       ];
 
+      // Product data and media are loaded from the editable GitHub catalogue.
+      function normalizeCatalogPath(value) {
+        if (typeof value !== 'string') return '';
+        const path = value.trim();
+        if (!path) return '';
+        if (/^https:\/\//i.test(path) || /^\/?assets\/products\//i.test(path)) return path;
+        return '';
+      }
+      function resolveCatalogMedia(path) {
+        if (!path) return '';
+        try {
+          const url = new URL(path, document.baseURI);
+          return url.protocol === 'https:' || url.origin === location.origin ? url.href : '';
+        } catch (e) { return ''; }
+      }
+      function escapeStoreAttribute(value) {
+        return String(value ?? '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      }
+      function getProductCover(product) {
+        const media = product && product.media ? product.media : {};
+        return media.cover || (Array.isArray(media.images) ? media.images[0] : '') || '';
+      }
+      function renderProductVisual(product) {
+        const fallback = product.svgIcon || '';
+        const source = resolveCatalogMedia(getProductCover(product));
+        if (!source) return fallback;
+        return '<div class="relative w-full h-full">' + fallback +
+          '<img src="' + escapeStoreAttribute(source) + '" alt="' + escapeStoreAttribute(product.title) +
+          '" loading="lazy" decoding="async" class="absolute inset-0 z-10 w-full h-full object-cover" onerror="this.remove()"></div>';
+      }
+      function renderProductGallery(product) {
+        const media = product.media || {};
+        const cover = getProductCover(product);
+        const images = [...new Set([cover, ...(Array.isArray(media.images) ? media.images : [])].filter(Boolean))]
+          .map(resolveCatalogMedia).filter(Boolean);
+        const videos = (Array.isArray(media.videos) ? media.videos : []).map(resolveCatalogMedia).filter(Boolean);
+        const thumbnails = images.slice(1, 8).map((source, index) =>
+          '<img src="' + escapeStoreAttribute(source) + '" alt="' + escapeStoreAttribute(product.title) +
+          ' - ' + (index + 2) + '" loading="lazy" class="h-20 w-20 shrink-0 rounded-xl border border-zinc-700 object-cover">').join('');
+        const videoMarkup = videos.map(source =>
+          '<video controls playsinline preload="metadata" ' + (images[0] ? 'poster="' + escapeStoreAttribute(images[0]) + '"' : '') +
+          ' class="w-full rounded-xl bg-black border border-zinc-800"><source src="' + escapeStoreAttribute(source) +
+          '">المتصفح لا يدعم تشغيل هذا الفيديو.</video>').join('');
+        return (thumbnails ? '<div class="flex gap-2 overflow-x-auto py-2">' + thumbnails + '</div>' : '') +
+          (videoMarkup ? '<div class="mt-3 space-y-2"><h4 class="text-xs font-bold text-[#d4af37]">فيديوهات المنتج</h4>' + videoMarkup + '</div>' : '');
+      }
+      function syncCategoryFilters() {
+        const group = document.getElementById('category-filter-group');
+        if (!group) return;
+        const visible = PRODUCTS.filter(product => product.active !== false);
+        const labels = { 'جاكت':'🧥 الجواكت والمعاطف', 'هودي':'👕 هوديز وسويت شيرت', 'جينز':'👖 جينز', 'بناطيل':'🏃 بناطيل رياضية' };
+        const categories = [...new Set(visible.map(product => product.category).filter(Boolean))]
+          .sort((a, b) => a.localeCompare(b, 'ar'));
+        group.innerHTML =
+          '<button type="button" data-category="all" class="cat-filter-btn magnetic-btn px-4 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-200 font-bold text-xs border border-zinc-800 transition-all">كل المنتجات (' + visible.length + ')</button>' +
+          categories.map(category => '<button type="button" data-category="' + escapeStoreAttribute(category) +
+            '" class="cat-filter-btn magnetic-btn px-4 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-200 font-bold text-xs border border-zinc-800 transition-all">' +
+            escapeStoreAttribute(labels[category] || category) + ' (' + visible.filter(product => product.category === category).length + ')</button>').join('');
+        const active = [...group.querySelectorAll('.cat-filter-btn')]
+          .find(button => button.dataset.category === currentCategory) ||
+          group.querySelector('[data-category="all"]');
+        if (active) active.className = 'cat-filter-btn magnetic-btn px-4 py-2 rounded-xl bg-[#d4af37] text-black font-black text-xs transition-all';
+      }
+      async function loadStoreCatalog() {
+        try {
+          const response = await fetch(new URL('./data/products.json', document.baseURI), { cache: 'no-store' });
+          if (!response.ok) throw new Error('Catalogue request failed: ' + response.status);
+          const catalogue = await response.json();
+          if (!catalogue || catalogue.version !== 1 || !Array.isArray(catalogue.products) || !catalogue.products.length) {
+            throw new Error('Invalid product catalogue format.');
+          }
+          const existing = new Map(PRODUCTS.map(product => [product.id, product]));
+          const seen = new Set();
+          const next = catalogue.products.map((record, index) => {
+            if (!record || typeof record.id !== 'string' ||
+                !/^[a-z0-9][a-z0-9_-]{1,48}$/i.test(record.id) || seen.has(record.id)) {
+              throw new Error('Invalid or duplicate product ID at row ' + (index + 1));
+            }
+            seen.add(record.id);
+            const price = Number(record.price);
+            if (!Number.isFinite(price) || price < 0 || typeof record.title !== 'string' || !record.title.trim() ||
+                typeof record.category !== 'string' || !record.category.trim()) {
+              throw new Error('Invalid title, category or price for ' + record.id);
+            }
+            const visual = record.visual || {};
+            const type = ['jeans', 'pants', 'hoodie', 'jacket'].includes(visual.type) ? visual.type :
+              (/جينز/.test(record.category) ? 'jeans' : /بناطيل/.test(record.category) ? 'pants' :
+                /هودي|سويت/.test(record.category) ? 'hoodie' : 'jacket');
+            const color = /^#[0-9a-f]{6}$/i.test(visual.color || '') ? visual.color : '#27272a';
+            const accent = /^#[0-9a-f]{6}$/i.test(visual.accent || '') ? visual.accent : '#d4af37';
+            const sourceMedia = record.media || {};
+            const media = {
+              cover: normalizeCatalogPath(sourceMedia.cover),
+              images: Array.isArray(sourceMedia.images) ? sourceMedia.images.map(normalizeCatalogPath).filter(Boolean) : [],
+              videos: Array.isArray(sourceMedia.videos) ? sourceMedia.videos.map(normalizeCatalogPath).filter(Boolean) : []
+            };
+            return {
+              ...(existing.get(record.id) || {}),
+              ...record,
+              id: record.id,
+              price,
+              visual: { type, color, accent },
+              media,
+              svgIcon: makeGarmentSvg(type, color, accent),
+              active: record.active !== false
+            };
+          });
+          PRODUCTS.splice(0, PRODUCTS.length, ...next);
+          const validIds = new Set(PRODUCTS.map(product => product.id));
+          Object.keys(selectedSizes).forEach(id => { if (!validIds.has(id)) delete selectedSizes[id]; });
+          PRODUCTS.forEach(product => { selectedSizes[product.id] = selectedSizes[product.id] || 'L'; });
+          wishlistIds = new Set([...wishlistIds].filter(id => validIds.has(id)));
+          cartItems = cartItems.map(item => {
+            const fresh = PRODUCTS.find(product => product.id === item.id);
+            return fresh ? { ...fresh, size: item.size, qty: item.qty } : item;
+          });
+          displayedProducts = currentCategory === 'all'
+            ? PRODUCTS.filter(product => product.active !== false)
+            : PRODUCTS.filter(product => product.active !== false && product.category === currentCategory);
+          if (currentCategory !== 'all' && !displayedProducts.length) {
+            currentCategory = 'all';
+            displayedProducts = PRODUCTS.filter(product => product.active !== false);
+          }
+          syncCategoryFilters();
+          renderProducts(false);
+          renderCartDrawer();
+          const wishCount = document.getElementById('wishlist-count-badge');
+          if (wishCount) wishCount.textContent = wishlistIds.size;
+          if (typeof gmApplySavedCards === 'function') gmApplySavedCards().catch(() => {});
+          console.info('MES catalogue loaded:', PRODUCTS.length, 'products');
+        } catch (error) {
+          console.warn('Using the built-in MES catalogue fallback:', error.message);
+        }
+      }
+
       // Selected Size per Product ID
       const selectedSizes = {};
       PRODUCTS.forEach(p => { selectedSizes[p.id] = 'L'; });
@@ -1553,7 +1688,7 @@
                   </div>
 
                   <div id="prod-visual-${p.id}" class="relative h-52 rounded-2xl bg-black/90 border border-zinc-800/80 flex items-center justify-center overflow-hidden liquid-hover cursor-pointer">
-                    ${p.svgIcon}
+                    ${renderProductVisual(p)}
                     <span class="motion-badge absolute bottom-1.5 right-1.5">${p.motionTag}</span>
                   </div>
 
@@ -1902,13 +2037,15 @@
             ? 'cat-filter-btn magnetic-btn px-4 py-2 rounded-xl bg-[#d4af37] text-black font-black text-xs transition-all'
             : 'cat-filter-btn magnetic-btn px-4 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-200 font-bold text-xs border border-zinc-800 transition-all';
         });
-        displayedProducts = cat === 'all' ? [...PRODUCTS] : PRODUCTS.filter(p => p.category === cat);
+        displayedProducts = cat === 'all' ? PRODUCTS.filter(p => p.active !== false) : PRODUCTS.filter(p => p.active !== false && p.category === cat);
         renderProducts(true);
         notifyDynamicIsland(`⚡ تصفية قسم "${cat === 'all' ? 'كل المنتجات' : cat}" بحركة FLIP (${displayedProducts.length} قطعة)`);
       }
 
-      document.querySelectorAll('.cat-filter-btn').forEach(btn => {
-        btn.addEventListener('click', () => filterByCategory(btn.dataset.category));
+      const categoryFilterGroup = document.getElementById('category-filter-group');
+      categoryFilterGroup.addEventListener('click', event => {
+        const button = event.target.closest('.cat-filter-btn');
+        if (button) filterByCategory(button.dataset.category);
       });
 
       document.querySelectorAll('.nav-cat-link').forEach(btn => {
@@ -2358,7 +2495,7 @@
         const curSz = selectedSizes[prod.id] || 'L';
         qvBody.innerHTML = `
           <div class="h-72 rounded-2xl bg-black border border-zinc-800 overflow-hidden relative">
-            ${prod.svgIcon}
+            ${renderProductVisual(prod)}
             <span class="absolute bottom-3 right-3 px-2.5 py-1 rounded-lg bg-black/80 text-[#d4af37] text-[11px] font-bold border border-[#d4af37]/40">✨ خامة أصلية مضمونة 100%</span>
           </div>
           <div class="space-y-3.5">
@@ -2381,6 +2518,9 @@
             </button>
           </div>
         `;
+        const mediaDetails = renderProductGallery(prod);
+        const quickViewStage = qvBody.querySelector('.h-72');
+        if (mediaDetails && quickViewStage) quickViewStage.insertAdjacentHTML('afterend', mediaDetails);
         if(typeof gmMountQuickView==='function') gmMountQuickView(prod);
         qvBackdrop.classList.remove('hidden');
         qvBackdrop.classList.add('flex');
@@ -3384,11 +3524,16 @@
         document.getElementById('gm-sleeves').checked=true;document.getElementById('gm-body').checked=true;document.getElementById('gm-edges').checked=true;
         gmImageReady=false;gmCtx.clearRect(0,0,gmCanvas.width,gmCanvas.height);gmMaskCtx.clearRect(0,0,gmMaskCanvas.width,gmMaskCanvas.height);
         gmGet(product.id).then(rec=>{
-          if(rec){document.getElementById('gm-category').value=rec.category;document.getElementById('gm-speed').value=rec.settings.speed;document.getElementById('gm-intensity').value=rec.settings.intensity;
+          const catalogSource = getProductCover(product);
+          if(rec && (!catalogSource || rec.sourceUrl === catalogSource)){document.getElementById('gm-category').value=rec.category;document.getElementById('gm-speed').value=rec.settings.speed;document.getElementById('gm-intensity').value=rec.settings.intensity;
             ['sleeves','body','edges'].forEach(k=>document.getElementById('gm-'+k).checked=rec.settings[k]);
             document.getElementById('gm-speed-value').textContent=rec.settings.speed+'%';document.getElementById('gm-intensity-value').textContent=rec.settings.intensity+'%';
             gmLoadImageURL(rec.original,()=>{const maskImg=new Image();maskImg.onload=()=>{gmMaskCtx.clearRect(0,0,gmMaskCanvas.width,gmMaskCanvas.height);gmMaskCtx.drawImage(maskImg,0,0,gmMaskCanvas.width,gmMaskCanvas.height);gmDrawEditor();};maskImg.src=rec.mask;});
             gmSetStatus('تم تحميل إعداد الحركة المحفوظ. يمكنك تعديله أو معاينته.');
+          }else if(catalogSource){
+            const sourceUrl=resolveCatalogMedia(catalogSource);
+            if(sourceUrl){gmLoadImageURL(sourceUrl);gmSetStatus('تم تحميل صورة المنتج من مكتبة المتجر. حدد مساحة الملابس لبدء إعداد الحركة.');}
+            else gmSetStatus('مسار صورة المنتج غير صالح.');
           }else gmSetStatus('ارفع صورة المنتج الأصلية للبدء. لا توجد صورة فعلية مرفقة بهذا المنتج حالياً.');
         }).catch(()=>gmSetStatus('تعذر فتح التخزين المحلي في هذا المتصفح.'));
       }
@@ -3463,7 +3608,7 @@
         const settings=gmReadSettings(),mask=gmMaskCanvas.toDataURL('image/png');
         return {id:gmCurrentProduct.id,productTitle:gmCurrentProduct.title,category:document.getElementById('gm-category').value,
           settings:settings,original:originalCanvas.toDataURL('image/jpeg',.92),mask:mask,background:cleanCanvas.toDataURL('image/jpeg',.92),
-          width:w,height:h,updatedAt:new Date().toISOString(),engineVersion:'1.0.0-mes'};
+          width:w,height:h,sourceUrl:getProductCover(gmCurrentProduct),updatedAt:new Date().toISOString(),engineVersion:'1.0.0-mes'};
       }
       document.getElementById('gm-save').addEventListener('click',async()=>{
         try{gmSetStatus('جارٍ تجهيز الخلفية الثابتة وطبقة الملابس...');const rec=await gmBuildRecord();await gmPut(rec);gmSavedCache.delete(rec.id);gmSetStatus('تم حفظ إعداد الحركة محلياً. ستظهر معاينة الحركة على بطاقة المنتج بعد تحديثها.');gmStudio.classList.remove('open');gmApplySavedCards();}
@@ -3492,7 +3637,7 @@
       });
       document.getElementById('gm-delete').addEventListener('click',async()=>{
         if(!gmCurrentProduct)return;await gmDelete(gmCurrentProduct.id);gmSavedCache.delete(gmCurrentProduct.id);gmCardCanvases.delete(gmCurrentProduct.id);gmSetStatus('تم حذف إعداد الحركة المحفوظ لهذا المنتج.');gmStudio.classList.remove('open');
-        const el=document.getElementById('prod-visual-'+gmCurrentProduct.id);if(el){const p=PRODUCTS.find(x=>x.id===gmCurrentProduct.id);el.innerHTML=p.svgIcon+'<span class="motion-badge absolute bottom-1.5 right-1.5">'+p.motionTag+'</span>';}
+        const el=document.getElementById('prod-visual-'+gmCurrentProduct.id);if(el){const p=PRODUCTS.find(x=>x.id===gmCurrentProduct.id);el.innerHTML=renderProductVisual(p)+'<span class="motion-badge absolute bottom-1.5 right-1.5">'+p.motionTag+'</span>';}
       });
       async function gmImageFromURL(url){return new Promise((resolve,reject)=>{const im=new Image();im.onload=()=>resolve(im);im.onerror=reject;im.src=url;});}
       async function gmGetAssets(id){
@@ -3531,8 +3676,10 @@
         const cards=Array.from(document.querySelectorAll('[id^="prod-visual-"]'));
         for(const visual of cards){
           const id=visual.id.replace('prod-visual-','');let assets;
-          try{assets=await gmGetAssets(id);}catch(e){continue;}if(!assets)continue;
           const p=PRODUCTS.find(x=>x.id===id);if(!p)continue;
+          try{assets=await gmGetAssets(id);}catch(e){continue;}if(!assets)continue;
+          const currentSource=getProductCover(p);
+          if(currentSource && assets.record.sourceUrl!==currentSource)continue;
           visual.innerHTML='';const c=document.createElement('canvas');c.width=480;c.height=Math.max(1,Math.round(480*assets.record.height/assets.record.width));c.className='gm-card-canvas';c.setAttribute('aria-label','معاينة حركة '+p.title);visual.appendChild(c);
           const badge=document.createElement('span');badge.className='motion-badge absolute bottom-1.5 right-1.5';badge.textContent='GARMENT MOTION';visual.appendChild(badge);
           gmCardCanvases.set(id,{canvas:c,assets,profile:gmProfileFor(p),visible:true});
@@ -3550,6 +3697,7 @@
         gmStopQuickView();
         try{
           const assets=await gmGetAssets(product.id);if(!assets)return;
+          const currentSource=getProductCover(product);if(currentSource && assets.record.sourceUrl!==currentSource)return;
           const stage=qvBody.querySelector('.h-72');if(!stage)return;
           stage.innerHTML='';
           const c=document.createElement('canvas');c.width=480;c.height=Math.round(480*assets.record.height/assets.record.width);
@@ -3569,6 +3717,7 @@
       renderProducts(false);
       gmApplySavedCards().catch(()=>{});
       renderCartDrawer();
+      loadStoreCatalog();
     })();
   </script>
 </body>
