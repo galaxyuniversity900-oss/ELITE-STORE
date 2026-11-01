@@ -56,11 +56,12 @@ services:
     build:
       context: ../..
       dockerfile: infra/docker/Dockerfile.web
+      args:
+        NEXT_PUBLIC_STOREFRONT_URL: ${NEXT_PUBLIC_STOREFRONT_URL:-https://galaxyuniversity900-oss.github.io/ELITE-STORE/ELITE.html}
     restart: unless-stopped
     environment:
       NODE_ENV: production
       API_INTERNAL_URL: http://api:4000/api
-      NEXT_PUBLIC_STOREFRONT_URL: ${NEXT_PUBLIC_STOREFRONT_URL:-/}
     ports:
       - "${WEB_PORT:-3000}:3000"
     depends_on:
