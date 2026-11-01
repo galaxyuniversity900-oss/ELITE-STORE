@@ -2,9 +2,13 @@ import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 import assert from 'node:assert/strict';
 
+const readJson = path => JSON.parse(readFileSync(new URL('../' + path, import.meta.url), 'utf8'));
 const html = readFileSync(new URL('../ELITE.html', import.meta.url), 'utf8');
-const catalogue = JSON.parse(readFileSync(new URL('../data/products.json', import.meta.url), 'utf8'));
-const scripts = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)];
+const catalogue = readJson('data/products.json');
+const contact = readJson('data/contact.json');
+const discounts = readJson('data/discounts.json');
+const sectionIndex = readJson('data/sections/index.json');
+const scripts = [...html.matchAll(/<script>([\\s\\S]*?)<\\/script>/g)];
 assert.equal(scripts.length, 1, 'Expected one main inline application script');
 new vm.Script(scripts[0][1], { filename: 'ELITE.html:inline-script' });
 
@@ -14,11 +18,15 @@ const required = [
   'gmInpaintBackground', 'gmAffineTriangle', 'gmRenderStored',
   'gmApplySavedCards', 'gmMountQuickView', 'product-motion',
   'data/products.json', 'loadStoreCatalog', 'renderProductVisual',
-  'renderProductGallery', "categoryFilterGroup.addEventListener('click',", 'sourceUrl'
+  'renderProductGallery', "categoryFilterGroup.addEventListener('click',", 'sourceUrl',
+  'data/contact.json', 'data/discounts.json', 'data/sections/index.json',
+  'function storeDiscountForCart()', 'function applyStoreCoupon(code)',
+  'storeWhatsAppNumber()', "https://wa.me/' + waNumber",
+  'cart-discount-summary', 'STORE_SECTIONS.categories'
 ];
 for (const token of required) assert.ok(html.includes(token), 'Missing integration token: ' + token);
 
-const productIds = [...html.matchAll(/\{ id: 'mes\d+'/g)].map(match => match[0]);
+const productIds = [...html.matchAll(/\\{ id: 'mes\\d+'/g)].map(match => match[0]);
 assert.equal(productIds.length, 22, 'Expected all 22 original built-in fallback product records');
 assert.equal(catalogue.version, 1, 'Unsupported product catalogue version');
 assert.equal(catalogue.currency, 'EGP', 'Expected EGP catalogue currency');
@@ -37,6 +45,25 @@ for (const product of catalogue.products) {
   assert.ok(Array.isArray(product.media.videos), 'Invalid video gallery: ' + product.id);
 }
 
+assert.equal(contact.version, 1, 'Unsupported contact config version');
+for (const field of ['store_name','whatsapp_number','phone','email','address','working_hours','instagram_url','facebook_url','tiktok_url','footer_note']) {
+  assert.ok(Object.hasOwn(contact, field), 'Missing contact field: ' + field);
+}
+assert.equal(discounts.version, 1, 'Unsupported discount config version');
+assert.ok(Array.isArray(discounts.coupons), 'Discount coupons must be an array');
+assert.ok(Array.isArray(discounts.quantity_rules), 'Quantity rules must be an array');
+for (const rule of discounts.quantity_rules) {
+  assert.ok(['cart','product','category'].includes(rule.scope), 'Invalid quantity rule scope: ' + rule.id);
+  assert.ok(['percentage','fixed_amount','fixed_price'].includes(rule.type), 'Invalid quantity rule type: ' + rule.id);
+  assert.ok(Number.isInteger(rule.min_units) && rule.min_units >= 1, 'Invalid minimum units: ' + rule.id);
+  assert.ok(Number.isFinite(rule.value) && rule.value >= 0, 'Invalid discount value: ' + rule.id);
+}
+assert.equal(sectionIndex.version, 1, 'Unsupported section registry version');
+for (const section of sectionIndex.sections) {
+  const config = readJson('data/sections/' + section.file);
+  assert.equal(config.version, 1, 'Unsupported section config version: ' + section.id);
+}
+
 for (const token of ['add-to-cart-btn', 'wish-btn', 'quick-view-btn', 'cart-drawer', 'optimistic-checkout-btn']) {
   assert.ok(html.includes(token), 'Original store behavior missing: ' + token);
 }
@@ -47,7 +74,9 @@ assert.ok(html.includes("get('gm-admin')==='1'"), 'Admin editor query switch mis
 assert.ok(html.includes('assets.record.sourceUrl!==currentSource'), 'Stale motion packs are not invalidated after a product image change');
 
 console.log('PASS: inline JavaScript syntax');
-console.log('PASS: editable product catalogue JSON and 22 unique product IDs');
-console.log('PASS: product media, galleries, videos and dynamic category filters');
-console.log('PASS: motion editor loads catalogue images and rejects stale source packs');
+console.log('PASS: editable catalogue and all 22 original product records');
+console.log('PASS: contact details, WhatsApp checkout and section configuration files');
+console.log('PASS: coupon and quantity discount rules');
+console.log('PASS: product media, galleries, videos and category filters');
+console.log('PASS: motion editor and stale-source protection');
 console.log('PASS: cart, wishlist, quick-view and checkout hooks retained');
