@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   validate:
-    name: Validate workspace and database schema
+    name: Validate, test and build workspace
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -40,8 +40,17 @@ jobs:
 
       - name: Validate JSON configuration
         run: |
-          node -e "for (const f of ['package.json','turbo.json']) JSON.parse(require('fs').readFileSync(f,'utf8')); console.log('Workspace JSON: OK')"
+          node -e "for (const f of ['package.json','turbo.json','apps/api/package.json','apps/web/package.json','apps/admin/package.json']) JSON.parse(require('fs').readFileSync(f,'utf8')); console.log('Workspace JSON: OK')"
           node -e "for (const f of ['data/products.json','data/contact.json','data/discounts.json','data/sections/index.json']) JSON.parse(require('fs').readFileSync(f,'utf8')); console.log('Store data JSON: OK')"
+
+      - name: Type-check workspaces
+        run: npm run lint
+
+      - name: Run automated tests
+        run: npm test
+
+      - name: Build all applications
+        run: npm run build
 
       - name: Verify garment motion engine
         run: node scripts/verify-garment-motion.mjs
