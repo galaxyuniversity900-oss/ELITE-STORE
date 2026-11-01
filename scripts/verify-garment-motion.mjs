@@ -9,7 +9,7 @@ new vm.Script(scripts[0][1], { filename: 'ELITE.html:inline-script' });
 
 const required = [
   'gm-studio', 'gm-editor-canvas', 'gm-image-upload', 'gm-auto-mask',
-  'gm-preview-toggle', 'gm-save', 'gm-export', 'gm-import',
+  'gm-preview-toggle', 'gm-ai-segment', 'gm-save', 'gm-export', 'gm-import',
   'gmInpaintBackground', 'gmAffineTriangle', 'gmRenderStored',
   'gmApplySavedCards', 'gmMountQuickView', 'product-motion'
 ];
