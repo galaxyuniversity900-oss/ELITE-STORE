@@ -56,6 +56,9 @@ assert.ok(html.includes("checkout: 'cart-drawer'"), 'Checkout visibility is not 
 assert.ok(html.includes('store-footer-name'), 'Store name is not connected to the contact file');
 assert.ok(html.includes('couponHeadline.textContent'), 'Promotional coupon display is not data-driven');
 assert.ok(html.includes('storeDiscountForCart()'), 'Quantity discounts are not connected to cart calculation');
+assert.ok(html.includes('checkoutConfig.payment_methods.map(storeSafeText)'), 'Checkout payment methods are not connected');
+assert.ok(html.includes('data-checkout-note'), 'Checkout shipping note is not connected');
+assert.ok(html.includes('store-coupon-description'), 'Coupon description is not data-driven');
 
 const ids = new Set();
 for (const product of catalogue.products) {
