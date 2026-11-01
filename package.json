@@ -2,15 +2,15 @@
   "name": "mes-store-platform",
   "version": "1.0.0",
   "private": true,
-  "description": "MES STORE commerce platform workspace foundation",
+  "description": "MES STORE commerce platform monorepo",
   "packageManager": "npm@11.6.2",
-  "workspaces": [
-    "packages/*",
-    "apps/*"
-  ],
+  "workspaces": ["packages/*", "apps/*"],
   "scripts": {
     "build": "turbo run build",
     "dev": "turbo run dev --parallel",
+    "dev:web": "npm run dev --workspace=@mes-store/web",
+    "dev:api": "npm run dev --workspace=@mes-store/api",
+    "dev:admin": "npm run dev --workspace=@mes-store/admin",
     "lint": "turbo run lint",
     "test": "turbo run test",
     "db:generate": "prisma generate --schema=prisma/schema.prisma",
