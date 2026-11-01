@@ -1,0 +1,6 @@
+{
+  "version": 1,
+  "enabled": true,
+  "title": "العروض والخصومات",
+  "description": "عروض تتغير حسب الكميات وقواعد الخصم في data/discounts.json"
+}
