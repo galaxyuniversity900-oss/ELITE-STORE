@@ -43,7 +43,7 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-mes_store}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-mes_store}?schema=public
       REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
-    command: ["sh", "-c", "npm run db:push && npm run start --workspace=@mes-store/api"]
+    command: ["sh", "-c", "npm run db:push && npm run db:seed && npm run start --workspace=@mes-store/api"]
     ports:
       - "${API_PORT:-4000}:4000"
     depends_on:
