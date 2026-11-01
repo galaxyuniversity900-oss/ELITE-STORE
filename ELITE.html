@@ -1148,7 +1148,9 @@
 
     <!-- Customer Details Form for WhatsApp Order -->
     <div class="p-5 border-t border-zinc-800 bg-[#111116] space-y-3">
-      <div class="text-xs font-bold text-[#e6ccb2]">بيانات التوصيل (الدفع عند الاستلام):</div>
+      <div class="text-xs font-bold text-[#e6ccb2]">بيانات التوصيل:</div>
+      <div data-checkout-note class="text-[11px] text-zinc-400">يتم تأكيد تفاصيل الشحن عبر واتساب.</div>
+      <div id="checkout-payment-methods" class="text-[11px] text-emerald-300">طرق الدفع: الدفع عند الاستلام</div>
       <div class="grid grid-cols-2 gap-2">
         <input id="wa-customer-name" type="text" placeholder="الاسم بالكامل" class="px-3 py-2 rounded-xl bg-black border border-zinc-700 text-xs text-white focus:border-[#d4af37] focus:outline-none" />
         <input id="wa-customer-phone" type="text" placeholder="رقم الموبايل / واتساب" class="px-3 py-2 rounded-xl bg-black border border-zinc-700 text-xs text-white focus:border-[#d4af37] focus:outline-none" />
@@ -1436,6 +1438,13 @@
             if (checkoutButton && checkoutConfig.enabled === false) checkoutButton.disabled = true;
             const checkoutNote = document.querySelector('#cart-drawer [data-checkout-note]');
             if (checkoutNote && checkoutConfig.shipping_note) checkoutNote.textContent = checkoutConfig.shipping_note;
+            const paymentMethods = document.getElementById('checkout-payment-methods');
+            if (paymentMethods && Array.isArray(checkoutConfig.payment_methods)) {
+              paymentMethods.textContent = checkoutConfig.payment_methods.length
+                ? 'طرق الدفع: ' + checkoutConfig.payment_methods.map(storeSafeText).join(' · ')
+                : '';
+              paymentMethods.hidden = !checkoutConfig.payment_methods.length;
+            }
           }
         } catch (error) { console.warn('Store section settings unavailable:', error.message); }
         const coupon = (STORE_DISCOUNTS.coupons || []).find(item => item.active === true && storeRuleIsCurrent(item));
