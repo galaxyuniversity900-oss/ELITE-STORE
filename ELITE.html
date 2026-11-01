@@ -1197,6 +1197,12 @@
             <label class="gm-button cursor-pointer">رفع صورة المنتج <input id="gm-image-upload" type="file" accept="image/*" class="hidden"></label>
             <button id="gm-auto-mask" class="gm-button">تحديد تلقائي للخلفية البسيطة</button>
             <button id="gm-clear-mask" class="gm-button">مسح التحديد</button>
+            <div class="w-full gm-control space-y-2">
+              <label for="gm-ai-endpoint" class="block text-xs font-bold">AI Segmentation Endpoint (اختياري)</label>
+              <input id="gm-ai-endpoint" type="url" placeholder="https://your-server/api/segment" class="w-full bg-black border border-zinc-700 rounded-lg p-2 text-xs text-white" />
+              <button id="gm-ai-segment" class="gm-button w-full">تحليل الملابس بالذكاء الاصطناعي</button>
+              <p class="text-[10px] text-zinc-500">يتطلب خادماً متوافقاً يعيد قناع PNG أو JSON يحتوي على mask / maskUrl.</p>
+            </div>
             <button id="gm-preview-toggle" class="gm-button active">▶ معاينة الحركة</button>
           </div>
           <p class="text-[11px] text-zinc-400 leading-6">حدد الملابس بالفرشاة البيضاء. امسح التحديد الزائد بالممحاة. التحديد التلقائي مناسب للخلفيات الموحدة؛ الصور المعقدة تحتاج تصحيحاً يدوياً أو ربط AI Segmentation.</p>
@@ -3327,6 +3333,36 @@
         const md=gmMaskCtx.createImageData(w,h),m=md.data;
         for(let i=0;i<d.length;i+=4){const dist=Math.hypot(d[i]-rr,d[i+1]-gg,d[i+2]-bb);if(dist>58){m[i]=m[i+1]=m[i+2]=255;m[i+3]=255;}}
         gmMaskCtx.putImageData(md,0,0);gmPreviewAssets=null;gmPreviewing=false;gmDrawEditor();gmSetStatus('تم إنشاء تحديد أولي من اختلاف ألوان الخلفية. راجع الحواف وصححها بالفرشاة والممحاة.');
+      });
+
+      const gmAIEndpoint=document.getElementById('gm-ai-endpoint');
+      try{gmAIEndpoint.value=localStorage.getItem('mes-gm-ai-endpoint')||'';}catch(e){}
+      gmAIEndpoint.addEventListener('change',()=>{try{localStorage.setItem('mes-gm-ai-endpoint',gmAIEndpoint.value.trim());}catch(e){}});
+      document.getElementById('gm-ai-segment').addEventListener('click',async()=>{
+        const endpoint=gmAIEndpoint.value.trim();
+        if(!gmImageReady){gmSetStatus('ارفع صورة أولاً.');return;}
+        if(!endpoint){gmSetStatus('أدخل عنوان AI Segmentation Endpoint متوافقاً أولاً، أو استخدم التحديد التلقائي والفرشاة.');return;}
+        try{
+          gmSetStatus('جارٍ إرسال الصورة إلى خدمة AI Segmentation...');
+          const uploadCanvas=document.createElement('canvas');uploadCanvas.width=gmCanvas.width;uploadCanvas.height=gmCanvas.height;
+          uploadCanvas.getContext('2d').drawImage(gmImage,0,0,gmCanvas.width,gmCanvas.height);
+          const blob=await new Promise(resolve=>uploadCanvas.toBlob(resolve,'image/jpeg',.9));
+          if(!blob)throw new Error('تعذر تجهيز الصورة للإرسال.');
+          const form=new FormData();form.append('image',blob,'garment.jpg');
+          const response=await fetch(endpoint,{method:'POST',body:form});
+          if(!response.ok)throw new Error('خدمة AI أعادت HTTP '+response.status);
+          let maskBlob;
+          if((response.headers.get('content-type')||'').includes('application/json')){
+            const payload=await response.json(),maskValue=payload.mask||payload.maskUrl;
+            if(!maskValue)throw new Error('استجابة AI يجب أن تحتوي على mask أو maskUrl.');
+            if(maskValue.startsWith('data:')){const parts=maskValue.split(',');maskBlob=await (await fetch(maskValue)).blob();}
+            else maskBlob=await (await fetch(new URL(maskValue,endpoint))).blob();
+          }else maskBlob=await response.blob();
+          const maskURL=URL.createObjectURL(maskBlob),maskImage=new Image();
+          maskImage.onload=()=>{gmMaskCtx.clearRect(0,0,gmMaskCanvas.width,gmMaskCanvas.height);gmMaskCtx.drawImage(maskImage,0,0,gmMaskCanvas.width,gmMaskCanvas.height);URL.revokeObjectURL(maskURL);gmPreviewAssets=null;gmPreviewing=false;gmDrawEditor();gmSetStatus('نجح AI Segmentation. صحح حدود القناع يدوياً قبل الحفظ.');};
+          maskImage.onerror=()=>{URL.revokeObjectURL(maskURL);gmSetStatus('استجابة AI ليست صورة قناع قابلة للقراءة.');};
+          maskImage.src=maskURL;
+        }catch(err){gmSetStatus('تعذر تشغيل AI Segmentation: '+(err.message||'تحقق من CORS وعنوان الخدمة.'));}
       });
       document.getElementById('gm-clear-mask').addEventListener('click',()=>{gmMaskCtx.clearRect(0,0,gmMaskCanvas.width,gmMaskCanvas.height);gmPreviewAssets=null;gmPreviewing=false;gmDrawEditor();gmSetStatus('تم مسح التحديد.');});
       document.getElementById('gm-paint-mode').addEventListener('click',()=>{gmBrushMode='paint';document.getElementById('gm-paint-mode').classList.add('active');document.getElementById('gm-erase-mode').classList.remove('active');});
