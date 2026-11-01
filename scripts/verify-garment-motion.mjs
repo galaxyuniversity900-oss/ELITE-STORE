@@ -32,6 +32,31 @@ assert.equal(catalogue.version, 1, 'Unsupported product catalogue version');
 assert.equal(catalogue.currency, 'EGP', 'Expected EGP catalogue currency');
 assert.equal(catalogue.products.length, 22, 'Expected all 22 original products in the editable catalogue');
 
+const contact = JSON.parse(readFileSync(new URL('../data/contact.json', import.meta.url), 'utf8'));
+const discounts = JSON.parse(readFileSync(new URL('../data/discounts.json', import.meta.url), 'utf8'));
+const sectionRegistry = JSON.parse(readFileSync(new URL('../data/sections/index.json', import.meta.url), 'utf8'));
+assert.equal(contact.version, 1, 'Unsupported contact settings version');
+for (const field of ['store_name', 'whatsapp_number', 'phone', 'email', 'address', 'working_hours', 'instagram_url', 'facebook_url', 'tiktok_url', 'footer_note']) {
+  assert.ok(Object.hasOwn(contact, field), 'Missing contact field: ' + field);
+}
+assert.equal(discounts.version, 1, 'Unsupported discount settings version');
+assert.ok(Array.isArray(discounts.coupons), 'Missing coupon list');
+assert.ok(Array.isArray(discounts.quantity_rules), 'Missing quantity rules');
+for (const rule of discounts.quantity_rules) {
+  assert.ok(Number.isInteger(rule.min_units) && rule.min_units >= 1, 'Invalid quantity threshold: ' + rule.id);
+  assert.ok(['cart', 'product', 'category'].includes(rule.scope), 'Invalid discount scope: ' + rule.id);
+  assert.ok(['percentage', 'fixed_amount', 'fixed_price'].includes(rule.type), 'Invalid discount type: ' + rule.id);
+  assert.ok(Number.isFinite(rule.value) && rule.value >= 0, 'Invalid discount value: ' + rule.id);
+  if (rule.type === 'percentage') assert.ok(rule.value <= 100, 'Percentage discount exceeds 100%: ' + rule.id);
+}
+assert.ok(sectionRegistry.sections.some(section => section.id === 'offers' && section.file === 'offers.json'), 'Offers section is not registered');
+assert.ok(sectionRegistry.sections.some(section => section.id === 'checkout' && section.file === 'checkout.json'), 'Checkout section is not registered');
+assert.ok(html.includes("offers: 'interactive-tricks-section'"), 'Offers visibility is not connected');
+assert.ok(html.includes("checkout: 'cart-drawer'"), 'Checkout visibility is not connected');
+assert.ok(html.includes('store-footer-name'), 'Store name is not connected to the contact file');
+assert.ok(html.includes('couponHeadline.textContent'), 'Promotional coupon display is not data-driven');
+assert.ok(html.includes('storeDiscountForCart()'), 'Quantity discounts are not connected to cart calculation');
+
 const ids = new Set();
 for (const product of catalogue.products) {
   assert.ok(product.id && /^[a-z0-9][a-z0-9_-]{1,48}$/i.test(product.id), 'Invalid product ID');
