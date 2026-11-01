@@ -4,6 +4,8 @@ COPY package.json turbo.json tsconfig.base.json ./
 COPY apps ./apps
 COPY packages ./packages
 COPY prisma ./prisma
+COPY data ./data
+COPY scripts ./scripts
 RUN npm install --no-audit --no-fund
 RUN npm run db:generate
 RUN npm run build --workspace=@mes-store/api
