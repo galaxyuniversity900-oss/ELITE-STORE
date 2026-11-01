@@ -3244,26 +3244,48 @@
         if(/جاكت|معطف|jacket|coat/.test(c))return 'jacket';
         return 'generic';
       }
-      function gmFitCanvas(w,h){
-        const scale=Math.min(1,1000/Math.max(w,h));
-        const nw=Math.max(1,Math.round(w*scale)), nh=Math.max(1,Math.round(h*scale));
-        gmCanvas.width=gmMaskCanvas.width=nw; gmCanvas.height=gmMaskCanvas.height=nh;
-        gmMaskCtx.clearRect(0,0,nw,nh);
-        gmImage.onload=()=>{gmCtx.clearRect(0,0,nw,nh);gmCtx.drawImage(gmImage,0,0,nw,nh);gmImageReady=true;gmPreviewing=false;gmDrawEditor();gmSetStatus('الصورة جاهزة. حدد مساحة الملابس بالفرشاة أو جرّب التحديد التلقائي.');};
+      let gmPreviewAssets=null;
+      function gmFitCanvas(){
+        const w=gmImage.naturalWidth,h=gmImage.naturalHeight,scale=Math.min(1,1000/Math.max(w,h));
+        const nw=Math.max(1,Math.round(w*scale)),nh=Math.max(1,Math.round(h*scale));
+        gmCanvas.width=gmMaskCanvas.width=nw;gmCanvas.height=gmMaskCanvas.height=nh;
+        gmMaskCtx.clearRect(0,0,nw,nh);gmCtx.clearRect(0,0,nw,nh);gmCtx.drawImage(gmImage,0,0,nw,nh);
+        gmImageReady=true;gmPreviewing=false;gmPreviewAssets=null;gmDrawEditor();
+        gmSetStatus('الصورة جاهزة. حدد مساحة الملابس بالفرشاة أو جرّب التحديد التلقائي.');
       }
-      function gmLoadImageURL(url){
-        gmImageReady=false; gmImage.onload=null; gmImage.src=url;
-        if(gmImage.complete&&gmImage.naturalWidth)gmFitCanvas(gmImage.naturalWidth,gmImage.naturalHeight);
-        else gmImage.onload=()=>gmFitCanvas(gmImage.naturalWidth,gmImage.naturalHeight);
+      function gmLoadImageURL(url,onready){
+        gmImageReady=false;gmPreviewAssets=null;
+        gmImage.onload=()=>{gmFitCanvas();if(onready)onready();};
+        gmImage.onerror=()=>gmSetStatus('تعذر قراءة الصورة. جرّب ملف JPG أو PNG آخر.');
+        gmImage.src=url;
+        if(gmImage.complete&&gmImage.naturalWidth){gmFitCanvas();if(onready)onready();}
       }
       function gmDrawEditor(){
         if(!gmImageReady)return;
         gmCtx.clearRect(0,0,gmCanvas.width,gmCanvas.height);
+        if(gmPreviewing&&gmPreviewAssets){
+          gmCtx.drawImage(gmPreviewAssets.background,0,0,gmCanvas.width,gmCanvas.height);
+          gmDrawMotion(gmCtx,gmPreviewAssets.garment,performance.now()/1000,gmReadSettings(),document.getElementById('gm-category').value);
+          return;
+        }
         gmCtx.drawImage(gmImage,0,0,gmCanvas.width,gmCanvas.height);
-        const overlay=document.createElement('canvas'); overlay.width=gmCanvas.width; overlay.height=gmCanvas.height;
-        const o=overlay.getContext('2d'); o.drawImage(gmMaskCanvas,0,0); o.globalCompositeOperation='source-in'; o.fillStyle='rgba(212,175,55,.55)'; o.fillRect(0,0,overlay.width,overlay.height);
+        const overlay=document.createElement('canvas');overlay.width=gmCanvas.width;overlay.height=gmCanvas.height;
+        const o=overlay.getContext('2d');o.drawImage(gmMaskCanvas,0,0);o.globalCompositeOperation='source-in';o.fillStyle='rgba(212,175,55,.55)';o.fillRect(0,0,overlay.width,overlay.height);
         gmCtx.drawImage(overlay,0,0);
-        if(gmPreviewing)gmDrawMotion(gmCtx,gmImage,gmMaskCanvas,performance.now()/1000,gmReadSettings(),true);
+      }
+      function gmPreparePreview(){
+        if(!gmImageReady)throw new Error('ارفع صورة أولاً');
+        const w=gmCanvas.width,h=gmCanvas.height,original=document.createElement('canvas');
+        original.width=w;original.height=h;original.getContext('2d').drawImage(gmImage,0,0,w,h);
+        const background=document.createElement('canvas');background.width=w;background.height=h;background.getContext('2d').drawImage(original,0,0);
+        gmInpaintBackground(background,gmMaskCanvas);
+        const garment=document.createElement('canvas');garment.width=w;garment.height=h;
+        const gc=garment.getContext('2d');gc.drawImage(original,0,0);gc.globalCompositeOperation='destination-in';gc.drawImage(gmMaskCanvas,0,0);
+        gmPreviewAssets={background,garment};gmPreviewLoop();
+      }
+      function gmPreviewLoop(){
+        if(!gmPreviewing||!gmStudio.classList.contains('open'))return;
+        gmDrawEditor();requestAnimationFrame(gmPreviewLoop);
       }
       function gmReadSettings(){
         return {speed:Number(document.getElementById('gm-speed').value),intensity:Number(document.getElementById('gm-intensity').value),
@@ -3274,6 +3296,7 @@
         return {x:(e.clientX-r.left)*gmCanvas.width/r.width,y:(e.clientY-r.top)*gmCanvas.height/r.height};
       }
       function gmStroke(a,b){
+        gmPreviewAssets=null;
         const brush=Number(document.getElementById('gm-brush').value);
         gmMaskCtx.save(); gmMaskCtx.lineCap='round'; gmMaskCtx.lineJoin='round'; gmMaskCtx.lineWidth=brush;
         gmMaskCtx.globalCompositeOperation=gmBrushMode==='paint'?'source-over':'destination-out';
@@ -3281,7 +3304,7 @@
         if(a.x===b.x&&a.y===b.y){gmMaskCtx.beginPath();gmMaskCtx.arc(a.x,a.y,brush/2,0,Math.PI*2);gmMaskCtx.fillStyle='white';gmMaskCtx.fill();}
         gmMaskCtx.restore(); gmDrawEditor();
       }
-      gmCanvas.addEventListener('pointerdown',e=>{if(!gmImageReady)return;gmPainting=true;gmLastPoint=gmPointerPoint(e);gmCanvas.setPointerCapture(e.pointerId);gmStroke(gmLastPoint,gmLastPoint);});
+      gmCanvas.addEventListener('pointerdown',e=>{if(!gmImageReady)return;gmPreviewing=false;gmPreviewAssets=null;document.getElementById('gm-preview-toggle').textContent='▶ معاينة الحركة';gmPainting=true;gmLastPoint=gmPointerPoint(e);gmCanvas.setPointerCapture(e.pointerId);gmStroke(gmLastPoint,gmLastPoint);});
       gmCanvas.addEventListener('pointermove',e=>{if(!gmPainting)return;const p=gmPointerPoint(e);gmStroke(gmLastPoint,p);gmLastPoint=p;});
       ['pointerup','pointercancel','lostpointercapture'].forEach(ev=>gmCanvas.addEventListener(ev,()=>{gmPainting=false;gmLastPoint=null;}));
       document.getElementById('gm-image-upload').addEventListener('change',e=>{
@@ -3298,15 +3321,19 @@
         rr/=pts.length;gg/=pts.length;bb/=pts.length;
         const md=gmMaskCtx.createImageData(w,h),m=md.data;
         for(let i=0;i<d.length;i+=4){const dist=Math.hypot(d[i]-rr,d[i+1]-gg,d[i+2]-bb);if(dist>58){m[i]=m[i+1]=m[i+2]=255;m[i+3]=255;}}
-        gmMaskCtx.putImageData(md,0,0);gmDrawEditor();gmSetStatus('تم إنشاء تحديد أولي من اختلاف ألوان الخلفية. راجع الحواف وصححها بالفرشاة والممحاة.');
+        gmMaskCtx.putImageData(md,0,0);gmPreviewAssets=null;gmPreviewing=false;gmDrawEditor();gmSetStatus('تم إنشاء تحديد أولي من اختلاف ألوان الخلفية. راجع الحواف وصححها بالفرشاة والممحاة.');
       });
-      document.getElementById('gm-clear-mask').addEventListener('click',()=>{gmMaskCtx.clearRect(0,0,gmMaskCanvas.width,gmMaskCanvas.height);gmDrawEditor();gmSetStatus('تم مسح التحديد.');});
+      document.getElementById('gm-clear-mask').addEventListener('click',()=>{gmMaskCtx.clearRect(0,0,gmMaskCanvas.width,gmMaskCanvas.height);gmPreviewAssets=null;gmPreviewing=false;gmDrawEditor();gmSetStatus('تم مسح التحديد.');});
       document.getElementById('gm-paint-mode').addEventListener('click',()=>{gmBrushMode='paint';document.getElementById('gm-paint-mode').classList.add('active');document.getElementById('gm-erase-mode').classList.remove('active');});
       document.getElementById('gm-erase-mode').addEventListener('click',()=>{gmBrushMode='erase';document.getElementById('gm-erase-mode').classList.add('active');document.getElementById('gm-paint-mode').classList.remove('active');});
       document.getElementById('gm-brush').addEventListener('input',e=>document.getElementById('gm-brush-value').textContent=e.target.value+' px');
       ['speed','intensity'].forEach(k=>document.getElementById('gm-'+k).addEventListener('input',e=>document.getElementById('gm-'+k+'-value').textContent=e.target.value+'%'));
       ['sleeves','body','edges'].forEach(k=>document.getElementById('gm-'+k).addEventListener('change',()=>{if(gmPreviewing)gmDrawEditor();}));
-      document.getElementById('gm-preview-toggle').addEventListener('click',e=>{gmPreviewing=!gmPreviewing;e.currentTarget.textContent=gmPreviewing?'Ⅱ إيقاف المعاينة':'▶ معاينة الحركة';e.currentTarget.classList.toggle('active',gmPreviewing);gmDrawEditor();});
+      document.getElementById('gm-preview-toggle').addEventListener('click',e=>{
+        if(gmPreviewing){gmPreviewing=false;gmDrawEditor();e.currentTarget.textContent='▶ معاينة الحركة';e.currentTarget.classList.remove('active');return;}
+        try{gmPreparePreview();gmPreviewing=true;e.currentTarget.textContent='Ⅱ إيقاف المعاينة';e.currentTarget.classList.add('active');gmPreviewLoop();}
+        catch(err){gmSetStatus(err.message||'تعذر بدء المعاينة.');}
+      });
       document.getElementById('gm-category').addEventListener('change',()=>{if(gmPreviewing)gmDrawEditor();});
       function gmOpenStudio(product){
         gmCurrentProduct=product; gmStudio.classList.add('open'); document.getElementById('gm-product-name').textContent=product.title+' · '+product.category;
@@ -3355,11 +3382,9 @@
         const f=(d0.y*(s1.x*s2.y-s2.x*s1.y)+d1.y*(s2.x*s0.y-s0.x*s2.y)+d2.y*(s0.x*s1.y-s1.x*s0.y))/den;
         ctx.save();ctx.beginPath();ctx.moveTo(d0.x,d0.y);ctx.lineTo(d1.x,d1.y);ctx.lineTo(d2.x,d2.y);ctx.closePath();ctx.clip();ctx.setTransform(a,b,c,d,e,f);ctx.drawImage(img,0,0);ctx.restore();
       }
-      function gmDrawMotion(ctx,img,maskCanvas,time,settings,editorMode){
+      function gmDrawMotion(ctx,garment,time,settings,profileName){
         const w=ctx.canvas.width,h=ctx.canvas.height;
-        const garment=document.createElement('canvas');garment.width=w;garment.height=h;
-        const gc=garment.getContext('2d');gc.drawImage(img,0,0,w,h);gc.globalCompositeOperation='destination-in';gc.drawImage(maskCanvas,0,0,w,h);
-        const type=document.getElementById('gm-category').value,profile=gmProfiles[type]||gmProfiles.generic;
+        const type=profileName||document.getElementById('gm-category').value,profile=gmProfiles[type]||gmProfiles.generic;
         const amp=(settings.intensity/100)*Math.min(w,h)*.027,phase=time*profile.frequency*(settings.speed/77);
         const cols=12,rows=14,src=[],dst=[];
         for(let y=0;y<=rows;y++)for(let x=0;x<=cols;x++){
