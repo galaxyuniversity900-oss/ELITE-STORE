@@ -228,35 +228,87 @@ The `data/sections/checkout.json` file controls the checkout drawer, the shippin
 The checkout sends the order to the WhatsApp number in `data/contact.json`. Enter and verify that number before publishing or accepting real orders.
 
 
-## Monorepo and backend foundation
+## Monorepo platform
 
-The repository now includes the initial shared platform foundation alongside the existing storefront. The existing ELITE.html storefront and its data files remain in place; this infrastructure work does not replace the customer-facing site.
+The repository now contains the original static storefront plus a working TypeScript workspace foundation:
 
-- Root npm workspace and Turborepo task pipeline: package.json, turbo.json.
-- PostgreSQL data model and Prisma Client: prisma/schema.prisma.
-- Shared database workspace: packages/database/package.json.
-- Local PostgreSQL and Redis services: infra/docker/docker-compose.yml.
-- Environment template: .env.example.
-- GitHub Actions validation: .github/workflows/ci.yml.
+- `apps/web`: Next.js customer-facing application. Its home page reads active products from the API and links to the existing storefront.
+- `apps/api`: NestJS API with health, product catalogue, and guest-cart endpoints.
+- `apps/admin`: separate Next.js admin status shell. It is not an authenticated administration system and must not be exposed publicly until authentication and role checks are implemented.
+- `packages/types`: shared TypeScript commerce contracts.
+- `packages/database`: shared Prisma Client package.
+- `prisma/schema.prisma`: PostgreSQL schema for users, addresses, categories, products, images, carts, orders, order items, and payments.
+- `infra/docker`: Dockerfiles and Compose services for PostgreSQL, Redis, API, and web.
+- `turbo.json`: workspace task graph and build caching.
+- `.github/workflows/ci.yml`: schema validation, generated client, type checks, tests, and builds.
 
-### Local database setup
+The existing `ELITE.html`, product catalogue JSON, discounts, contact settings, and motion engine remain in the repository. The Next.js application does not replace the existing storefront.
 
-1. Install Node.js 20.19+ and Docker Compose.
-2. Copy .env.example to .env and replace both example passwords with long random values. Update DATABASE_URL to use the same PostgreSQL password.
-3. Start infrastructure from the repository root:
+### Run the full local stack
 
-   docker compose --env-file .env -f infra/docker/docker-compose.yml up -d
+Requires Node.js 22 and Docker Compose.
 
-4. Install dependencies and generate the Prisma client:
+1. Copy `.env.example` to `.env`.
+2. Replace the PostgreSQL and Redis secrets with long URL-safe random alphanumeric values. Keep the PostgreSQL password in `DATABASE_URL` identical to `POSTGRES_PASSWORD`.
+3. Start the stack from the repository root:
 
-   npm install
-   npm run db:validate
-   npm run db:generate
+   ```bash
+   docker compose --env-file .env -f infra/docker/docker-compose.yml up --build
+   ```
 
-5. For a development database migration, run npm run db:migrate. For a disposable/local schema sync only, npm run db:push is also available.
+The Compose API startup performs a local Prisma schema sync and imports the current `data/products.json` catalogue. This automatic `db:push` is for local development only; production deployments should use reviewed Prisma migrations.
 
-Do not commit the real .env file or production credentials.
+- Web application: `http://localhost:3000`
+- API health: `http://localhost:4000/api/health`
+- Product list: `http://localhost:4000/api/products`
+- PostgreSQL: `localhost:5432`
+- Redis: `localhost:6379`
 
-### Current implementation boundary
+### Run apps separately
 
-This commit establishes the workspace tooling, database schema, local infrastructure, and CI validation. It does not claim that the Next.js customer app, NestJS API, or separate admin application have been implemented yet. Those applications should be introduced as real workspace packages in subsequent implementation stages, then connected to the shared Prisma client and deployment pipeline. The current storefront remains the existing static application until that migration is deliberately implemented and verified.
+After installing dependencies and ensuring PostgreSQL is available:
+
+```bash
+npm install
+npm run db:generate
+npm run db:validate
+npm run dev:api
+npm run dev:web
+npm run dev:admin
+```
+
+The commands for API, web, and admin are separate so each can be run in its own terminal. The API reads the repository-root `.env` file when started through its workspace script.
+
+### API routes currently implemented
+
+- `GET /api/health` — API process health.
+- `GET /api/products?page=1&limit=24` — paginated active catalogue; optional `category` slug filter.
+- `GET /api/products/:slug` — active product details.
+- `GET /api/cart/:sessionId` — guest cart lookup; session ID must be a UUID.
+- `POST /api/cart/:sessionId/items` — add product and quantity.
+- `PATCH /api/cart/:sessionId/items/:itemId` — update quantity.
+- `DELETE /api/cart/:sessionId/items/:itemId` — remove item.
+
+The product seed imports stable product IDs, names, prices, categories, and configured image URLs from `data/products.json`. Inventory is kept `null` when the source catalogue does not specify stock; the system does not invent stock counts. Cart quantity limits are enforced whenever inventory is explicitly configured.
+
+### Workspace checks
+
+```bash
+npm run db:validate
+npm run db:generate
+npm run lint
+npm test
+npm run build
+node scripts/verify-garment-motion.mjs
+```
+
+CI runs these checks on feature branch pushes and pull requests. A successful build validates the workspace code; it does not mean the API has production authentication, a live payment provider, or a deployed database.
+
+### Security and production boundaries
+
+- PostgreSQL and Redis credentials must be supplied through environment variables; never commit `.env`.
+- Helmet, request validation, CORS allow-listing, and UUID validation for guest cart sessions are enabled in the API.
+- The current cart is guest-session based. User registration/login, admin authorization, order placement, payment-provider integration, and production migration/deployment secrets are not yet implemented.
+- The admin application is a separate status shell, not a secured control panel. Do not publish it as a public admin system.
+- Redis is provisioned in Compose but is not yet used by the API.
+- Use Prisma migrations for production. Do not run `prisma db push` against a production database.
