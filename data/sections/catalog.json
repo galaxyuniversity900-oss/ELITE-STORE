@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "enabled": true,
+  "title": "تسوق أحدث المنتجات",
+  "description": "اكتشف تشكيلتنا",
+  "show_categories": true,
+  "show_sort_controls": true
+}
