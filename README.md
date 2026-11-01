@@ -125,3 +125,50 @@ For large video files, use a video CDN or a hosting service and put its HTTPS UR
 ## Storefront entry point
 
 The repository root now includes `index.html`, which forwards visitors to `ELITE.html`. When GitHub Pages is enabled with the repository root as its publishing source, the repository's main URL can open the storefront without requiring visitors to type the HTML filename.
+
+
+## Store contact details
+
+Edit `data/contact.json` to maintain the store's public contact information. The footer reads this file automatically.
+
+- `whatsapp_number`: store WhatsApp number in international digits only (for Egypt, use `20...`, without a leading `+` or local leading zero).
+- `phone`, `email`, `address`, `working_hours`: optional public contact details.
+- `instagram_url`, `facebook_url`, `tiktok_url`: optional HTTPS profile links.
+- `store_name` and `footer_note`: displayed store identity and footer note.
+
+The checkout preview adds a **Send order to store WhatsApp** link only when a valid WhatsApp number is configured. The owner must enter and verify their own number; no contact number is prefilled.
+
+## Quantity discounts and coupon rules
+
+Edit `data/discounts.json`. Discounts are calculated from the catalogue prices and actual cart quantities; there is no need to edit every product price when creating a promotion.
+
+### Quantity rule fields
+
+- `active`: set to `true` to enable the rule.
+- `scope`: `cart`, `product`, or `category`.
+- `min_units`: minimum eligible quantity. For product/category rules this is counted only among matching products.
+- `type`: `percentage`, `fixed_amount` (discount per eligible unit), or `fixed_price` (new unit price).
+- `value`: percentage, amount in EGP, or target unit price depending on type.
+- `product_ids` or `categories`: required when using the matching scope.
+- `starts_at` and `ends_at`: optional ISO date/time boundaries.
+
+Only the single quantity rule giving the largest saving is applied; quantity rules do not stack with one another. A valid coupon can stack with that quantity discount. The total is never reduced below zero.
+
+Example: enable `buy-2-save-5` to give 5% off the cart when the customer buys at least two units. It is initially disabled so no new promotion is activated without the store owner's decision. The `MESVIP200` coupon is configured in the same file and can be changed or disabled there.
+
+## Per-section configuration files
+
+Each part of the storefront has its own editable JSON file under `data/sections/`:
+
+| File | Controls |
+|---|---|
+| `home.json` | Hero title and subtitle |
+| `catalog.json` | Product section title, description and display controls |
+| `categories.json` | Category heading and category labels |
+| `offers.json` | Offer section settings |
+| `product-details.json` | Product gallery, video and badge visibility |
+| `checkout.json` | Checkout methods and shipping note |
+| `footer.json` | Footer visibility, copyright and contact links |
+| `index.json` | Registry of the section configuration files |
+
+The storefront loads the section registry and the individual files. The home, category and catalogue headings, category labels, product gallery/video visibility, and footer visibility are connected to their corresponding settings. Keep each file's `version` at `1` and preserve valid JSON when editing.
