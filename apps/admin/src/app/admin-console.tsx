@@ -2,7 +2,7 @@
 
 import { FormEvent, useEffect, useState } from 'react';
 
-type Product = { id: string; name: string; sku: string; price: string | number; status: string; stockQuantity: number | null };
+type Product = { id: string; name: string; sku: string; slug: string; price: string | number; status: string; stockQuantity: number | null };
 type Order = { id: string; orderNumber: string; status: string; customerName: string; customerPhone: string; grandTotal: string | number; currency: string };
 
 const apiBase = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api';
@@ -13,6 +13,7 @@ export default function AdminConsole() {
   const [password, setPassword] = useState('');
   const [overview, setOverview] = useState<Record<string, number> | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
+  const [editingProductId, setEditingProductId] = useState<string | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
@@ -101,6 +102,31 @@ export default function AdminConsole() {
     }
   }
 
+  async function updateProduct(event: FormEvent<HTMLFormElement>, product: Product) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    setBusy(true);
+    setError('');
+    try {
+      await api(`/admin/products/${product.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          name: String(form.get('name')),
+          sku: String(form.get('sku')),
+          slug: String(form.get('slug')),
+          price: Number(form.get('price')),
+          stockQuantity: form.get('stockQuantity') === '' ? null : Number(form.get('stockQuantity')),
+        }),
+      });
+      setEditingProductId(null);
+      await refresh(token);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'تعذر تحديث المنتج');
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function changeOrder(order: Order, status: string) {
     setBusy(true);
     setError('');
@@ -179,7 +205,29 @@ export default function AdminConsole() {
       <section className="panel">
         <div className="panel-heading"><h2>المنتجات</h2><span>{products.length} سجل معروض</span></div>
         <div className="table-wrap"><table><thead><tr><th>المنتج</th><th>SKU</th><th>السعر</th><th>المخزون</th><th>الحالة</th><th>إجراء</th></tr></thead><tbody>
-          {products.map(product => <tr key={product.id}><td>{product.name}</td><td>{product.sku}</td><td>{Number(product.price).toLocaleString('ar-EG')} ج.م</td><td>{product.stockQuantity ?? 'غير متتبع'}</td><td>{product.status}</td><td><button className="danger" disabled={busy || product.status === 'ARCHIVED'} onClick={() => archiveProduct(product)}>أرشفة</button></td></tr>)}
+          {products.map(product => (
+            <>
+              <tr key={product.id}>
+                <td>{product.name}</td><td>{product.sku}</td><td>{Number(product.price).toLocaleString('ar-EG')} ج.م</td><td>{product.stockQuantity ?? 'غير متتبع'}</td><td>{product.status}</td>
+                <td><div className="actions">
+                  <button className="secondary" disabled={busy || product.status === 'ARCHIVED'} onClick={() => setEditingProductId(editingProductId === product.id ? null : product.id)}>{editingProductId === product.id ? 'إغلاق' : 'تعديل'}</button>
+                  <button className="danger" disabled={busy || product.status === 'ARCHIVED'} onClick={() => archiveProduct(product)}>أرشفة</button>
+                </div></td>
+              </tr>
+              {editingProductId === product.id && (
+                <tr key={`${product.id}-edit`}><td colSpan={6}>
+                  <form className="product-form" onSubmit={event => updateProduct(event, product)}>
+                    <label>اسم المنتج<input name="name" defaultValue={product.name} minLength={2} required /></label>
+                    <label>SKU<input name="sku" defaultValue={product.sku} minLength={2} required /></label>
+                    <label>Slug<input name="slug" defaultValue={product.slug} minLength={2} required /></label>
+                    <label>السعر بالجنيه<input name="price" type="number" min="0.01" step="0.01" defaultValue={product.price} required /></label>
+                    <label>المخزون<input name="stockQuantity" type="number" min="0" step="1" defaultValue={product.stockQuantity ?? ''} /></label>
+                    <button disabled={busy}>حفظ التعديلات</button>
+                  </form>
+                </td></tr>
+              )}
+            </>
+          ))}
         </tbody></table></div>
       </section>
       <section className="panel">
