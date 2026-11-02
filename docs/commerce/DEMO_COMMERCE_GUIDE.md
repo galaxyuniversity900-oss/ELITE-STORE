@@ -70,3 +70,8 @@ The Next.js customer web app exposes:
 - `/track` — tracking-number and checkout-phone lookup.
 
 The account page stores the short-lived demo bearer token in browser session storage. This is acceptable only for a controlled demo; before public release, replace it with an HttpOnly, Secure, SameSite cookie through a BFF/session layer and add CSRF protection, rate limiting, email verification and account recovery. Set `NEXT_PUBLIC_API_URL` to the public HTTPS API base URL in the web deployment environment.
+
+
+## Current storefront integration boundary
+
+The payment and shipping options are available through the API and accepted by the API checkout DTO. The new Next.js customer portal currently provides account and tracking screens. The original `ELITE.html` checkout still follows its existing WhatsApp flow; its cart has not yet been migrated to the API checkout session. Therefore, the demo payment/shipping choices are API-ready but are not yet selectable from that legacy checkout screen. Do not present the old WhatsApp checkout as having charged or booked anything.
