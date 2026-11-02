@@ -20,7 +20,7 @@ export default async function HomePage() {
     <main className="page">
       <header className="topbar">
         <a className="brand" href="/">MES STORE</a>
-        <nav><a href={storefrontUrl}>المتجر الكامل</a><a href="#latest">أحدث المنتجات</a></nav>
+        <nav><a href={storefrontUrl}>المتجر الكامل</a><a href="/account">حسابي</a><a href="/track">تتبع الطلب</a><a href="#latest">أحدث المنتجات</a></nav>
       </header>
       <section className="hero">
         <p className="eyebrow">MEN'S COLLECTION</p>
