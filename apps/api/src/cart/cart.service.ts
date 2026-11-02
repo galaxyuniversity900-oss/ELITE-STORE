@@ -36,6 +36,9 @@ export class CartService {
       where: { cartId_productId: { cartId: cart.id, productId } },
     });
     const nextQuantity = (existing?.quantity ?? 0) + quantity;
+    if (nextQuantity > 20) {
+      throw new BadRequestException('A cart line cannot exceed 20 units');
+    }
     if (product.stockQuantity !== null && nextQuantity > product.stockQuantity) {
       throw new BadRequestException('Requested quantity exceeds available stock');
     }
