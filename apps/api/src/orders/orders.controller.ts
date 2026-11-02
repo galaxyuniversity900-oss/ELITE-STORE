@@ -1,4 +1,4 @@
-import { Body, Controller, Param, ParseUUIDPipe, Post } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Headers, Param, ParseUUIDPipe, Post } from '@nestjs/common';
 import { CheckoutDto } from './orders.dto';
 import { OrdersService } from './orders.service';
 
@@ -9,8 +9,12 @@ export class OrdersController {
   @Post('checkout/:sessionId')
   checkout(
     @Param('sessionId', new ParseUUIDPipe()) sessionId: string,
+    @Headers('idempotency-key') idempotencyKey: string | undefined,
     @Body() input: CheckoutDto,
   ) {
-    return this.orders.checkout(sessionId, input);
+    if (!idempotencyKey) {
+      throw new BadRequestException('Idempotency-Key header is required');
+    }
+    return this.orders.checkout(sessionId, idempotencyKey, input);
   }
 }
