@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from 'react';
+import { Fragment, FormEvent, useEffect, useState } from 'react';
 
 type Product = { id: string; name: string; sku: string; slug: string; price: string | number; status: string; stockQuantity: number | null };
 type Order = { id: string; orderNumber: string; status: string; customerName: string; customerPhone: string; grandTotal: string | number; currency: string };
@@ -206,8 +206,8 @@ export default function AdminConsole() {
         <div className="panel-heading"><h2>المنتجات</h2><span>{products.length} سجل معروض</span></div>
         <div className="table-wrap"><table><thead><tr><th>المنتج</th><th>SKU</th><th>السعر</th><th>المخزون</th><th>الحالة</th><th>إجراء</th></tr></thead><tbody>
           {products.map(product => (
-            <>
-              <tr key={product.id}>
+            <Fragment key={product.id}>
+              <tr>
                 <td>{product.name}</td><td>{product.sku}</td><td>{Number(product.price).toLocaleString('ar-EG')} ج.م</td><td>{product.stockQuantity ?? 'غير متتبع'}</td><td>{product.status}</td>
                 <td><div className="actions">
                   <button className="secondary" disabled={busy || product.status === 'ARCHIVED'} onClick={() => setEditingProductId(editingProductId === product.id ? null : product.id)}>{editingProductId === product.id ? 'إغلاق' : 'تعديل'}</button>
@@ -226,7 +226,7 @@ export default function AdminConsole() {
                   </form>
                 </td></tr>
               )}
-            </>
+            </Fragment>
           ))}
         </tbody></table></div>
       </section>
