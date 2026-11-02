@@ -8,7 +8,7 @@ import { CheckoutDto } from './orders.dto';
 export class OrdersService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async checkout(sessionId: string, idempotencyKey: string, input: CheckoutDto) {
+  async checkout(sessionId: string, idempotencyKey: string, input: CheckoutDto, userId?: string) {
     if (!/^[A-Za-z0-9._:-]{8,128}$/.test(idempotencyKey)) {
       throw new BadRequestException('A valid Idempotency-Key header (8-128 safe characters) is required');
     }
@@ -93,6 +93,7 @@ export class OrdersService {
             orderNumber,
             checkoutSessionId: sessionId,
             idempotencyKey,
+            userId,
             status: 'PENDING',
             subtotal,
             discountTotal,
@@ -130,7 +131,7 @@ export class OrdersService {
   
         await tx.cart.update({
           where: { id: cart.id },
-          data: { status: CartStatus.CONVERTED },
+          data: { status: CartStatus.CONVERTED, userId },
         });
   
         return order;
