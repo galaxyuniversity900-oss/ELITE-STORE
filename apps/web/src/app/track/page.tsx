@@ -1,6 +1,6 @@
 'use client';
 
-import { FormEvent, useState } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api';
 
@@ -10,6 +10,11 @@ export default function TrackPage() {
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const value = new URLSearchParams(window.location.search).get('tracking');
+    if (value) setTracking(value);
+  }, []);
 
   async function lookup(event: FormEvent) {
     event.preventDefault(); setLoading(true); setError(''); setResult(null);
