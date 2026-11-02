@@ -12,7 +12,10 @@ const input: CheckoutDto = {
 
 describe('OrdersService', () => {
   it('rejects checkout when no active cart exists', async () => {
-    const tx = { cart: { findUnique: jest.fn().mockResolvedValue(null) } };
+    const tx = {
+      order: { findUnique: jest.fn().mockResolvedValue(null) },
+      cart: { findUnique: jest.fn().mockResolvedValue(null) },
+    };
     const prisma = { $transaction: jest.fn((work: (client: unknown) => unknown) => work(tx)) };
     const service = new OrdersService(prisma as never);
 
@@ -21,6 +24,7 @@ describe('OrdersService', () => {
 
   it('rejects checkout for an empty cart', async () => {
     const tx = {
+      order: { findUnique: jest.fn().mockResolvedValue(null) },
       cart: {
         findUnique: jest.fn().mockResolvedValue({
           id: 'cart-1',
@@ -90,4 +94,14 @@ describe('OrdersService', () => {
       data: { status: CartStatus.CONVERTED },
     });
   });
+  it('reuses the order when checkout is retried with the same key', async () => {
+    const previous = { id: 'order-existing', items: [], payments: [] };
+    const tx = { order: { findUnique: jest.fn().mockResolvedValue(previous) } };
+    const prisma = { $transaction: jest.fn((work: (client: unknown) => unknown) => work(tx)) };
+    const service = new OrdersService(prisma as never);
+
+    await expect(service.checkout('session-id', 'retry-test-0001', input)).resolves.toBe(previous);
+    expect(tx.order.findUnique).toHaveBeenCalledTimes(1);
+  });
+
 });
