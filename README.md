@@ -313,3 +313,7 @@ CI runs these checks on feature branch pushes and pull requests. A successful bu
 - The admin application is a separate status shell, not a secured control panel. Do not publish it as a public admin system.
 - Redis is provisioned in Compose but is not yet used by the API.
 - Use Prisma migrations for production. Do not run `prisma db push` against a production database.
+
+## Commerce engineering rules
+
+The repository-wide requirements for pricing, inventory, checkout, payments, security, shipping, accessibility, performance, privacy, operations and release quality are in [docs/commerce/COMMERCE_RULES.md](docs/commerce/COMMERCE_RULES.md). This policy separates implemented features from remaining production controls and is the acceptance baseline for future changes.
