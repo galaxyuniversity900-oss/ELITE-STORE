@@ -185,7 +185,7 @@ These are engineering baselines, not a security certification or substitute for 
 - Product archive is a soft-delete. Order state transitions are checked server-side; cancellation before shipment restores tracked stock in the same transaction. Refund status is blocked until payment-provider reconciliation exists.
 - New environments apply committed migrations with `prisma migrate deploy`. Existing databases created with `db push` require a reviewed baseline operation and backup; never mark a migration applied without verifying the live schema.
 - Remaining security work includes edge/API rate limiting, MFA, session revocation/refresh strategy, formal audit logging, production HTTPS/reverse-proxy configuration and a penetration test. Session-storage bearer tokens are exposed to same-origin script execution; keep the admin origin tightly controlled and prioritize an HttpOnly-cookie/BFF session before broad public exposure.
-- The admin UI currently supports login, overview, product creation/archive and order progression. Image upload/media management, full product editing UI, customer accounts, coupons/shipping administration and refunds remain incomplete.
+- The admin UI currently supports login, overview, product creation/edit/archive and order progression. Image upload/media management, customer accounts, coupons/shipping administration and refunds remain incomplete.
 - Full CI, browser E2E, backup restore, monitoring and production deployment must pass on the exact release commit before declaring the platform production-ready.
 
 ## 18. Database and local-network hardening (verification pending)
