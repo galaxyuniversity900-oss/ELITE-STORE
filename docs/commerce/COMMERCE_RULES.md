@@ -162,7 +162,7 @@ Never merge/deploy merely to clear a checklist. Report failed and pending gates 
 - Product listing and guest-cart API routes exist.
 - Guest checkout/COD order creation with transactional tracked-stock decrement has been added.
 - Checkout unit tests have been added; they are not considered verified until CI passes on the final commit.
-- Authentication, secure admin authorization, production migrations, online payments, server-authoritative promotions, shipping quotes, refunds, full order-management UI and full browser E2E tests remain incomplete.
+- A first administrator authentication/RBAC implementation, protected product/order administration API, initial Prisma migration and administrator web console have been added. They remain pending final CI verification and security review; the admin browser currently holds its short-lived bearer token in session storage.
 - Redis is provisioned but is not yet a fully implemented application dependency.
 - GitHub Pages static deployment does not deploy Next.js/NestJS services.
 - A passing workflow proves only the checks run against that exact commit; it is not certification or proof of production readiness.
@@ -176,3 +176,14 @@ Never merge/deploy merely to clear a checklist. Report failed and pending gates 
 - Google Core Web Vitals: https://developers.google.com/search/docs/appearance/core-web-vitals
 
 These are engineering baselines, not a security certification or substitute for qualified legal/accounting/payment-provider advice.
+
+
+## 17. Newly implemented platform controls (verification pending)
+- Administrator login is private: no public registration endpoint exists. First-run bootstrap is opt-in through paired environment variables and creates a SUPER_ADMIN only if the email is absent.
+- Passwords use per-account random-salt scrypt hashes; API access tokens are HMAC-SHA256 signed and expire after 15 minutes. Protected requests reload the user and reject inactive accounts.
+- Admin routes enforce ADMIN or SUPER_ADMIN roles on the server. Hiding UI controls is never treated as authorization.
+- Product archive is a soft-delete. Order state transitions are checked server-side; cancellation before shipment restores tracked stock in the same transaction. Refund status is blocked until payment-provider reconciliation exists.
+- New environments apply committed migrations with `prisma migrate deploy`. Existing databases created with `db push` require a reviewed baseline operation and backup; never mark a migration applied without verifying the live schema.
+- Remaining security work includes edge/API rate limiting, MFA, session revocation/refresh strategy, formal audit logging, production HTTPS/reverse-proxy configuration and a penetration test. Session-storage bearer tokens are exposed to same-origin script execution; keep the admin origin tightly controlled and prioritize an HttpOnly-cookie/BFF session before broad public exposure.
+- The admin UI currently supports login, overview, product creation/archive and order progression. Image upload/media management, full product editing UI, customer accounts, coupons/shipping administration and refunds remain incomplete.
+- Full CI, browser E2E, backup restore, monitoring and production deployment must pass on the exact release commit before declaring the platform production-ready.

@@ -42,8 +42,11 @@ services:
       API_PORT: 4000
       DATABASE_URL: postgresql://${POSTGRES_USER:-mes_store}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-mes_store}?schema=public
       REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
-      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
-    command: ["sh", "-c", "npm run db:push && npm run db:seed && npm run start --workspace=@mes-store/api"]
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in your environment}
+      BOOTSTRAP_ADMIN_EMAIL: ${BOOTSTRAP_ADMIN_EMAIL:-}
+      BOOTSTRAP_ADMIN_PASSWORD: ${BOOTSTRAP_ADMIN_PASSWORD:-}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000,http://localhost:3001}
+    command: ["sh", "-c", "npm run db:migrate:deploy && npm run db:seed && npm run start --workspace=@mes-store/api"]
     ports:
       - "${API_PORT:-4000}:4000"
     depends_on:
@@ -64,6 +67,20 @@ services:
       API_INTERNAL_URL: http://api:4000/api
     ports:
       - "${WEB_PORT:-3000}:3000"
+    depends_on:
+      - api
+
+  admin:
+    build:
+      context: ../..
+      dockerfile: infra/docker/Dockerfile.admin
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:4000/api}
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+    ports:
+      - "${ADMIN_PORT:-3001}:3001"
     depends_on:
       - api
 

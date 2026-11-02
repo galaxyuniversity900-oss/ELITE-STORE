@@ -322,10 +322,46 @@ The repository-wide requirements for pricing, inventory, checkout, payments, sec
 
 The NestJS API exposes guest cash-on-delivery checkout at:
 
-`POST /orders/checkout/:sessionId`
+`POST /api/orders/checkout/:sessionId`
 
 Send the cart's UUID session ID and a request header named `Idempotency-Key`. The key must contain 8–128 ASCII letters, digits, dots, underscores, colons or hyphens. Generate it once when the customer starts a checkout attempt and reuse the **same key** for network retries of that attempt. Generate a new key only for a genuinely new checkout attempt.
 
 The API scopes the key to the cart session and persists it with the order. A repeated request returns the already-created order instead of reserving stock or creating another COD payment. The database unique constraint is the final concurrency guard; serialization/unique-key retries re-read the committed order.
 
 The API recalculates item prices from the database and reserves tracked stock in the same database transaction. Shipping and discounts remain zero in this API path until verified server-side shipping and coupon rules are configured. The static storefront's browser-side promotion display is not a substitute for server-side price calculation.
+
+
+## Full platform operations: API, administrator and database
+
+### Secure administrator bootstrap
+
+The administrator console is served on port 3001 and the API on port 4000. Copy `.env.example` to `.env`, generate unique random values for `JWT_SECRET`, database passwords and Redis password, then set both `BOOTSTRAP_ADMIN_EMAIL` and `BOOTSTRAP_ADMIN_PASSWORD`. The bootstrap password must be at least 16 characters. The first startup creates a `SUPER_ADMIN` only when that email does not already exist; subsequent startups do not overwrite an existing account's password or role. There is no public registration endpoint.
+
+The login endpoint is `POST /api/auth/login`. It issues a 15-minute HMAC-SHA256 bearer token. Passwords are stored as salted scrypt hashes. Every protected request reloads the account and checks that it remains active. Administrative routes require the `ADMIN` or `SUPER_ADMIN` role. Do not use the example values in production. Configure rate limiting at the public reverse proxy/API gateway, use HTTPS, rotate secrets, and restrict network access to the database and Redis.
+
+### Administrator capabilities
+
+- Overview counts for active products, orders, pending orders and customer accounts.
+- Product creation, editing through the API, and archive (soft-delete) operations.
+- Order listing and guarded status transitions: pending → confirmed → processing → shipped → delivered. Cancellation is available before shipment and restores tracked stock in the same transaction.
+- Refund status is deliberately blocked until a real payment-provider refund and reconciliation workflow exists.
+
+The admin web console currently exposes product creation/archive and order progression. Product editing and image upload are available through the protected API contract only; a media-storage service and image-management UI remain future work.
+
+### Database migrations
+
+New environments use `npm run db:migrate:deploy`; the Docker API service applies committed Prisma migrations before seeding. The first migration creates the schema represented by `prisma/schema.prisma`. Existing installations previously created with `prisma db push` must be checked against this migration and baselined once with `prisma migrate resolve --applied 20261102080000_initial_commerce` **only after confirming every table, enum, index and constraint matches**. Back up the database before baselining. Never run `db push` as a production startup command.
+
+### Run locally
+
+```bash
+cp .env.example .env
+# Replace every example secret before starting
+docker compose -f infra/docker/docker-compose.yml up -d --build
+```
+
+- Storefront: http://localhost:3000
+- Admin console: http://localhost:3001
+- API health: http://localhost:4000/api/health
+
+This is a deployable application stack, not a claim that production operations are fully finished. Before public launch, complete reverse-proxy rate limiting, HTTPS and security headers at the edge, backup/restore drills, monitoring/alerts, payment-provider integration, verified shipping/tax/coupon rules, customer account flows, image storage/CDN, and browser-level end-to-end testing.
