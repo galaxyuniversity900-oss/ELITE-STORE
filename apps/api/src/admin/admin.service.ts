@@ -1,5 +1,5 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import { OrderStatus, Prisma, ProductStatus } from '@prisma/client';
+import { OrderStatus, Prisma, ProductStatus, UserRole } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateProductDto, UpdateProductDto } from './admin.dto';
 
@@ -12,7 +12,7 @@ export class AdminService {
       this.prisma.product.count({ where: { status: ProductStatus.ACTIVE } }),
       this.prisma.order.count(),
       this.prisma.order.count({ where: { status: OrderStatus.PENDING } }),
-      this.prisma.user.count({ where: { role: 'CUSTOMER' } }),
+      this.prisma.user.count({ where: { role: UserRole.CUSTOMER } }),
     ]);
     return { products, orders, pendingOrders, customers };
   }

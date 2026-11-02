@@ -57,7 +57,7 @@ export class AuthService implements OnModuleInit {
     } catch {
       throw new UnauthorizedException('Invalid access token');
     }
-    if (supplied.length !== expected.length || !timingSafeEqual(supplied, expected) || !claims.sub || claims.exp <= Math.floor(Date.now() / 1000)) {
+    if (supplied.length !== expected.length || !timingSafeEqual(supplied, expected) || typeof claims.sub !== 'string' || typeof claims.exp !== 'number' || claims.exp <= Math.floor(Date.now() / 1000)) {
       throw new UnauthorizedException('Access token is invalid or expired');
     }
     const user = await this.prisma.user.findUnique({
