@@ -80,9 +80,10 @@ export class OrdersService {
           });
         }
   
-        // Shipping and discounts remain zero until the store owner configures
-        // verified shipping rates and server-side coupon rules.
-        const shippingTotal = new Prisma.Decimal(0);
+        // Fixed demo rates are server-calculated and clearly labelled as simulations.
+        const shippingMethod = input.shippingMethod ?? 'DEMO_STANDARD';
+        const shippingFees: Record<string, number> = { DEMO_STANDARD: 45, DEMO_EXPRESS: 75, DEMO_PICKUP: 0 };
+        const shippingTotal = new Prisma.Decimal(shippingFees[shippingMethod] ?? 45);
         const discountTotal = new Prisma.Decimal(0);
         const grandTotal = subtotal.add(shippingTotal).sub(discountTotal);
         const orderNumber = `MES-${Date.now()}-${randomUUID().slice(0, 8).toUpperCase()}`;
@@ -98,6 +99,8 @@ export class OrdersService {
             shippingTotal,
             grandTotal,
             currency: 'EGP',
+            paymentMethod: input.paymentMethod ?? 'CASH_ON_DELIVERY',
+            shippingMethod,
             customerName: input.recipient,
             customerEmail: input.email,
             customerPhone: input.phone,
@@ -115,7 +118,7 @@ export class OrdersService {
             items: { create: orderItems },
             payments: {
               create: {
-                provider: 'cash_on_delivery',
+                provider: (input.paymentMethod ?? 'CASH_ON_DELIVERY') === 'CASH_ON_DELIVERY' ? 'cash_on_delivery' : 'demo_gateway',
                 status: 'PENDING',
                 amount: grandTotal,
                 currency: 'EGP',
