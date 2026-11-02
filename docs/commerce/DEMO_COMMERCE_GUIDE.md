@@ -61,3 +61,12 @@ Send `Authorization: Bearer <token>` to account endpoints. If a customer checks 
 The payment and shipping provider names, identifiers and demo rates are isolated in `apps/api/src/demo-commerce/demo-commerce.service.ts`. Replace these adapters with provider-specific server-side integrations, keep credentials in environment secrets, verify payment signatures/webhooks, implement idempotent capture/refund/reconciliation, obtain live carrier quotes, and authenticate staff shipment updates. Preserve the stable order/payment/shipment records and never treat a demo `PAID` status as evidence of a real financial transaction.
 
 **Safety boundary:** every demo response marks `demo: true` or `environment: DEMO_ONLY`; no external payment or courier provider is called.
+
+
+## Customer-facing portal
+
+The Next.js customer web app exposes:
+- `/account` — registration/login, customer profile, saved addresses and order history.
+- `/track` — tracking-number and checkout-phone lookup.
+
+The account page stores the short-lived demo bearer token in browser session storage. This is acceptable only for a controlled demo; before public release, replace it with an HttpOnly, Secure, SameSite cookie through a BFF/session layer and add CSRF protection, rate limiting, email verification and account recovery. Set `NEXT_PUBLIC_API_URL` to the public HTTPS API base URL in the web deployment environment.
