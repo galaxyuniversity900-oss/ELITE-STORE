@@ -19,6 +19,10 @@ jobs:
     name: Validate, test and build workspace
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      # Disposable credentials used only by this isolated CI stack.
+      POSTGRES_PASSWORD: ci-postgres-password
+      REDIS_PASSWORD: ci-redis-password
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -54,15 +58,9 @@ jobs:
         run: npm run build
 
       - name: Validate Docker Compose configuration
-        env:
-          POSTGRES_PASSWORD: ci-postgres-password
-          REDIS_PASSWORD: ci-redis-password
         run: docker compose -f infra/docker/docker-compose.yml config --quiet
 
       - name: Start full Docker stack
-        env:
-          POSTGRES_PASSWORD: ci-postgres-password
-          REDIS_PASSWORD: ci-redis-password
         run: docker compose -f infra/docker/docker-compose.yml up -d --build
 
       - name: Smoke test API and web containers
