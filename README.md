@@ -347,7 +347,7 @@ The login endpoint is `POST /api/auth/login`. It issues a 15-minute HMAC-SHA256 
 - Order listing and guarded status transitions: pending → confirmed → processing → shipped → delivered. Cancellation is available before shipment and restores tracked stock in the same transaction.
 - Refund status is deliberately blocked until a real payment-provider refund and reconciliation workflow exists.
 
-The admin web console currently exposes product creation/archive and order progression. Product editing and image upload are available through the protected API contract only; a media-storage service and image-management UI remain future work.
+The admin web console exposes product creation, editing, archive and order progression. Product image upload still requires a secure media-storage service and dedicated media-management UI.
 
 ### Database migrations
 
