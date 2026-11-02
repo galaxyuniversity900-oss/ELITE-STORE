@@ -8,8 +8,23 @@ import { CheckoutDto } from './orders.dto';
 export class OrdersService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async checkout(sessionId: string, input: CheckoutDto) {
-    return this.prisma.$transaction(async (tx) => {
+  async checkout(sessionId: string, idempotencyKey: string, input: CheckoutDto) {
+    if (!/^[A-Za-z0-9._:-]{8,128}$/.test(idempotencyKey)) {
+      throw new BadRequestException('A valid Idempotency-Key header (8-128 safe characters) is required');
+    }
+
+    try {
+      return await this.prisma.$transaction(async (tx) => {
+      const previousOrder = await tx.order.findUnique({
+        where: {
+          checkoutSessionId_idempotencyKey: {
+            checkoutSessionId: sessionId,
+            idempotencyKey,
+          },
+        },
+        include: { items: true, payments: true },
+      });
+      if (previousOrder) return previousOrder;
       const cart = await tx.cart.findUnique({
         where: { sessionId },
         include: { items: { include: { product: true }, orderBy: { createdAt: 'asc' } } },
@@ -75,6 +90,8 @@ export class OrdersService {
       const order = await tx.order.create({
         data: {
           orderNumber,
+          checkoutSessionId: sessionId,
+          idempotencyKey,
           status: 'PENDING',
           subtotal,
           discountTotal,
@@ -114,6 +131,22 @@ export class OrdersService {
       });
 
       return order;
-    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+      }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+    } catch (error) {
+      // A concurrent retry can win the unique-key race. Return its committed order.
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        const existing = await this.prisma.order.findUnique({
+          where: {
+            checkoutSessionId_idempotencyKey: {
+              checkoutSessionId: sessionId,
+              idempotencyKey,
+            },
+          },
+          include: { items: true, payments: true },
+        });
+        if (existing) return existing;
+      }
+      throw error;
+    }
   }
 }
