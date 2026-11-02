@@ -54,6 +54,8 @@ jobs:
         run: npm test
       - name: Build all applications
         run: npm run build
+      - name: Verify API runtime entrypoint
+        run: test -s apps/api/dist/main.js
       - name: Validate Docker Compose configuration
         run: docker compose -f infra/docker/docker-compose.yml config --quiet
       - name: Start full Docker stack

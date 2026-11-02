@@ -8,7 +8,8 @@ COPY data ./data
 COPY scripts ./scripts
 RUN npm install --no-audit --no-fund
 RUN npm run db:generate
-RUN npm run build --workspace=@mes-store/api
+RUN npm run build --workspace=@mes-store/api \
+    && test -f apps/api/dist/main.js
 ENV NODE_ENV=production
 EXPOSE 4000
 CMD ["npm", "run", "start", "--workspace=@mes-store/api"]
