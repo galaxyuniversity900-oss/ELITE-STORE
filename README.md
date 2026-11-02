@@ -233,8 +233,8 @@ The checkout sends the order to the WhatsApp number in `data/contact.json`. Ente
 The repository now contains the original static storefront plus a working TypeScript workspace foundation:
 
 - `apps/web`: Next.js customer-facing application. Its home page reads active products from the API and links to the existing storefront.
-- `apps/api`: NestJS API with health, product catalogue, and guest-cart endpoints.
-- `apps/admin`: separate Next.js admin status shell. It is not an authenticated administration system and must not be exposed publicly until authentication and role checks are implemented.
+- `apps/api`: NestJS API with health, product catalogue, guest-cart, idempotent COD checkout, administrator authentication and protected administration endpoints.
+- `apps/admin`: separate Next.js administrator console with login and API-backed overview, product creation/archive and order progression. The current browser token is held in session storage; complete the HttpOnly session/BFF hardening before broad public exposure.
 - `packages/types`: shared TypeScript commerce contracts.
 - `packages/database`: shared Prisma Client package.
 - `prisma/schema.prisma`: PostgreSQL schema for users, addresses, categories, products, images, carts, orders, order items, and payments.
@@ -257,7 +257,7 @@ Requires Node.js 22 and Docker Compose.
    docker compose --env-file .env -f infra/docker/docker-compose.yml up --build
    ```
 
-The Compose API startup performs a local Prisma schema sync and imports the current `data/products.json` catalogue. This automatic `db:push` is for local development only; production deployments should use reviewed Prisma migrations.
+The Compose API startup applies committed Prisma migrations with `prisma migrate deploy` and imports the current `data/products.json` catalogue. Do not use `prisma db push` for production schema changes.
 
 - Web application: `http://localhost:3000`
 - API health: `http://localhost:4000/api/health`
@@ -309,8 +309,9 @@ CI runs these checks on feature branch pushes and pull requests. A successful bu
 
 - PostgreSQL and Redis credentials must be supplied through environment variables; never commit `.env`.
 - Helmet, request validation, CORS allow-listing, and UUID validation for guest cart sessions are enabled in the API.
-- The current cart is guest-session based. User registration/login, admin authorization, order placement, payment-provider integration, and production migration/deployment secrets are not yet implemented.
-- The admin application is a separate status shell, not a secured control panel. Do not publish it as a public admin system.
+- Guest COD checkout uses server-side database prices, transactional tracked-stock decrement and an idempotency key. Shipping and discounts are zero in this API path until verified server-side rules are configured.
+- Administrator login and role-protected product/order API routes exist. The admin browser currently stores its short-lived bearer token in session storage; use a controlled admin origin and complete HttpOnly-cookie/BFF hardening before broad public exposure.
+- The Compose host ports bind to `127.0.0.1` by default, including PostgreSQL and Redis. Keep databases private; expose application traffic through a configured HTTPS reverse proxy. Set `HOST_BIND_ADDRESS=0.0.0.0` only when the host firewall and network exposure are intentionally configured.
 - Redis is provisioned in Compose but is not yet used by the API.
 - Use Prisma migrations for production. Do not run `prisma db push` against a production database.
 
