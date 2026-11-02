@@ -366,3 +366,8 @@ docker compose -f infra/docker/docker-compose.yml up -d --build
 - API health: http://localhost:4000/api/health
 
 This is a deployable application stack, not a claim that production operations are fully finished. Before public launch, complete reverse-proxy rate limiting, HTTPS and security headers at the edge, backup/restore drills, monitoring/alerts, payment-provider integration, verified shipping/tax/coupon rules, customer account flows, image storage/CDN, and browser-level end-to-end testing.
+
+
+## Demo payment, shipping, customer accounts and tracking
+
+The API now includes explicitly simulated payment and courier flows, configurable demo checkout choices, customer registration/profile/address/order-history endpoints, and phone-verified demo shipment tracking. These systems do not capture money or book a real courier. See [Demo commerce guide](docs/commerce/DEMO_COMMERCE_GUIDE.md) for routes, request examples, demo rates and the production replacement boundary. Customer account registration is available through the API; email verification, password reset and production session hardening remain release requirements.
