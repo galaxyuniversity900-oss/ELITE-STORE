@@ -29,6 +29,18 @@ export class AuthService implements OnModuleInit {
     });
   }
 
+  async register(input: { email: string; password: string; firstName?: string; lastName?: string; phone?: string }) {
+    const email = input.email.trim().toLowerCase();
+    if (input.password.length < 12) throw new UnauthorizedException('Password must contain at least 12 characters');
+    try {
+      await this.prisma.user.create({ data: { email, passwordHash: this.hashPassword(input.password), firstName: input.firstName?.trim(), lastName: input.lastName?.trim(), phone: input.phone?.trim(), role: UserRole.CUSTOMER } });
+    } catch (error) {
+      if (error instanceof Error && 'code' in error && error.code === 'P2002') throw new UnauthorizedException('An account with this email already exists');
+      throw error;
+    }
+    return this.login(email, input.password);
+  }
+
   async login(emailInput: string, password: string) {
     const email = emailInput.trim().toLowerCase();
     const user = await this.prisma.user.findUnique({ where: { email } });
