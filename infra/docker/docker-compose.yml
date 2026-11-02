@@ -46,7 +46,7 @@ services:
       BOOTSTRAP_ADMIN_EMAIL: ${BOOTSTRAP_ADMIN_EMAIL:-}
       BOOTSTRAP_ADMIN_PASSWORD: ${BOOTSTRAP_ADMIN_PASSWORD:-}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000,http://localhost:3001}
-    command: ["sh", "-c", "npm run db:migrate:deploy && npm run db:seed && npm run start --workspace=@mes-store/api"]
+    command: ["sh", "-c", "npm run db:migrate:deploy && npm run db:seed && npm run build --workspace=@mes-store/api && test -f apps/api/dist/main.js && exec npm run start --workspace=@mes-store/api"]
     ports:
       - "${API_PORT:-4000}:4000"
     depends_on:
