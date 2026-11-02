@@ -172,6 +172,8 @@ model CartItem {
 model Order {
   id                String      @id @default(cuid())
   orderNumber       String      @unique
+  checkoutSessionId String?
+  idempotencyKey    String?
   userId            String?
   addressId         String?
   status            OrderStatus @default(PENDING)
@@ -194,6 +196,7 @@ model Order {
 
   @@index([userId, createdAt])
   @@index([status, createdAt])
+  @@unique([checkoutSessionId, idempotencyKey])
   @@map("orders")
 }
 
