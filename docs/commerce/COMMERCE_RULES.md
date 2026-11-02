@@ -187,3 +187,9 @@ These are engineering baselines, not a security certification or substitute for 
 - Remaining security work includes edge/API rate limiting, MFA, session revocation/refresh strategy, formal audit logging, production HTTPS/reverse-proxy configuration and a penetration test. Session-storage bearer tokens are exposed to same-origin script execution; keep the admin origin tightly controlled and prioritize an HttpOnly-cookie/BFF session before broad public exposure.
 - The admin UI currently supports login, overview, product creation/archive and order progression. Image upload/media management, full product editing UI, customer accounts, coupons/shipping administration and refunds remain incomplete.
 - Full CI, browser E2E, backup restore, monitoring and production deployment must pass on the exact release commit before declaring the platform production-ready.
+
+## 18. Database and local-network hardening (verification pending)
+- A follow-up migration adds database CHECK constraints for positive product prices, nonnegative tracked stock, bounded cart-line quantities, nonnegative order/payment amounts, reconciled order totals and mathematically consistent order-item line totals. The migration intentionally fails on pre-existing invalid data rather than silently correcting financial or inventory records.
+- The cart API rejects a combined product line quantity above 20 before writing, matching the database constraint and DTO contract.
+- Docker Compose published ports bind to `127.0.0.1` by default, including PostgreSQL and Redis. Set `HOST_BIND_ADDRESS=0.0.0.0` only when intentional external exposure is protected by a firewall and the required network controls. Application services should normally sit behind an HTTPS reverse proxy.
+- These changes require successful migration execution, Docker Compose validation and full CI on the exact commit before they can be marked verified.
