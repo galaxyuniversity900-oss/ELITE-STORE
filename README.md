@@ -317,3 +317,15 @@ CI runs these checks on feature branch pushes and pull requests. A successful bu
 ## Commerce engineering rules
 
 The repository-wide requirements for pricing, inventory, checkout, payments, security, shipping, accessibility, performance, privacy, operations and release quality are in [docs/commerce/COMMERCE_RULES.md](docs/commerce/COMMERCE_RULES.md). This policy separates implemented features from remaining production controls and is the acceptance baseline for future changes.
+
+## API checkout safety contract
+
+The NestJS API exposes guest cash-on-delivery checkout at:
+
+`POST /orders/checkout/:sessionId`
+
+Send the cart's UUID session ID and a request header named `Idempotency-Key`. The key must contain 8–128 ASCII letters, digits, dots, underscores, colons or hyphens. Generate it once when the customer starts a checkout attempt and reuse the **same key** for network retries of that attempt. Generate a new key only for a genuinely new checkout attempt.
+
+The API scopes the key to the cart session and persists it with the order. A repeated request returns the already-created order instead of reserving stock or creating another COD payment. The database unique constraint is the final concurrency guard; serialization/unique-key retries re-read the committed order.
+
+The API recalculates item prices from the database and reserves tracked stock in the same database transaction. Shipping and discounts remain zero in this API path until verified server-side shipping and coupon rules are configured. The static storefront's browser-side promotion display is not a substitute for server-side price calculation.
