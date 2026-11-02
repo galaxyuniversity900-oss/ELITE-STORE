@@ -1,4 +1,4 @@
-import { IsEmail, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
+import { IsEmail, IsIn, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
 
 export class CheckoutDto {
   @IsString()
@@ -40,6 +40,14 @@ export class CheckoutDto {
   @IsEmail()
   @MaxLength(254)
   email?: string;
+
+  @IsOptional()
+  @IsIn(['CASH_ON_DELIVERY', 'DEMO_CARD', 'DEMO_WALLET'])
+  paymentMethod?: string;
+
+  @IsOptional()
+  @IsIn(['DEMO_STANDARD', 'DEMO_EXPRESS', 'DEMO_PICKUP'])
+  shippingMethod?: string;
 
   @IsOptional()
   @IsString()
