@@ -1,13 +1,11 @@
 'use client';
 
 import { FormEvent, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api';
 
 export default function TrackPage() {
-  const params = useSearchParams();
-  const [tracking, setTracking] = useState(params.get('tracking') ?? '');
+  const [tracking, setTracking] = useState('');
   const [phone, setPhone] = useState('');
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState('');
