@@ -78,7 +78,8 @@ export default function AdminConsole() {
 
   async function createProduct(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const form = new FormData(event.currentTarget);
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
     setBusy(true);
     setError('');
     try {
@@ -93,7 +94,7 @@ export default function AdminConsole() {
           status: 'ACTIVE',
         }),
       });
-      event.currentTarget.reset();
+      formElement.reset();
       await refresh(token);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'تعذر حفظ المنتج');
