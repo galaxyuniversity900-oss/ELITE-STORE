@@ -1,4 +1,4 @@
-/* MES Product Image Lab — applies the existing WebGL material shader to real catalogue images. */
+/* MES Product Image Lab — WebGL effects for verified catalogue media and clearly labelled SVG illustrations. */
 (() => {
   'use strict';
 
@@ -24,7 +24,7 @@
   const panel = document.createElement('div');
   panel.id = 'mes-real-image-lab';
   panel.className = 'mt-6 rounded-2xl border border-[#d4af37]/40 bg-[#0b0b0f] p-4 space-y-3';
-  panel.innerHTML = '<div class="flex flex-wrap items-center justify-between gap-2"><div><strong class="text-sm text-[#f5ebe0]">تطبيق التأثير على صورة المنتج الفعلية</strong><p class="text-xs text-zinc-400 mt-1">اختر قطعة من الكتالوج ثم طبّق Shader مباشرة على بكسلات صورتها.</p></div><span id="mes-real-image-status" class="text-xs text-[#d4af37]" role="status" aria-live="polite">بانتظار اختيار المنتج</span></div><div class="flex flex-wrap gap-2"><select id="mes-real-image-product" class="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-xs text-white min-w-[190px]" aria-label="اختر المنتج"></select><button type="button" id="mes-real-image-reset" class="rounded-lg border border-zinc-700 px-3 py-2 text-xs text-zinc-200">إيقاف التأثير</button></div><div id="mes-real-image-effects" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2"></div><p class="text-[10px] text-zinc-500">التأثيرات لا تغيّر ملف الصورة الأصلي أو بيانات المنتج. يلزم وجود صورة فعلية محمّلة في بيانات المنتج.</p>';
+  panel.innerHTML = '<div class="flex flex-wrap items-center justify-between gap-2"><div><strong class="text-sm text-[#f5ebe0]">مختبر خامات صور ورسومات المنتجات</strong><p class="text-xs text-zinc-400 mt-1">يطبّق WebGL على صورة المنتج، أو على رسم SVG توضيحي عند غياب الصورة الفوتوغرافية.</p></div><span id="mes-real-image-status" class="text-xs text-[#d4af37]" role="status" aria-live="polite">بانتظار اختيار المنتج</span></div><div class="flex flex-wrap gap-2"><select id="mes-real-image-product" class="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-xs text-white min-w-[190px]" aria-label="اختر المنتج"></select><button type="button" id="mes-real-image-reset" class="rounded-lg border border-zinc-700 px-3 py-2 text-xs text-zinc-200">إيقاف التأثير</button></div><div id="mes-real-image-effects" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2"></div><p class="text-[10px] text-zinc-500">الرسم التوضيحي ليس صورة مخزون أو تصويراً حقيقياً للقطعة. عند إضافة media.cover أو media.images سيُفضّل المختبر الصورة الفعلية تلقائياً.</p>';
 
   const grid = section.querySelector('.grid');
   if (grid) grid.insertAdjacentElement('afterend', panel);
@@ -35,6 +35,10 @@
   const buttons = $('#mes-real-image-effects', panel);
   let activeEffect = null;
   let activeImage = null;
+  let sourceNode = null;
+  let overlayNode = null;
+  let labelNode = null;
+  let objectUrl = '';
 
   function say(message) { status.textContent = message; }
 
@@ -58,10 +62,51 @@
     }
   }
 
-  function selectedImage() {
-    if (!select.value) return null;
-    const visual = document.getElementById('prod-visual-' + select.value);
-    return visual?.querySelector('img:not([data-fabric-ripple-canvas])') || null;
+  function selectedVisual() {
+    return select.value ? document.getElementById('prod-visual-' + select.value) : null;
+  }
+
+  function makeIllustrationImage(svg) {
+    const clone = svg.cloneNode(true);
+    clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+    clone.querySelectorAll('script,foreignObject').forEach(node => node.remove());
+    clone.querySelectorAll('*').forEach(node => {
+      [...node.attributes].forEach(attr => {
+        const name = attr.name.toLowerCase();
+        const value = attr.value.trim();
+        if (name.startsWith('on') || ((name === 'href' || name.endsWith(':href')) && !value.startsWith('#'))) {
+          node.removeAttribute(attr.name);
+        }
+      });
+    });
+    const markup = new XMLSerializer().serializeToString(clone);
+    objectUrl = URL.createObjectURL(new Blob([markup], { type: 'image/svg+xml;charset=utf-8' }));
+    const img = new Image();
+    img.alt = 'رسم توضيحي للمنتج — ليس صورة مخزون';
+    img.dataset.mesGeneratedIllustration = 'true';
+    img.decoding = 'async';
+    img.className = 'absolute inset-0 z-[8] h-full w-full object-contain pointer-events-none';
+    img.src = objectUrl;
+    const visual = selectedVisual();
+    sourceNode = svg;
+    sourceNode.style.visibility = 'hidden';
+    overlayNode = img;
+    visual.append(img);
+    labelNode = document.createElement('span');
+    labelNode.textContent = 'رسم توضيحي';
+    labelNode.className = 'absolute top-2 right-2 z-[12] rounded-md bg-black/75 px-2 py-1 text-[9px] text-[#f5ebe0] pointer-events-none';
+    visual.append(labelNode);
+    return img;
+  }
+
+  function selectedTarget() {
+    const visual = selectedVisual();
+    if (!visual) return null;
+    const photo = visual.querySelector('img:not([data-fabric-ripple-canvas]):not([data-mes-generated-illustration])');
+    if (photo) return { image: photo, kind: 'photo' };
+    const svg = visual.querySelector('svg');
+    if (svg) return { image: makeIllustrationImage(svg), kind: 'illustration' };
+    return null;
   }
 
   function stopEffect() {
@@ -71,24 +116,33 @@
       activeImage.style.visibility = '';
       activeImage.classList.remove('mes-fabric-fallback');
     }
+    if (overlayNode) overlayNode.remove();
+    if (labelNode) labelNode.remove();
+    if (sourceNode) sourceNode.style.visibility = '';
+    if (objectUrl) URL.revokeObjectURL(objectUrl);
     activeEffect = null;
     activeImage = null;
+    sourceNode = null;
+    overlayNode = null;
+    labelNode = null;
+    objectUrl = '';
   }
 
   async function apply(preset) {
-    const img = selectedImage();
-    if (!img) {
-      say('هذا المنتج لا يحتوي حالياً على صورة فعلية. أضف صورة إلى data/products.json أولاً.');
+    stopEffect();
+    const target = selectedTarget();
+    if (!target) {
+      say('المنتج المحدد لا يحتوي صورة أو رسماً قابلاً للمعالجة.');
       return;
     }
+    const img = target.image;
     if (!window.FabricRippleEffect) {
+      stopEffect();
       say('محرك WebGL غير متاح في هذه الصفحة.');
       return;
     }
-
-    stopEffect();
     if (!img.complete || !img.naturalWidth) {
-      say('جاري تحميل صورة المنتج...');
+      say('جاري تجهيز مادة العرض...');
       try {
         if (typeof img.decode === 'function') await img.decode();
         else await new Promise((resolve, reject) => {
@@ -96,12 +150,14 @@
           img.addEventListener('error', reject, { once: true });
         });
       } catch {
-        say('تعذر تحميل صورة المنتج. تحقق من رابط الصورة في data/products.json.');
+        stopEffect();
+        say('تعذر تجهيز صورة أو رسم المنتج.');
         return;
       }
     }
     if (!img.isConnected || !img.naturalWidth || !img.getBoundingClientRect().width) {
-      say('الصورة غير جاهزة للعرض. افتح المنتج ثم أعد المحاولة.');
+      stopEffect();
+      say('مادة العرض غير جاهزة. أعد فتح المنتج ثم حاول مجدداً.');
       return;
     }
 
@@ -109,16 +165,15 @@
       const effect = new window.FabricRippleEffect(img, preset.opts);
       if (!effect.gl || !effect.canvas || img.dataset.fabricRippleActive !== 'true') {
         effect.destroy();
-        img.classList.remove('mes-fabric-fallback');
-        say(matchMedia('(prefers-reduced-motion: reduce)').matches
-          ? 'إعداد تقليل الحركة مفعّل؛ لم يتم تشغيل WebGL حفاظاً على تفضيل الجهاز.'
-          : 'لم يبدأ WebGL على هذه الصورة. تحقق من دعم WebGL وسلامة مصدر الصورة.');
+        stopEffect();
+        say('تعذر بدء WebGL على مادة العرض. تحقق من دعم WebGL في المتصفح.');
         return;
       }
       activeEffect = effect;
       activeImage = img;
-      say('تأثير WebGL فعّال على صورة المنتج: ' + preset.label);
+      say((target.kind === 'photo' ? 'WebGL فعّال على صورة المنتج: ' : 'WebGL فعّال على رسم توضيحي (ليس صورة مخزون): ') + preset.label);
     } catch (error) {
+      stopEffect();
       say('تعذر تشغيل التأثير: ' + (error?.message || 'خطأ WebGL غير معروف'));
     }
   }
@@ -138,7 +193,7 @@
   });
   $('#mes-real-image-reset', panel).addEventListener('click', () => {
     stopEffect();
-    say('تم إيقاف التأثير وإعادة الصورة الأصلية.');
+    say('تم إيقاف التأثير وإعادة العرض الأصلي.');
   });
 
   const productsGrid = $('#products-grid');
@@ -150,6 +205,5 @@
     refreshOptions();
   }
   document.addEventListener('mes:catalog-rendered', refreshOptions);
-
   window.MESRealImageLab = { apply, stop: stopEffect, refresh: refreshOptions, presets };
 })();
