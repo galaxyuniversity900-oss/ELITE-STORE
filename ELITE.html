@@ -1156,10 +1156,10 @@
       <div data-checkout-note class="text-[11px] text-zinc-400">يتم تأكيد تفاصيل الشحن عبر واتساب.</div>
       <div id="checkout-payment-methods" class="text-[11px] text-emerald-300">طرق الدفع: الدفع عند الاستلام</div>
       <div class="grid grid-cols-2 gap-2">
-        <input id="wa-customer-name" type="text" placeholder="الاسم بالكامل" class="px-3 py-2 rounded-xl bg-black border border-zinc-700 text-xs text-white focus:border-[#d4af37] focus:outline-none" />
-        <input id="wa-customer-phone" type="text" placeholder="رقم الموبايل / واتساب" class="px-3 py-2 rounded-xl bg-black border border-zinc-700 text-xs text-white focus:border-[#d4af37] focus:outline-none" />
+        <input id="wa-customer-name" type="text" placeholder="الاسم بالكامل" autocomplete="name" maxlength="100" required class="px-3 py-2 rounded-xl bg-black border border-zinc-700 text-xs text-white focus:border-[#d4af37] focus:outline-none" />
+        <input id="wa-customer-phone" type="tel" inputmode="tel" autocomplete="tel" maxlength="20" required placeholder="رقم الموبايل / واتساب" class="px-3 py-2 rounded-xl bg-black border border-zinc-700 text-xs text-white focus:border-[#d4af37] focus:outline-none" />
       </div>
-      <input id="wa-customer-address" type="text" placeholder="المحافظة والعنوان بالتفصيل" class="w-full px-3 py-2 rounded-xl bg-black border border-zinc-700 text-xs text-white focus:border-[#d4af37] focus:outline-none" />
+      <input id="wa-customer-address" type="text" autocomplete="street-address" minlength="8" maxlength="250" required placeholder="المحافظة والعنوان بالتفصيل" class="w-full px-3 py-2 rounded-xl bg-black border border-zinc-700 text-xs text-white focus:border-[#d4af37] focus:outline-none" />
 
       <div class="flex items-center justify-between text-sm font-bold pt-1">
         <span class="text-zinc-400">الإجمالي (شامل خصم الكوبون إن وجد):</span>
@@ -1168,7 +1168,7 @@
       <div id="cart-discount-summary" hidden class="text-[11px] text-emerald-400 font-bold"></div>
 
       <button id="optimistic-checkout-btn" type="button" class="w-full py-3 rounded-2xl bg-gradient-to-r from-[#d4af37] to-[#e6ccb2] hover:opacity-95 text-black font-black text-sm shadow-lg transition-all">
-        💬 تأكيد وإرسال الطلب عبر واتساب (Optimistic UI + Confetti)
+        💬 مراجعة الطلب وإرساله عبر واتساب
       </button>
       <div id="wa-order-preview" class="hidden p-3 rounded-xl bg-emerald-950/60 border border-emerald-500/40 text-[11px] text-emerald-200 space-y-1"></div>
     </div>
@@ -2199,52 +2199,100 @@
       });
 
       document.getElementById('optimistic-checkout-btn').addEventListener('click', (e) => {
-        playSynthSound('success');
-        const name = document.getElementById('wa-customer-name').value.trim() || 'عميل MES المميز';
-        const phone = document.getElementById('wa-customer-phone').value.trim() || '010XXXXXXXX';
-        const addr = document.getElementById('wa-customer-address').value.trim() || 'القاهرة - الدفع عند الاستلام';
-        const quantityDiscount = storeDiscountForCart();
-        const couponDiscount = Math.min(discountAmount, Math.max(0, cartItems.reduce((sum, item) => sum + item.price * item.qty, 0) - quantityDiscount.amount));
-        const itemsSummary = cartItems.map(i => `• ${i.title} (مقاس ${i.size}) × ${i.qty} = ${i.price * i.qty} ج.م`).join('<br/>');
+        playSynthSound('pop');
         const preview = document.getElementById('wa-order-preview');
+        preview.replaceChildren();
         preview.classList.remove('hidden');
-        preview.innerHTML = `
-          <div class="font-black text-emerald-300">✅ تم تجهيز رسالة طلب واتساب فوراً (Optimistic UI):</div>
-          <div><strong>العميل:</strong> ${name} (${phone}) — ${addr}</div>
-          <div>${itemsSummary || '• طقم MES الكامل'}</div>
-          <div class="font-mono-tech font-bold text-[#d4af37]">الإجمالي عند الاستلام: ${lastTotalAmount.toLocaleString()} ج.م</div>
-        `;
-        if (quantityDiscount.amount > 0 || couponDiscount > 0) {
-          const discountLine = document.createElement('div');
-          discountLine.textContent = 'إجمالي الخصومات: ' + (quantityDiscount.amount + couponDiscount).toLocaleString() + ' ج.م';
+        const showMessage = (message, tone = 'text-amber-300') => {
+          const note = document.createElement('p');
+          note.className = tone + ' leading-6';
+          note.textContent = message;
+          preview.appendChild(note);
+        };
+        if (!cartItems.length) {
+          showMessage('السلة فارغة. أضف منتجاً واحداً على الأقل قبل تجهيز الطلب.');
+          document.getElementById('cart-items-list').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          return;
+        }
+        const nameInput = document.getElementById('wa-customer-name');
+        const phoneInput = document.getElementById('wa-customer-phone');
+        const addressInput = document.getElementById('wa-customer-address');
+        const name = nameInput.value.trim();
+        const phone = phoneInput.value.trim();
+        const phoneDigits = phone.replace(/[^0-9]/g, '');
+        const addr = addressInput.value.trim();
+        if (name.length < 2 || name.length > 100) {
+          nameInput.focus();
+          showMessage('أدخل الاسم بالكامل (من حرفين إلى 100 حرف).');
+          return;
+        }
+        if (phoneDigits.length < 8 || phoneDigits.length > 15) {
+          phoneInput.focus();
+          showMessage('أدخل رقم هاتف صحيحاً بكود الدولة، من 8 إلى 15 رقماً.');
+          return;
+        }
+        if (addr.length < 8 || addr.length > 250) {
+          addressInput.focus();
+          showMessage('أدخل عنوان التوصيل بالتفصيل (8 أحرف على الأقل).');
+          return;
+        }
+
+        const rawTotal = cartItems.reduce((sum, item) => sum + Number(item.price || 0) * Number(item.qty || 0), 0);
+        const quantityDiscount = storeDiscountForCart();
+        const couponDiscount = Math.min(discountAmount, Math.max(0, rawTotal - quantityDiscount.amount));
+        const totalDiscount = quantityDiscount.amount + couponDiscount;
+        const finalTotal = Math.max(0, rawTotal - totalDiscount);
+        const heading = document.createElement('strong');
+        heading.className = 'block text-emerald-200';
+        heading.textContent = 'مراجعة الطلب قبل الإرسال';
+        preview.appendChild(heading);
+        const summary = document.createElement('p');
+        summary.className = 'leading-6';
+        summary.textContent = 'العميل: ' + name + ' · الهاتف: ' + phone + ' · العنوان: ' + addr;
+        preview.appendChild(summary);
+        const list = document.createElement('ul');
+        list.className = 'list-disc pr-5 space-y-1';
+        cartItems.forEach(item => {
+          const row = document.createElement('li');
+          row.textContent = item.title + ' · مقاس ' + item.size + ' · عدد ' + item.qty + ' · ' + (Number(item.price) * Number(item.qty)).toLocaleString('en-US') + ' ج.م';
+          list.appendChild(row);
+        });
+        preview.appendChild(list);
+        if (totalDiscount > 0) {
+          const discountLine = document.createElement('p');
+          discountLine.textContent = 'إجمالي الخصومات المعروضة: ' + totalDiscount.toLocaleString('en-US') + ' ج.م';
           preview.appendChild(discountLine);
         }
+        const total = document.createElement('strong');
+        total.className = 'block text-[#d4af37]';
+        total.textContent = 'الإجمالي التقديري قبل تأكيد المتجر: ' + finalTotal.toLocaleString('en-US') + ' ج.م';
+        preview.appendChild(total);
+
         const waNumber = storeWhatsAppNumber();
-        if (waNumber) {
-          const orderText = [
-            'طلب جديد من ' + (STORE_CONTACT.store_name || 'MES STORE'),
-            'العميل: ' + name,
-            'هاتف العميل: ' + phone,
-            'العنوان: ' + addr,
-            ...cartItems.map(item => item.title + ' | مقاس ' + item.size + ' | عدد ' + item.qty + ' | ' + (item.price * item.qty).toLocaleString() + ' جنيه'),
-            'الإجمالي: ' + lastTotalAmount.toLocaleString() + ' جنيه'
-          ].join('\\n');
-          const waLink = document.createElement('a');
-          waLink.href = 'https://wa.me/' + waNumber + '?text=' + encodeURIComponent(orderText);
-          waLink.target = '_blank';
-          waLink.rel = 'noopener';
-          waLink.className = 'inline-flex mt-2 px-3 py-2 rounded-lg bg-emerald-600 text-white font-bold';
-          waLink.textContent = 'إرسال الطلب إلى واتساب المتجر';
-          preview.appendChild(waLink);
-        } else {
-          const missingNumber = document.createElement('div');
-          missingNumber.className = 'mt-2 text-amber-300';
-          missingNumber.textContent = 'أضف رقم واتساب المتجر في data/contact.json لتفعيل إرسال الطلبات.';
-          preview.appendChild(missingNumber);
+        if (!waNumber) {
+          showMessage('لم يتم إرسال الطلب. أضف رقم واتساب المتجر الصحيح في data/contact.json ثم أعد النشر.');
+          return;
         }
-        const rect = e.currentTarget.getBoundingClientRect();
-        spawnParticles(rect.left + rect.width / 2, rect.top, '#d4af37', 45);
-        notifyDynamicIsland('💬 تم تجهيز طلب واتساب بنجاح مع احتفالية الجزيئات الذهبية!');
+        const orderText = [
+          'طلب جديد من ' + (STORE_CONTACT.store_name || 'MES STORE'),
+          'هذا طلب مبدئي بانتظار تأكيد المتجر.',
+          'العميل: ' + name,
+          'هاتف العميل: ' + phone,
+          'العنوان: ' + addr,
+          ...cartItems.map(item => item.title + ' | مقاس ' + item.size + ' | عدد ' + item.qty + ' | ' + (Number(item.price) * Number(item.qty)).toLocaleString('en-US') + ' جنيه'),
+          'الخصومات المعروضة: ' + totalDiscount.toLocaleString('en-US') + ' جنيه',
+          'الإجمالي التقديري: ' + finalTotal.toLocaleString('en-US') + ' جنيه',
+          'يرجى تأكيد توافر المنتجات والسعر والشحن وموعد التسليم.'
+        ].join('\n');
+        const waLink = document.createElement('a');
+        waLink.href = 'https://wa.me/' + waNumber + '?text=' + encodeURIComponent(orderText);
+        waLink.target = '_blank';
+        waLink.rel = 'noopener noreferrer';
+        waLink.className = 'inline-flex mt-3 px-3 py-2 rounded-lg bg-emerald-600 text-white font-bold';
+        waLink.textContent = 'فتح واتساب وإرسال الطلب المبدئي';
+        preview.appendChild(waLink);
+        showMessage('لم يتم تسجيل طلب أو تحصيل أي مبلغ بعد. يصبح الطلب مؤكداً فقط بعد رد المتجر وتأكيد التوافر والتكلفة.', 'text-zinc-300');
+        notifyDynamicIsland('تم إعداد ملخص الطلب؛ ينتظر تأكيد المتجر.');
       });
 
       // -------------------------------------------------------------------
