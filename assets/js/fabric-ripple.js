@@ -2,7 +2,7 @@
 (function(g){'use strict';
 const V='attribute vec2 a;varying vec2 v;void main(){v=a*.5+.5;gl_Position=vec4(a,0.,1.);}';
 const F=[
-'precision highp float;varying vec2 v;uniform sampler2D texA,texB;uniform float blend,t,amp,freq,speed,grainAmp,grainFreq,mouseOn,mouseRadius,mouseStrength;uniform vec2 mouse;uniform vec4 masses[4];uniform float lensRadius,normalStrength,rimIntensity,lightIntensity;uniform vec2 lightDir;',
+'precision highp float;varying vec2 v;uniform sampler2D texA,texB;uniform float blend,t,amp,freq,speed,grainAmp,grainFreq,mouseOn,mouseRadius,mouseStrength;uniform vec2 mouse;uniform vec4 masses[4];uniform float lensRadius,normalStrength,rimIntensity,lightIntensity;uniform vec2 lightDir,uvMin,uvMax;',
 'vec2 warp(vec2 p){p=clamp(p,uvMin,uvMax);',
 'float w1=sin(p.y*freq+t*speed)*amp;float w2=cos(p.x*freq*.72+t*speed*.81)*amp*.62;',
 'float gr=sin(p.x*grainFreq+t*2.1)*sin(p.y*grainFreq-t*1.7)*grainAmp;vec2 off=vec2(w1+gr,w2+gr);',
