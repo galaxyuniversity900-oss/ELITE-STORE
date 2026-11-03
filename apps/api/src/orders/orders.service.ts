@@ -131,7 +131,7 @@ export class OrdersService {
   
         await tx.cart.update({
           where: { id: cart.id },
-          data: { status: CartStatus.CONVERTED, userId },
+          data: { status: CartStatus.CONVERTED, ...(userId ? { userId } : {}) },
         });
   
         return order;
