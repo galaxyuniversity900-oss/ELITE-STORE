@@ -371,3 +371,17 @@ This is a deployable application stack, not a claim that production operations a
 ## Demo payment, shipping, customer accounts and tracking
 
 The API now includes explicitly simulated payment and courier flows, configurable demo checkout choices, customer registration/profile/address/order-history endpoints, and phone-verified demo shipment tracking. These systems do not capture money or book a real courier. See [Demo commerce guide](docs/commerce/DEMO_COMMERCE_GUIDE.md) for routes, request examples, demo rates and the production replacement boundary. Customer account registration is available through the API; email verification, password reset and production session hardening remain release requirements.
+
+
+## Commercial test readiness
+
+A controlled QA plan and an automated checkout-safety audit are available:
+
+- [Commercial test readiness plan](docs/commerce/COMMERCIAL_TEST_READINESS.md)
+- Run `node scripts/verify-commercial-readiness.mjs` with Node.js 22 to validate the checkout flow and print owner-controlled pre-launch blockers.
+- Set `STRICT_COMMERCIAL=1` to make unresolved owner configuration fail the audit.
+- The audit runs in the Monorepo CI workflow alongside the existing garment-motion verification.
+
+The static WhatsApp checkout now rejects an empty cart and invalid customer details, renders customer-provided values as text rather than HTML, blocks products whose price is marked as requiring confirmation, and applies either the eligible quantity discount or the coupon discount (not both). The WhatsApp message is explicitly a preliminary request; it is not a recorded order, payment, inventory reservation or courier booking.
+
+**Current limitation:** automated structural checks do not establish commercial launch readiness. The audit reports missing store contact configuration, missing product photography, unresolved prices, unapproved promotions, production infrastructure/provider requirements and pending browser/security/accessibility checks. Resolve those items and verify the exact release deployment before accepting public orders.
