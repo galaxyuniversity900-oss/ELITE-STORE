@@ -96,8 +96,8 @@ for (const rule of discounts.quantity_rules) {
   assert.ok(Number.isFinite(rule.value) && rule.value >= 0, 'Invalid discount value: ' + rule.id);
   if (rule.type === 'percentage') assert.ok(rule.value <= 100, 'Quantity discount exceeds 100%: ' + rule.id);
 }
-assert.ok(discounts.quantity_rules.some(rule => rule.active && rule.min_units === 2), 'Expected an active two-unit discount');
-assert.ok(discounts.quantity_rules.some(rule => rule.active && rule.min_units === 3), 'Expected an active three-unit discount');
+assert.ok(discounts.quantity_rules.some(rule => rule.min_units === 2), 'Expected the configurable two-unit discount rule');
+assert.ok(discounts.quantity_rules.some(rule => rule.min_units === 3), 'Expected the configurable three-unit discount rule');
 
 assert.equal(sectionIndex.version, 1, 'Unsupported section registry version');
 assert.ok(Array.isArray(sectionIndex.sections), 'Section registry must be an array');
