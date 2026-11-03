@@ -13,6 +13,7 @@
     "dev:admin": "npm run dev --workspace=@mes-store/admin",
     "lint": "turbo run lint",
     "test": "turbo run test",
+    "verify:product-image-lab": "node scripts/verify-product-image-lab.mjs",
     "db:generate": "prisma generate --schema=prisma/schema.prisma",
     "db:seed": "node scripts/seed-products.mjs",
     "db:validate": "prisma validate --schema=prisma/schema.prisma",
