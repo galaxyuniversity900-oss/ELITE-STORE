@@ -42,8 +42,8 @@ Use a dedicated test browser profile and synthetic details only:
 | Catalogue | Open on mobile and desktop | Products and category filters load; no broken assets or console errors |
 | Product details | Open Quick View, switch variants, close with Escape | Correct product remains selected; modal is keyboard/touch usable |
 | Motion | Disable motion in OS settings | Store remains usable and animations are reduced |
-| Product price | Try an item marked price-confirmation-required | It cannot be added until its final price is set |
-| Cart | Add confirmed-price products, change size and quantity | Cart lines and totals update consistently |
+| Product price | Try an item marked price-confirmation-required | No numeric price is presented as final; Quick View/sticky purchase actions are disabled and it cannot be added until its final price is set |
+| Cart | Add confirmed-price products, change size and quantity | Cart lines and totals update consistently; line quantity cannot exceed 20 |
 | Empty cart | Try to prepare checkout with no items | Checkout is blocked with a clear message |
 | Customer fields | Submit blank, malformed phone, short address | No WhatsApp link is created; the first invalid field receives focus |
 | Injection safety | Enter HTML-like text in customer fields | It is displayed as text, never executed as markup |
