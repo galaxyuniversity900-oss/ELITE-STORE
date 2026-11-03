@@ -87,7 +87,8 @@ describe('OrdersService', () => {
     expect(orderData.checkoutSessionId).toBe('session-id');
     expect(orderData.idempotencyKey).toBe('checkout-test-0001');
     expect(orderData.subtotal.toString()).toBe('200');
-    expect(orderData.grandTotal.toString()).toBe('200');
+    expect(orderData.shippingTotal.toString()).toBe('45');
+    expect(orderData.grandTotal.toString()).toBe('245');
     expect(orderData.payments.create.provider).toBe('cash_on_delivery');
     expect(tx.cart.update).toHaveBeenCalledWith({
       where: { id: 'cart-1' },
