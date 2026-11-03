@@ -38,7 +38,7 @@ function selectedImage(){
  return visual?.querySelector('img:not([data-fabric-ripple-canvas])')||null;
 }
 function stop(){
- if(activeImage){const mounted=window.MESFabricRipple?.instances?.get(activeImage);mounted?.destroy();activeImage.style.visibility='visible';}
+ if(active?.effect)active.effect.destroy();else if(activeImage)window.MESFabricRipple?.instances?.get(activeImage)?.destroy();if(activeImage)activeImage.style.visibility='visible';
  active=null;activeImage=null;
  const canvas=$('#products-grid .product-card[data-id="'+CSS.escape(select.value)+'"] [data-fabric-ripple-canvas]');
  if(canvas)canvas.remove();
@@ -48,7 +48,7 @@ function apply(preset){
  const img=selectedImage();
  if(!img){say('هذا المنتج لا يحتوي حالياً على صورة فعلية. أضف صورة إلى data/products.json أولاً.');return;}
  if(!window.FabricRippleEffect){say('محرك WebGL غير متاح في هذا المتصفح.');return;}
- if(activeImage&&activeImage!==img){window.MESFabricRipple?.instances?.get(activeImage)?.destroy();activeImage.style.visibility='visible';}
+ if(activeImage){if(active?.effect)active.effect.destroy();else window.MESFabricRipple?.instances?.get(activeImage)?.destroy();activeImage.style.visibility='visible';}
  const old=window.MESFabricRipple?.instances?.get(img);old?.destroy();
  try{
   const effect=new window.FabricRippleEffect(img,preset.opts);
