@@ -55,11 +55,25 @@ jobs:
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           OPENAI_IMAGE_MODEL: gpt-image-2
+          PRODUCT_IDS: ${{ inputs.product_ids }}
+          PRODUCT_LIMIT: ${{ inputs.limit }}
+          FORCE_REGENERATE: ${{ inputs.force }}
         run: |
+          set -euo pipefail
           args=()
-          if [ -n "${{ inputs.product_ids }}" ]; then args+=(--product-ids "${{ inputs.product_ids }}"); fi
-          if [ "${{ inputs.limit }}" -gt 0 ]; then args+=(--limit "${{ inputs.limit }}"); fi
-          if [ "${{ inputs.force }}" = "true" ]; then args+=(--force); fi
+          if [[ -n "$PRODUCT_IDS" ]]; then
+            args+=(--product-ids "$PRODUCT_IDS")
+          fi
+          if [[ ! "$PRODUCT_LIMIT" =~ ^[0-9]+$ ]]; then
+            echo "::error::The product limit must be a non-negative integer."
+            exit 1
+          fi
+          if (( PRODUCT_LIMIT > 0 )); then
+            args+=(--limit "$PRODUCT_LIMIT")
+          fi
+          if [[ "$FORCE_REGENERATE" == "true" ]]; then
+            args+=(--force)
+          fi
           python scripts/generate-product-photography.py "${args[@]}"
 
       - name: Validate generated media and catalogue references
@@ -69,10 +83,12 @@ jobs:
           from pathlib import Path
           data=json.loads(Path("data/products.json").read_text(encoding="utf-8"))
           missing=[]
+          generated=0
           for p in data["products"]:
               media=p.get("media", {})
               if media.get("photography", {}).get("source") != "ai-generated":
                   continue
+              generated += 1
               for key in ("cover",):
                   path=Path(media[key])
                   if not path.is_file() or path.stat().st_size < 10000:
@@ -80,9 +96,11 @@ jobs:
               for path in media.get("images", []):
                   if not Path(path).is_file() or Path(path).stat().st_size < 10000:
                       missing.append(f"{p['id']}:{path}")
+          if generated == 0:
+              raise SystemExit("No products were marked as generated; refusing an empty photography commit.")
           if missing:
               raise SystemExit("Missing or invalid generated photos: " + ", ".join(missing))
-          print("Generated product photo references validated.")
+          print(f"Validated generated photography for {generated} product(s).")
           PY
 
       - name: Commit generated product photography
