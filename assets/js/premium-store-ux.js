@@ -14,14 +14,14 @@ if(!$('#mes-size-sheet'))document.body.insertAdjacentHTML('beforeend','<div id="
 }
 function toast(t){let n=document.createElement('div');n.className='mes-toast';n.textContent=t;$('#mes-toast-stack').append(n);requestAnimationFrame(()=>n.classList.add('show'));setTimeout(()=>{n.classList.remove('show');setTimeout(()=>n.remove(),250)},2500);}
 function bump(n){if(!n)return;n.classList.remove('mes-bump');void n.offsetWidth;n.classList.add('mes-bump');setTimeout(()=>n.classList.remove('mes-bump'),400);}
-function productFor(card){let b=card?.querySelector('[data-quick-id],[data-add-id],[data-wish-id]'),id=b?.dataset.quickId||b?.dataset.addId||b?.dataset.wishId;return (window.PRODUCTS||[]).find(p=>p.id===id)||null;}
+function productFor(card){let b=card?.querySelector('[data-quick-id],[data-add-id],[data-wish-id]'),id=b?.dataset.quickId||b?.dataset.addId||b?.dataset.wishId;return (window.MESStoreProducts||[]).find(p=>p.id===id)||null;}
 function imageFor(card){return $('img',card)||$('[data-fabric-ripple-canvas]',card);}
 function material(p){let s=(p?.category+' '+p?.visual?.type).toLowerCase();return /جلد|leather/.test(s)?'leather':/mesh|sneaker|shoe|شبك/.test(s)?'mesh':'fabric';}
 function fly(source){let target=$('#cart-icon')||$('[data-cart-icon]')||$('#open-cart-drawer-btn');if(!source||!target||reduced)return;let a=source.getBoundingClientRect(),b=target.getBoundingClientRect(),n=source.cloneNode(true);n.className='mes-fly-clone';n.style.cssText='left:'+(a.left+a.width/2)+'px;top:'+(a.top+a.height/2)+'px;width:'+Math.min(a.width,120)+'px;height:'+Math.min(a.height,120)+'px';document.body.append(n);n.animate([{transform:'translate(-50%,-50%) scale(1)',opacity:1},{transform:'translate(calc(-50% + '+(b.left-a.left)+'px),calc(-50% + '+(b.top-a.top-60)+'px)) scale(.08)',opacity:0}],{duration:680,easing:'cubic-bezier(.2,.8,.25,1)'}).onfinish=()=>n.remove();bump(target);}
 function recent(){let t=$('#mes-recent-track');if(!t)return;t.innerHTML=S.recent.map(p=>'<button class="mes-recent-card" data-recent="'+esc(p.id)+'"><span>'+((p.media?.cover||p.media?.images?.[0])?'<img src="'+esc(p.media.cover||p.media.images[0])+'" alt="">':'MES')+'</span><b>'+esc(p.title)+'</b><small>'+money(p.price)+'</small></button>').join('');}
 function openProductQuickView(thumbnailElement,imageSrc,materialPreset){
 let card=thumbnailElement?.closest('.product-card'),p=productFor(card)||S.product;if(!p)return;S.product=p;S.qty=1;
-let img=$('#mes-qv-img'),src=imageSrc||imageFor(card)?.src||'';img.src=src;img.alt=p.title||'Product';
+let img=$('#mes-qv-img'),source=imageFor(card),src=imageSrc||source?.src||source?.toDataURL?.()||p.media?.cover||p.media?.images?.[0]||'';img.src=src;img.alt=p.title||'Product';
 $('#mes-qv-title').textContent=p.title||'';$('#mes-qv-desc').textContent=p.desc||'';$('#mes-qv-price').textContent=money(p.price);$('#mes-sticky-price').textContent=money(p.price);$('#mes-sticky-qty').textContent='1';
 let modal=$('#mes-premium-qv');modal.classList.add('open');document.body.classList.add('mes-qv-open');S.recent=[p,...S.recent.filter(x=>x.id!==p.id)].slice(0,8);recent();
 let variants=p.media?.variants||p.variants||[];$('#mes-qv-swatches').innerHTML=variants.map((v,i)=>'<button class="mes-swatch '+(!i?'active':'')+'" data-src="'+esc(v.cover||v.image||'')+'" data-material="'+esc(v.material||materialPreset||material(p))+'" style="--swatch:'+esc(v.color||'#777')+'"></button>').join('')||'<small>الألوان والخامات حسب التوفر</small>';
@@ -35,7 +35,7 @@ function init(){
 style();scaffold();
 document.addEventListener('click',e=>{
 let q=e.target.closest('.quick-view-btn,[data-quick-id],.product-card .liquid-hover');if(q){let c=q.closest('.product-card'),p=productFor(c),im=imageFor(c);if(p)openProductQuickView(im||q,im?.src||'',material(p));return;}
-let rc=e.target.closest('[data-recent]');if(rc){let p=(window.PRODUCTS||[]).find(x=>x.id===rc.dataset.recent);if(p){S.product=p;openProductQuickView(null,p.media?.cover||p.media?.images?.[0]||'',material(p));}return;}
+let rc=e.target.closest('[data-recent]');if(rc){let p=(window.MESStoreProducts||[]).find(x=>x.id===rc.dataset.recent);if(p){S.product=p;openProductQuickView(null,p.media?.cover||p.media?.images?.[0]||'',material(p));}return;}
 let add=e.target.closest('.add-to-cart-btn,[data-add-id],#mes-qv-add,#mes-sticky-add');if(add){let p=S.product||productFor(add.closest('.product-card'));if(p){fly(imageFor(add.closest('.product-card'))||$('#mes-qv-img'));toast('تمت إضافة المنتج إلى السلة');}return;}
 let w=e.target.closest('.wish-btn,[data-wish-id]');if(w){heart(w);toast(w.classList.contains('loved')?'أُضيف إلى المفضلة':'أُزيل من المفضلة');return;}
 if(e.target.closest('.mes-qv-close')){close();$('#mes-size-sheet').classList.remove('open');return;}
