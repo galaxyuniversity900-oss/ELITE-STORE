@@ -2,7 +2,7 @@
 .mes-low-stock{position:absolute;z-index:5;inset-block-start:10px;inset-inline-start:10px;padding:5px 10px;border-radius:999px;background:#2a1515;color:#ff8585;font-size:11px;font-weight:800;letter-spacing:.01em;pointer-events:none}
 .mes-low-stock.is-sold-out{background:#252529;color:#b7b7bd}
 .mes-card-rating{position:absolute;z-index:4;inset-block-end:12px;inset-inline-start:12px;color:#56565c;font-size:12px;letter-spacing:2px;overflow:hidden;pointer-events:none}
-.mes-card-rating-fill{display:block;width:calc(var(--rating)*1%);white-space:nowrap;overflow:hidden;color:#e8c766;clip-path:inset(0 100% 0 0);transition:clip-path .8s cubic-bezier(.2,.8,.2,1)}
+.mes-card-rating-fill{display:block;width:var(--rating);white-space:nowrap;overflow:hidden;color:#e8c766;clip-path:inset(0 100% 0 0);transition:clip-path .8s cubic-bezier(.2,.8,.2,1)}
 .mes-card-rating.is-visible .mes-card-rating-fill{clip-path:inset(0 0 0 0)}
 .mes-reduced-motion *, .mes-reduced-motion *::before,.mes-reduced-motion *::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
 @media(prefers-reduced-motion:reduce){.mes-card-rating-fill{transition:none}.mes-low-stock{animation:none!important}}
