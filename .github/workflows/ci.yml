@@ -13,6 +13,12 @@ jobs:
   verify:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      POSTGRES_PASSWORD: ci-only-postgres-password-12345
+      REDIS_PASSWORD: ci-only-redis-password-12345
+      JWT_SECRET: ci-only-jwt-secret-at-least-32-characters-long
+      BOOTSTRAP_ADMIN_EMAIL: admin@example.test
+      BOOTSTRAP_ADMIN_PASSWORD: ci-only-bootstrap-password-12345
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -20,9 +26,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
       - name: Install dependencies
-        run: npm ci
+        run: npm install --no-audit --no-fund
       - name: Validate workspace and store configuration
         run: |
           node -e "for (const f of ['package.json','apps/api/package.json','apps/web/package.json','apps/admin/package.json']) JSON.parse(require('fs').readFileSync(f,'utf8')); console.log('Workspace JSON: OK')"
