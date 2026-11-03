@@ -2102,8 +2102,13 @@
       function addToCartState(prod, size = 'L') {
         const key = `${prod.id}_${size}`;
         const existing = cartItems.find(i => `${i.id}_${i.size}` === key);
-        if (existing) existing.qty += 1;
-        else cartItems.push({ ...prod, size, qty: 1 });
+        if (existing) {
+          if (existing.qty >= 20) {
+            notifyDynamicIsland('الحد الأقصى للقطعة الواحدة هو 20.');
+            return;
+          }
+          existing.qty += 1;
+        } else cartItems.push({ ...prod, size, qty: 1 });
 
         const totalCount = cartItems.reduce((s, i) => s + i.qty, 0);
         const ticker = document.getElementById('cart-count-ticker');
@@ -2137,7 +2142,7 @@
           cartItemsList.innerHTML = cartItems.map((item, idx) => `
             <div class="cart-item-row p-3.5 rounded-2xl bg-[#111116] border border-zinc-800 flex items-center justify-between gap-2 transition-all duration-300">
               <div>
-                <div class="text-xs font-bold text-white">${item.title} <span class="px-1.5 py-0.5 rounded bg-[#d4af37]/20 text-[#d4af37] font-mono-tech text-[10px]">مقاس ${item.size}</span></div>
+                <div class="text-xs font-bold text-white">${storeSafeText(item.title)} <span class="px-1.5 py-0.5 rounded bg-[#d4af37]/20 text-[#d4af37] font-mono-tech text-[10px]">مقاس ${storeSafeText(item.size)}</span></div>
                 <div class="text-xs text-[#e6ccb2] font-mono-tech mt-0.5">${item.price} ج.م × ${item.qty}</div>
               </div>
               <div class="flex items-center gap-1">
@@ -2169,7 +2174,16 @@
         lastTotalAmount = finalTotal;
 
         cartItemsList.querySelectorAll('[data-inc-idx]').forEach(b => {
-          b.addEventListener('click', () => { cartItems[Number(b.dataset.incIdx)].qty++; renderCartDrawer(); });
+          b.addEventListener('click', () => {
+            const item = cartItems[Number(b.dataset.incIdx)];
+            if (!item) return;
+            if (item.qty >= 20) {
+              notifyDynamicIsland('الحد الأقصى للقطعة الواحدة هو 20.');
+              return;
+            }
+            item.qty++;
+            renderCartDrawer();
+          });
         });
         cartItemsList.querySelectorAll('[data-dec-idx]').forEach(b => {
           b.addEventListener('click', () => {
