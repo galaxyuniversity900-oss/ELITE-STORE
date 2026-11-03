@@ -6,6 +6,7 @@
   <title>MES STORE · MEN'S COLLECTION | ستايلك مش شبه حد (النسخة التفاعلية الكاملة 32 فئة حركية)</title>
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
+  <script defer src="./assets/js/fabric-ripple.js"></script>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
@@ -1510,7 +1511,7 @@
         if (!source) return fallback;
         return '<div class="relative w-full h-full">' + fallback +
           '<img src="' + escapeStoreAttribute(source) + '" alt="' + escapeStoreAttribute(product.title) +
-          '" loading="lazy" decoding="async" class="absolute inset-0 z-10 w-full h-full object-cover" onerror="this.remove()"></div>';
+          '" loading="lazy" decoding="async" class="absolute inset-0 z-10 w-full h-full object-cover" data-fabric-ripple="on" onerror="this.remove()"></div>';
       }
       function renderProductGallery(product) {
         const media = product.media || {};
