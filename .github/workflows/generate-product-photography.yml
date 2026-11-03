@@ -68,7 +68,7 @@ jobs:
             echo "::error::The product limit must be a non-negative integer."
             exit 1
           fi
-          if (( PRODUCT_LIMIT > 0 )); then
+          if [[ "$PRODUCT_LIMIT" != "0" ]]; then
             args+=(--limit "$PRODUCT_LIMIT")
           fi
           if [[ "$FORCE_REGENERATE" == "true" ]]; then
