@@ -36,6 +36,8 @@ assert.ok(!checkout.includes('preview.innerHTML'), 'Customer checkout data must 
 assert.ok(!checkout.includes('عميل MES المميز') && !checkout.includes('010XXXXXXXX') && !checkout.includes('القاهرة - الدفع عند الاستلام'), 'Checkout must not invent customer details');
 assert.ok(html.includes('هذا المنتج غير متاح للطلب حتى يعتمد المتجر سعره النهائي.'), 'Unpriced products must be blocked from cart');
 assert.ok(html.includes('const useCoupon = couponCandidate > quantityDiscount.amount'), 'Discounts must not stack implicitly');
+assert.ok(html.includes('storeSafeText(item.title)'), 'Catalogue text in the cart must be escaped');
+assert.ok(html.includes('if (existing.qty >= 20)') && html.includes('if (item.qty >= 20)'), 'Cart line quantity must be capped at 20');
 for (const id of ['wa-customer-name','wa-customer-phone','wa-customer-address']) {
   const tag = html.match(new RegExp('<input[^>]*id="' + id + '"[^>]*>'));
   assert.ok(tag && /required/.test(tag[0]), 'Required customer field missing: ' + id);
