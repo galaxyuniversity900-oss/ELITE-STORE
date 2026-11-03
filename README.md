@@ -152,9 +152,9 @@ Edit `data/discounts.json`. Discounts are calculated from the catalogue prices a
 - `product_ids` or `categories`: required when using the matching scope.
 - `starts_at` and `ends_at`: optional ISO date/time boundaries.
 
-Only the single quantity rule giving the largest saving is applied; quantity rules do not stack with one another. A valid coupon can stack with that quantity discount. The total is never reduced below zero.
+Only one promotion is applied per cart: the storefront compares the best eligible quantity discount with the coupon discount and uses the larger saving. Coupon and quantity discounts do not stack. The total is never reduced below zero.
 
-Example: enable `buy-2-save-5` to give 5% off the cart when the customer buys at least two units. It is initially disabled so no new promotion is activated without the store owner's decision. The `MESVIP200` coupon is configured in the same file and can be changed or disabled there.
+Example: enable `buy-2-save-5` to give 5% off the cart when the customer buys at least two units. All starter coupon and quantity rules are currently disabled until the store owner approves the exact offer, eligibility and dates. The `MESVIP200` coupon is retained in the same file and can be configured or disabled there.
 
 ## Per-section configuration files
 
@@ -202,7 +202,7 @@ Supported quantity rule fields:
 - `product_ids` / `categories`: optional eligibility filters for product/category rules.
 - `starts_at` / `ends_at`: optional ISO date-time limits.
 
-The starter rules are enabled: 5% off from 2 cart units, and 10% off from 3 cart units. When multiple quantity rules qualify, the largest eligible quantity discount is selected. An eligible coupon can then apply as an additional discount, capped so the final total cannot go below zero.
+The starter rules are retained but disabled pending store-owner approval: 5% off from 2 cart units, and 10% off from 3 cart units. When multiple quantity rules qualify, the largest eligible quantity discount is selected. The storefront compares that amount with any eligible coupon and applies only the larger discount; promotions do not stack. The final total cannot go below zero.
 
 Coupons support `percentage` and `fixed_amount`, `min_units`, `active`, `starts_at`, and `ends_at`. The promotional coupon card displays the first currently active coupon in the file. Change its code/value/description there; do not hard-code discount amounts in the storefront.
 
