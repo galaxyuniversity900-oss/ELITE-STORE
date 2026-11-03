@@ -6,6 +6,7 @@ const readJson = path => JSON.parse(readFileSync(new URL('../' + path, import.me
 const html = readFileSync(new URL('../ELITE.html', import.meta.url), 'utf8');
 const catalogue = readJson('data/products.json');
 const fabricShader = readFileSync(new URL('../assets/js/fabric-ripple.js', import.meta.url), 'utf8');
+new vm.Script(fabricShader, { filename: 'assets/js/fabric-ripple.js' });
 assert.ok(html.includes('assets/js/fabric-ripple.js'), 'WebGL fabric shader must be loaded by the storefront');
 assert.ok(html.includes('data-fabric-ripple="on"'), 'Product cover images must opt into the fabric shader');
 for (const token of ['class FabricRippleEffect', 'uLensPoints[8]', 'uLensStrength', 'uLensSwirl', 'texture2D(uTexture,sampleUv)', 'requestAnimationFrame', 'IntersectionObserver', 'fabric-ripple-fallback']) {
