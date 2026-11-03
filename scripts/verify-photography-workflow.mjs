@@ -21,7 +21,7 @@ assert.ok(shell.includes('set -euo pipefail'), 'Shell must fail safely');
 assert.ok(shell.includes('"$PRODUCT_IDS"'), 'Product IDs must be passed as one quoted argument');
 assert.ok(shell.includes('"$PRODUCT_LIMIT"'), 'Product limit must be passed as one quoted argument');
 assert.ok(shell.includes('"$FORCE_REGENERATE"'), 'Force flag must be read from its environment variable');
-assert.ok(shell.includes('"\${args[@]}"'), 'Argument array must be expanded safely');
+assert.ok(shell.includes('"$' + '{args[@]}"'), 'Argument array must be expanded safely');
 
 assert.ok(workflow.includes('generated == 0'), 'Workflow must reject an empty generated-media set');
 assert.ok(workflow.includes('path.stat().st_size < 10000'), 'Workflow must reject missing or implausibly small images');
