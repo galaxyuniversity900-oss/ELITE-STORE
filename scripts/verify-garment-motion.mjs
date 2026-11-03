@@ -17,8 +17,8 @@ for (const token of ['openProductQuickView', 'flyToCart', 'mes-recently-viewed',
 assert.ok(premiumCss.includes('.mes-qv-backdrop') && premiumCss.includes('.mes-sticky-buy'), 'Premium UX styles missing');
 
 assert.ok(html.includes('assets/js/mes-store-orchestrator.js'), 'Unified storefront orchestrator must be loaded');
-const orchestrator = readText('assets/js/mes-store-orchestrator.js');
-const orchestratorCss = readText('assets/css/mes-store-orchestrator.css');
+const orchestrator = readFileSync(new URL('../assets/js/mes-store-orchestrator.js', import.meta.url), 'utf8');
+const orchestratorCss = readFileSync(new URL('../assets/css/mes-store-orchestrator.css', import.meta.url), 'utf8');
 for (const token of ['MESStore','MESFabricRipple.scan','MutationObserver','mes:catalog-rendered','mes:product-image-ready','prefers-reduced-motion','mes-low-stock','mes-card-rating']) assert.ok(orchestrator.includes(token), 'Missing orchestrator capability: ' + token);
 assert.ok(orchestratorCss.includes('.mes-low-stock') && orchestratorCss.includes('.mes-card-rating'), 'Orchestrator styles missing');
 new vm.Script(orchestrator, { filename: 'assets/js/mes-store-orchestrator.js' });
