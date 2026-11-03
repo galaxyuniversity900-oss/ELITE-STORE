@@ -18,7 +18,7 @@ assert.ok(premiumCss.includes('.mes-qv-backdrop') && premiumCss.includes('.mes-s
 
 assert.ok(html.includes('assets/js/fabric-ripple.js'), 'WebGL fabric shader must be loaded by the storefront');
 assert.ok(html.includes('data-fabric-ripple="on"'), 'Product cover images must opt into the fabric shader');
-for (const token of ['class FabricRippleEffect', 'uLensPoints[8]', 'uLensStrength', 'uLensSwirl', 'texture2D(uTexture,sampleUv)', 'requestAnimationFrame', 'IntersectionObserver', 'fabric-ripple-fallback']) {
+for (const token of ['class FabricRippleEffect', 'uniform vec4 masses[4]', 'lensRadius', 'normalStrength', 'rimIntensity', 'texture2D(texA,uvw)', 'requestAnimationFrame', 'IntersectionObserver', 'swapTexture(src,duration)']) {
   assert.ok(fabricShader.includes(token), 'Missing WebGL fabric effect feature: ' + token);
 }
 
