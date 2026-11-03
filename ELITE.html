@@ -279,11 +279,27 @@
       animation-iteration-count: 1 !important;
       transition-duration: 0.05s !important;
     }
+  
+/* MES Garment Motion Engine — isolated product-image animation */
+#gm-studio{position:fixed;inset:0;z-index:260;background:rgba(0,0,0,.88);backdrop-filter:blur(14px);display:none;align-items:center;justify-content:center;padding:14px}
+#gm-studio.open{display:flex}
+.gm-panel{width:min(1100px,100%);max-height:94vh;overflow:auto;background:#0b0b0f;border:1px solid rgba(212,175,55,.45);border-radius:22px;box-shadow:0 30px 100px #000}
+.gm-stage{background:#050505;border:1px solid #333;border-radius:16px;overflow:hidden;min-height:260px;display:grid;place-items:center}
+#gm-editor-canvas{width:100%;max-height:65vh;object-fit:contain;touch-action:none;cursor:crosshair}
+.gm-control{background:#141419;border:1px solid #333;border-radius:12px;padding:10px;color:#eee}
+.gm-button{border:1px solid #4b4532;background:#211d12;color:#f5e7bd;border-radius:10px;padding:9px 12px;font-size:12px;font-weight:800}
+.gm-button.primary{background:#d4af37;color:#111;border-color:#d4af37}
+.gm-button.active{background:#d4af37;color:#111}
+.gm-card-canvas{width:100%;height:100%;object-fit:contain;display:block}body.gm-admin .gm-admin-btn{display:block}
+.gm-admin-btn{display:none;width:100%;margin-top:8px;border:1px solid rgba(212,175,55,.45);background:rgba(212,175,55,.10);color:#f5ebe0;border-radius:10px;padding:8px;font-size:11px;font-weight:800}
+.gm-status{font-size:11px;color:#d4af37;min-height:18px}
+@media(prefers-reduced-motion:reduce){.gm-card-canvas{animation:none!important}}
+
   </style>
 </head>
 <body class="hide-motion-badges selection:bg-[#d4af37] selection:text-black">
 
-  <!-- HIDDEN SVG FILTERS: Gooey Metaball & Liquid Turbulence -->
+  <!-- HIDDEN SVG FILTERS: تأثيرات بصرية & Liquid Turbulence -->
   <svg class="hidden" width="0" height="0" aria-hidden="true">
     <defs>
       <filter id="gooey-filter">
@@ -315,7 +331,7 @@
 
   <!-- CURTAIN PRELOADER (MES STORE · NEW SEASON) -->
   <div id="curtain-preloader" class="fixed inset-0 bg-[#070709] z-[200] flex flex-col items-center justify-center p-6 curtain-open" style="clip-path: inset(0 0 100% 0);">
-    <div class="motion-badge mb-4">Curtain Wipe + Odometer Ticker + SVG Self-Drawing</div>
+    
     <div class="text-xs font-mono-tech tracking-[0.3em] text-[#d4af37] mb-2">NEW SEASON · MEN'S COLLECTION</div>
     <div class="text-4xl sm:text-6xl font-black tracking-widest text-white mb-3">MES STORE</div>
     <div class="text-sm text-zinc-400 mb-4">ستايلك مش شبه حد.</div>
@@ -460,16 +476,16 @@
             <span class="px-2.5 py-1 rounded-full bg-zinc-900 border border-zinc-700 text-zinc-300 text-[11px] font-mono-tech">
               NEW SEASON · MES STORE
             </span>
-            <span class="motion-badge">Variable Font Proximity + Scramble + Magnetic CTA</span>
+            
           </div>
 
           <!-- Interactive Headline ("ستايلك مش شبه حد.") -->
           <div class="space-y-3">
-            <p class="text-xs font-mono-tech text-[#d4af37]">حرك الماوس فوق حروف الشعار لتكبيرها تفاعلياً (Proximity Weight) أو انقر لفك التشفير (Scramble):</p>
+            <p class="text-xs font-mono-tech text-[#d4af37]"></p>
             <h1 id="hero-kinetic-title" class="text-4xl sm:text-6xl font-black leading-tight tracking-tight cursor-pointer select-none">
               <span id="scramble-headline" class="mes-gold-text">ستايلك مش شبه حد.</span>
             </h1>
-            <p class="text-base sm:text-lg text-zinc-300 leading-relaxed max-w-2xl">
+            <p id="hero-subtitle" class="text-base sm:text-lg text-zinc-300 leading-relaxed max-w-2xl">
               اختار القطعة اللي تعبر عنك. <strong class="text-[#f5ebe0]">جواكت، هوديز وبناطيل</strong> بتفاصيل عصرية وإطلالة مختلفة كل يوم. اطلب بسهولة عبر واتساب مع ميزة <strong class="text-[#d4af37]">الدفع عند الاستلام</strong>.
             </p>
           </div>
@@ -497,12 +513,12 @@
             </a>
 
             <button id="hero-scramble-btn" type="button" class="magnetic-btn ripple-btn px-4 py-3.5 rounded-2xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-[#f5ebe0] font-bold text-xs">
-              🔀 تحريك شعار MES (Scramble)
+              اكتشف الشعار
             </button>
 
             <button id="hero-hold-btn" type="button" class="magnetic-btn relative overflow-hidden px-4 py-3.5 rounded-2xl bg-zinc-900 border border-[#d4af37]/50 text-white font-bold text-xs select-none">
               <div id="hero-hold-progress" class="absolute inset-y-0 right-0 bg-[#d4af37]/35 w-0 pointer-events-none"></div>
-              <span id="hero-hold-label" class="relative z-10">⚡ اضغط مطولاً لطلب طقم كامل (Hold to Confirm)</span>
+              <span id="hero-hold-label" class="relative z-10">اطلب الطقم الكامل</span>
             </button>
           </div>
         </div>
@@ -520,14 +536,14 @@
             </div>
 
             <div class="absolute top-3 right-3 px-3 py-1 rounded-xl bg-zinc-900/90 border border-zinc-700 text-[11px] font-bold text-[#e6ccb2] pointer-events-none">
-              🧥 اسحب لتدوير المجسم أو حرك الفأرة للتفاعل مع الجزيئات
+              
             </div>
           </div>
 
           <div class="flex flex-wrap items-center justify-center gap-2 mt-3">
             <button id="morph-shape-hoodie-btn" type="button" class="px-3 py-1.5 rounded-xl bg-[#d4af37] text-black text-xs font-black">مجسم هودي وجاكت MES</button>
-            <button id="morph-shape-torus-btn" type="button" class="px-3 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-200 text-xs font-bold border border-zinc-700">حلقة الأناقة الذهبية (Torus)</button>
-            <button id="morph-shape-wave-btn" type="button" class="px-3 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-200 text-xs font-bold border border-zinc-700">تموج القماش الثلاثي (Fabric Wave)</button>
+            <button id="morph-shape-torus-btn" type="button" class="px-3 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-200 text-xs font-bold border border-zinc-700">التصميم الدائري</button>
+            <button id="morph-shape-wave-btn" type="button" class="px-3 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-200 text-xs font-bold border border-zinc-700">تموجات القماش</button>
           </div>
         </div>
       </div>
@@ -545,7 +561,7 @@
       <div class="flex flex-wrap items-end justify-between gap-4">
         <div>
           <div class="text-xs font-mono-tech tracking-[0.25em] text-[#d4af37] uppercase">SEASONAL LOOKBOOK · 2026</div>
-          <h2 class="text-2xl sm:text-3xl font-black text-white mt-1">أقسام MES STORE الرئيسية</h2>
+          <h2 id="store-categories-title" class="text-2xl sm:text-3xl font-black text-white mt-1">أقسام MES STORE الرئيسية</h2>
         </div>
         <button id="open-size-calc-btn" type="button" class="magnetic-btn ripple-btn px-4 py-2.5 rounded-2xl bg-zinc-900 hover:bg-zinc-800 border border-[#d4af37]/50 text-[#f5ebe0] text-xs font-black flex items-center gap-2">
           <span>📏 حاسبة المقاس الذكية (اعرف مقاسك بالوزن والطول)</span>
@@ -557,7 +573,7 @@
         <div class="flex items-center justify-between border-b border-zinc-800 pb-3">
           <div>
             <h3 class="text-base font-black text-white">📏 مساعد المقاسات الذكي من MES STORE</h3>
-            <p class="text-xs text-zinc-400">أدخل وزنك وطولك ليقوم النظام بحساب المقاس المثالي لك وتطبيقه تلقائياً على جميع المنتجات:</p>
+            <p class="text-xs text-zinc-400">اعثر على المقاس الأنسب لك.</p>
           </div>
           <button id="close-size-calc-btn" type="button" class="px-3 py-1 rounded-xl bg-zinc-800 text-zinc-300 text-xs font-bold">✕ إغلاق</button>
         </div>
@@ -648,11 +664,11 @@
           <div>
             <div class="flex flex-wrap items-center gap-2 mb-1">
               <span class="text-xs font-mono-tech tracking-widest text-[#d4af37]">THE COLLECTION</span>
-              <span class="motion-badge">FLIP Layout Animation (60fps)</span>
-              <span class="motion-badge">Gooey Liquid Metaballs</span>
-              <span class="motion-badge">3D Tilt + Spotlight + Parabolic Arc</span>
+              
+              
+              
             </div>
-            <h2 class="text-2xl sm:text-3xl font-black text-white">اختار إطلالتك — جميع منتجات MES STORE (22 قطعة)</h2>
+            <h2 id="store-catalog-title" class="text-2xl sm:text-3xl font-black text-white">اختار إطلالتك — جميع منتجات MES STORE (22 قطعة)</h2>
             <p class="text-xs text-zinc-400">تصفح المنتجات واختر المقاس (`S / M / L / XL / XXL`) والكمية، أو اقلب البطاقة 3D لمشاهدة تفاصيل الخامة.</p>
           </div>
 
@@ -713,17 +729,17 @@
 
     <!-- =====================================================================
          SECTION 3: ABOUT MES & SCROLLYTELLING GARMENT ANATOMY
-                    (Exploded 4-Layer Jacket/Hoodie Scrubbing + Karaoke Text)
+                    
          ===================================================================== -->
     <section id="about-mes-section" class="rounded-3xl bg-gradient-to-b from-[#111116] via-[#070709] to-[#111116] border border-zinc-800 p-6 md:p-10 space-y-6">
       <div class="flex flex-wrap items-center justify-between gap-4">
         <div>
           <div class="flex flex-wrap items-center gap-2 mb-2">
-            <span class="motion-badge">Scroll-Linked Exploded Garment View</span>
-            <span class="motion-badge">Scroll Karaoke Text Highlight</span>
+            
+            
           </div>
           <h2 class="text-2xl sm:text-3xl font-black text-white">عن MES STORE — تفكيك طبقات الجاكت والهودي بالتمرير (Scrollytelling)</h2>
-          <p class="text-xs text-zinc-400">يتفكك الجاكت تلقائياً أثناء التمرير لإظهار جودة الخامات الأربع، أو اسحب المؤشر يدوياً لفحص كل طبقة.</p>
+          <p class="text-xs text-zinc-400"></p>
         </div>
 
         <div class="flex items-center gap-3 bg-black px-4 py-2.5 rounded-2xl border border-zinc-800">
@@ -820,7 +836,7 @@
         <div>
           <div class="motion-badge mb-1.5">Tinder Card Swipe + Rubber-Banding</div>
           <h3 class="text-lg font-black text-white">منسق إطلالات MES التفاعلي (اسحب يميناً أو يساراً)</h3>
-          <p class="text-xs text-zinc-400">اسحب الطقم لليمين لإضافته لطلبك أو لليسار لعرض الطقم التالي بفيزياء النوابض.</p>
+          <p class="text-xs text-zinc-400"></p>
         </div>
 
         <div class="relative h-56 flex items-center justify-center overflow-hidden rounded-2xl bg-black border border-zinc-800 p-4">
@@ -831,7 +847,7 @@
             </div>
             <div id="tinder-deal-title" class="text-base font-black text-white mb-1">جاكت شمواه نبيتي + جينز أسود واسع</div>
             <div id="tinder-deal-price" class="text-xl font-black text-[#d4af37] font-mono-tech mb-2">1,899 ج.م <span class="text-xs text-zinc-500 line-through">2,048 ج.م</span></div>
-            <p class="text-[11px] text-zinc-300">اسحب الطقم لليمين لإضافته للسلة فوراً أو لليسار لتجربة تنسيق آخر!</p>
+            <p class="text-[11px] text-zinc-300"></p>
           </div>
         </div>
 
@@ -850,12 +866,12 @@
         <div>
           <div class="motion-badge mb-1.5">Scratch-Off Mask + Copy Checkmark Morph</div>
           <h3 class="text-lg font-black text-white">اخدش البطاقة الذهبية لخصم خاص على طلبك</h3>
-          <p class="text-xs text-zinc-400">حرك الماوس أو إصبعك فوق الطبقة الذهبية لمسحها وكشف كود خصم MES STORE.</p>
+          <p id="store-coupon-description" class="text-xs text-zinc-400">اكتشف مفاجأتك.</p>
         </div>
 
         <div class="relative h-56 rounded-2xl bg-gradient-to-br from-[#d4af37]/25 via-black to-zinc-900 border border-[#d4af37]/50 flex flex-col items-center justify-center p-4 overflow-hidden">
-          <div class="text-xs text-[#f5ebe0] font-bold mb-1">🎉 مبروك! كود خصم إضافي 200 ج.م عند الطلب</div>
-          <div class="font-mono-tech text-2xl font-black text-[#d4af37] tracking-widest bg-zinc-950 px-4 py-2 rounded-xl border border-[#d4af37] mb-3">
+          <div id="store-coupon-headline" class="text-xs text-[#f5ebe0] font-bold mb-1">🎉 خصم خاص على طلبك</div>
+          <div id="store-coupon-code" class="font-mono-tech text-2xl font-black text-[#d4af37] tracking-widest bg-zinc-950 px-4 py-2 rounded-xl border border-[#d4af37] mb-3">
             MESVIP200
           </div>
           <button id="copy-coupon-btn" type="button" class="px-4 py-1.5 rounded-xl bg-[#d4af37] hover:bg-[#e6ccb2] text-black font-black text-xs flex items-center gap-1.5">
@@ -876,7 +892,7 @@
         <div>
           <div class="motion-badge mb-1.5">Clip-Path Before / After Style Slider</div>
           <h3 class="text-lg font-black text-white">قارن الإطلالة: الصباح الكلاسيكي مقابل السهرة الجريئة</h3>
-          <p class="text-xs text-zinc-400">اسحب الفاصل للمقارنة بين جاكت كريمي كلاسيك (999 ج.م) وجاكت جلد أسود (1,099 ج.م).</p>
+          <p class="text-xs text-zinc-400"></p>
         </div>
 
         <div id="comparison-stage" class="relative h-56 rounded-2xl overflow-hidden border border-zinc-800 select-none">
@@ -913,18 +929,18 @@
     <!-- =====================================================================
          SECTION 5: ★ ADVANCED EXTENSION LAB FOR MES STORE (Categories 21 to 32)
                     Interactive Cloth Weave, Streetwear Print Generator,
-                    4D Tesseract & ASCII Raymarcher, Audio FFT & Text Dissolution
+                    تفاصيل التصميم والإيقاع
          ===================================================================== -->
     <section id="advanced-extension-section" class="rounded-3xl houdini-gold-border p-6 md:p-8 space-y-8 shadow-2xl">
       <div class="flex flex-wrap items-center justify-between gap-4 border-b border-zinc-800 pb-5">
         <div class="space-y-1.5">
           <div class="flex flex-wrap items-center gap-2">
             <span class="px-3 py-1 rounded-full bg-[#d4af37] text-black font-black text-xs">★ MES ADVANCED LAB (21–32)</span>
-            <span class="motion-badge">User-Interactive Physics, Math & Shaders</span>
+            
           </div>
           <h2 class="text-2xl sm:text-3xl font-black text-white">مختبر MES التفاعلي للأقمشة، الطباعة الإجرائية، والفيزياء النادرة (التصنيفات 21–32)</h2>
           <p class="text-xs sm:text-sm text-zinc-300">
-            كل محاكي بالأسفل يستجيب مباشرة لحركة الماوس أو اللمس أو النقر: اختبر فيزياء نسيج الأقمشة، صمم طبعات الهوديز بالخوارزميات الرياضية، وتفاعل مع شعار MES الصوتي والجزيئي.
+            اكتشف تفاصيل التصميم.
           </p>
         </div>
 
@@ -939,11 +955,11 @@
         <div class="rounded-2xl bg-black/90 border border-zinc-800 p-5 space-y-4 flex flex-col justify-between">
           <div class="space-y-1.5">
             <div class="flex items-center justify-between">
-              <span class="motion-badge">Cat 21 & 27: Generative Streetwear Print Lab</span>
+              
               <span id="gen-math-status" class="text-[11px] font-mono-tech text-[#d4af37]">Mode: Perlin Flow Field</span>
             </div>
-            <h3 class="text-base font-black text-white">1. مصمم طبعات هوديز MES الإجرائي (Flow Field, Boids, Voronoi, Phyllotaxis, Game of Life, Electric Arc)</h3>
-            <p class="text-xs text-zinc-400">حرك المؤشر داخل القماش لتوجيه التدفق أو انقر لإطلاق شرارات L-System الكهربائية:</p>
+            <h3 class="text-base font-black text-white">1. نقوش وتصميمات مستوحاة من أزياء الشارع</h3>
+            <p class="text-xs text-zinc-400"></p>
           </div>
 
           <div class="relative h-64 rounded-2xl bg-[#050507] border border-zinc-800 overflow-hidden">
@@ -953,7 +969,7 @@
           <div class="flex flex-wrap items-center gap-1.5">
             <button type="button" data-gen-mode="flow" class="gen-mode-btn px-2.5 py-1.5 rounded-xl bg-[#d4af37] text-black font-black text-[11px]">🌊 Perlin Flow</button>
             <button type="button" data-gen-mode="boids" class="gen-mode-btn px-2.5 py-1.5 rounded-xl bg-zinc-900 text-zinc-200 font-bold text-[11px] border border-zinc-800">🐦 Boids Flock</button>
-            <button type="button" data-gen-mode="voronoi" class="gen-mode-btn px-2.5 py-1.5 rounded-xl bg-zinc-900 text-zinc-200 font-bold text-[11px] border border-zinc-800">💎 Voronoi Mesh</button>
+            <button type="button" data-gen-mode="voronoi" class="gen-mode-btn px-2.5 py-1.5 rounded-xl bg-zinc-900 text-zinc-200 font-bold text-[11px] border border-zinc-800">نقوش هندسية</button>
             <button type="button" data-gen-mode="phyllotaxis" class="gen-mode-btn px-2.5 py-1.5 rounded-xl bg-zinc-900 text-zinc-200 font-bold text-[11px] border border-zinc-800">🌻 Golden Spiral</button>
             <button type="button" data-gen-mode="life" class="gen-mode-btn px-2.5 py-1.5 rounded-xl bg-zinc-900 text-zinc-200 font-bold text-[11px] border border-zinc-800">🧬 Game of Life</button>
             <button type="button" data-gen-mode="arc" class="gen-mode-btn px-2.5 py-1.5 rounded-xl bg-zinc-900 text-zinc-200 font-bold text-[11px] border border-zinc-800">⚡ Electric Arc</button>
@@ -964,11 +980,11 @@
         <div class="rounded-2xl bg-black/90 border border-zinc-800 p-5 space-y-4 flex flex-col justify-between">
           <div class="space-y-1.5">
             <div class="flex items-center justify-between">
-              <span class="motion-badge">Cat 22 & 32: Interactive Cloth & Chaos Physics</span>
-              <span id="phys-sim-status" class="text-[11px] font-mono-tech text-[#e6ccb2]">Mode: Cloth Simulation Mesh</span>
+              
+              <span id="phys-sim-status" class="text-[11px] font-mono-tech text-[#e6ccb2]">نسيج</span>
             </div>
-            <h3 class="text-base font-black text-white">2. اختبار مرونة قماش MES والفيزياء الفوضوية (Cloth Mesh, Double Pendulum, 3-Body Orbit, DNA)</h3>
-            <p class="text-xs text-zinc-400">مرر المؤشر فوق نسيج القماش لشد الخيوط واختبار مرونتها الفيزيائية في الوقت الفعلي:</p>
+            <h3 class="text-base font-black text-white">2. تفاصيل نسيج القماش</h3>
+            <p class="text-xs text-zinc-400"></p>
           </div>
 
           <div class="relative h-64 rounded-2xl bg-[#050507] border border-zinc-800 overflow-hidden">
@@ -976,7 +992,7 @@
           </div>
 
           <div class="flex flex-wrap items-center gap-1.5">
-            <button type="button" data-phys-mode="cloth" class="phys-mode-btn px-2.5 py-1.5 rounded-xl bg-[#d4af37] text-black font-black text-[11px]">🧵 نسيج القماش التفاعلي (Cloth Mesh)</button>
+            <button type="button" data-phys-mode="cloth" class="phys-mode-btn px-2.5 py-1.5 rounded-xl bg-[#d4af37] text-black font-black text-[11px]">🧵 نسيج القماش</button>
             <button type="button" data-phys-mode="pendulum" class="phys-mode-btn px-2.5 py-1.5 rounded-xl bg-zinc-900 text-zinc-200 font-bold text-[11px] border border-zinc-800">🎢 Double Pendulum</button>
             <button type="button" data-phys-mode="threebody" class="phys-mode-btn px-2.5 py-1.5 rounded-xl bg-zinc-900 text-zinc-200 font-bold text-[11px] border border-zinc-800">🪐 3-Body Orbit</button>
             <button type="button" data-phys-mode="wavependulum" class="phys-mode-btn px-2.5 py-1.5 rounded-xl bg-zinc-900 text-zinc-200 font-bold text-[11px] border border-zinc-800">〰️ Pendulum Wave</button>
@@ -984,15 +1000,15 @@
           </div>
         </div>
 
-        <!-- SIMULATOR 3: 4D Hypercube Emblem, Fourier Epicycles, SDF Metaballs & ASCII Raymarcher (Cat 23, 24, 30) -->
+        <!-- SIMULATOR 3: 4D Hypercube Emblem, Fourier Epicycles, SDF Metaballs & تأثيرات بصرية (Cat 23, 24, 30) -->
         <div class="rounded-2xl bg-black/90 border border-zinc-800 p-5 space-y-4 flex flex-col justify-between">
           <div class="space-y-1.5">
             <div class="flex items-center justify-between">
-              <span class="motion-badge">Cat 23, 24, 30: 4D Tesseract, SDF & ASCII Shader</span>
-              <span id="math-viz-status" class="text-[11px] font-mono-tech text-[#d4af37]">Mode: 4D Hypercube (Tesseract)</span>
+              
+              <span id="math-viz-status" class="text-[11px] font-mono-tech text-[#d4af37]">أشكال هندسية</span>
             </div>
-            <h3 class="text-base font-black text-white">3. الهندسة رباعية الأبعاد والمسح الشعاعي (4D Tesseract, Fourier, SDF smin, ASCII Raymarcher)</h3>
-            <p class="text-xs text-zinc-400">حرك المؤشر لتغيير زاوية دوران المكعب رباعي الأبعاد أو دمج كرات SDF السائلة:</p>
+            <h3 class="text-base font-black text-white">3. أشكال هندسية وتأثيرات بصرية</h3>
+            <p class="text-xs text-zinc-400"></p>
           </div>
 
           <div class="relative h-64 rounded-2xl bg-[#050507] border border-zinc-800 overflow-hidden flex items-center justify-center">
@@ -1001,9 +1017,9 @@
           </div>
 
           <div class="flex flex-wrap items-center gap-1.5">
-            <button type="button" data-math-mode="tesseract" class="math-mode-btn px-2.5 py-1.5 rounded-xl bg-[#d4af37] text-black font-black text-[11px]">🧊 4D Tesseract</button>
+            <button type="button" data-math-mode="tesseract" class="math-mode-btn px-2.5 py-1.5 rounded-xl bg-[#d4af37] text-black font-black text-[11px]">🧊 شكل هندسي</button>
             <button type="button" data-math-mode="fourier" class="math-mode-btn px-2.5 py-1.5 rounded-xl bg-zinc-900 text-zinc-200 font-bold text-[11px] border border-zinc-800">⭕ Fourier Epicycles</button>
-            <button type="button" data-math-mode="sdf" class="math-mode-btn px-2.5 py-1.5 rounded-xl bg-zinc-900 text-zinc-200 font-bold text-[11px] border border-zinc-800">💧 SDF Smooth Union</button>
+            <button type="button" data-math-mode="sdf" class="math-mode-btn px-2.5 py-1.5 rounded-xl bg-zinc-900 text-zinc-200 font-bold text-[11px] border border-zinc-800">💧 أشكال متداخلة</button>
             <button type="button" data-math-mode="ascii" class="math-mode-btn px-2.5 py-1.5 rounded-xl bg-zinc-900 text-zinc-200 font-bold text-[11px] border border-zinc-800">📟 ASCII Raymarcher</button>
             <button type="button" data-math-mode="lensing" class="math-mode-btn px-2.5 py-1.5 rounded-xl bg-zinc-900 text-zinc-200 font-bold text-[11px] border border-zinc-800">🕳️ Gravity Lensing</button>
           </div>
@@ -1013,17 +1029,17 @@
         <div class="rounded-2xl bg-black/90 border border-zinc-800 p-5 space-y-4 flex flex-col justify-between">
           <div class="space-y-1.5">
             <div class="flex items-center justify-between">
-              <span class="motion-badge">Cat 28, 29, 31: Audio FFT & Text Particle Dissolution</span>
+              
               <span id="audio-viz-status" class="text-[11px] font-mono-tech text-[#e6ccb2]">Interactive Cursor & Beat Active</span>
             </div>
-            <h3 class="text-base font-black text-white">4. استوديو إيقاع MES وتفكيك النص الجزيئي (FFT Spectrum, Oscilloscope & Word Scramble)</h3>
-            <p class="text-xs text-zinc-400">حرك المؤشر داخل الشاشة لدفع الجزيئات الذهبية أو مرر فوق كلمات الشعار بالأسفل لبعثرتها:</p>
+            <h3 class="text-base font-black text-white">4. إيقاع وهوية MES</h3>
+            <p class="text-xs text-zinc-400"></p>
           </div>
 
           <div class="relative h-64 rounded-2xl bg-[#050507] border border-zinc-800 overflow-hidden">
             <canvas id="audio-text-canvas" class="w-full h-full block cursor-pointer"></canvas>
             <div class="absolute bottom-2 inset-x-3 px-3 py-1.5 rounded-xl bg-zinc-900/90 border border-zinc-700/80 flex flex-wrap items-center justify-between gap-2 text-xs">
-              <span class="text-[10px] font-mono-tech text-[#d4af37]">Scramble-on-Hover Per Word:</span>
+              <span class="text-[10px] font-mono-tech text-[#d4af37]"></span>
               <div class="flex items-center gap-2 font-black text-white">
                 <span class="word-scramble-hover cursor-pointer hover:text-[#d4af37]" data-word="ستايلك">ستايلك</span>
                 <span class="word-scramble-hover cursor-pointer hover:text-[#d4af37]" data-word="مش">مش</span>
@@ -1034,9 +1050,9 @@
           </div>
 
           <div class="flex flex-wrap items-center gap-1.5">
-            <button type="button" id="trigger-audio-beat-btn" class="px-3 py-1.5 rounded-xl bg-[#d4af37] text-black font-black text-[11px]">🎵 نبضة إيقاعية (Beat + FFT)</button>
-            <button type="button" id="trigger-text-dissolve-btn" class="px-3 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-[#f5ebe0] font-bold text-[11px] border border-zinc-700">✨ تفكيك وتجميع الجزيئات</button>
-            <button type="button" id="toggle-oscilloscope-btn" class="px-3 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-200 font-bold text-[11px] border border-zinc-700">📈 تبديل Oscilloscope / Bars</button>
+            <button type="button" id="trigger-audio-beat-btn" class="px-3 py-1.5 rounded-xl bg-[#d4af37] text-black font-black text-[11px]">🎵 تشغيل الإيقاع</button>
+            <button type="button" id="trigger-text-dissolve-btn" class="px-3 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-[#f5ebe0] font-bold text-[11px] border border-zinc-700">✨ تغيير التأثير</button>
+            <button type="button" id="toggle-oscilloscope-btn" class="px-3 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-200 font-bold text-[11px] border border-zinc-700">📈 تغيير العرض</button>
           </div>
         </div>
 
@@ -1070,7 +1086,7 @@
   <div id="quick-view-backdrop" class="fixed inset-0 bg-black/80 backdrop-blur-md z-[120] hidden items-center justify-center p-4 opacity-0 transition-opacity duration-300">
     <div id="quick-view-modal" class="relative w-full max-w-2xl rounded-3xl bg-[#111116] border border-zinc-700 p-6 shadow-2xl transform scale-90 transition-all duration-300 space-y-5">
       <div class="flex items-center justify-between border-b border-zinc-800 pb-3">
-        <span class="motion-badge">Container Transform + Backdrop Obscuration Blur + Accordion</span>
+        
         <button id="close-quick-view-btn" type="button" class="px-3 py-1 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-bold">✕ إغلاق</button>
       </div>
 
@@ -1122,7 +1138,7 @@
   <div id="cart-drawer" class="fixed inset-y-0 right-0 w-full max-w-md bg-[#070709]/95 backdrop-blur-2xl border-l border-zinc-800 z-[150] transform translate-x-full transition-transform duration-500 flex flex-col shadow-2xl">
     <div class="p-5 border-b border-zinc-800 flex items-center justify-between">
       <div>
-        <span class="motion-badge">WhatsApp Direct Order + Value Change Ticker</span>
+        
         <h2 class="text-lg font-black text-white mt-1">سلة طلبات MES STORE</h2>
       </div>
       <button id="close-cart-drawer-btn" type="button" class="px-3 py-1.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-bold">✕ إغلاق</button>
@@ -1132,7 +1148,9 @@
 
     <!-- Customer Details Form for WhatsApp Order -->
     <div class="p-5 border-t border-zinc-800 bg-[#111116] space-y-3">
-      <div class="text-xs font-bold text-[#e6ccb2]">بيانات التوصيل (الدفع عند الاستلام):</div>
+      <div class="text-xs font-bold text-[#e6ccb2]">بيانات التوصيل:</div>
+      <div data-checkout-note class="text-[11px] text-zinc-400">يتم تأكيد تفاصيل الشحن عبر واتساب.</div>
+      <div id="checkout-payment-methods" class="text-[11px] text-emerald-300">طرق الدفع: الدفع عند الاستلام</div>
       <div class="grid grid-cols-2 gap-2">
         <input id="wa-customer-name" type="text" placeholder="الاسم بالكامل" class="px-3 py-2 rounded-xl bg-black border border-zinc-700 text-xs text-white focus:border-[#d4af37] focus:outline-none" />
         <input id="wa-customer-phone" type="text" placeholder="رقم الموبايل / واتساب" class="px-3 py-2 rounded-xl bg-black border border-zinc-700 text-xs text-white focus:border-[#d4af37] focus:outline-none" />
@@ -1143,6 +1161,7 @@
         <span class="text-zinc-400">الإجمالي (شامل خصم الكوبون إن وجد):</span>
         <span id="cart-total-price" class="text-xl font-black text-[#d4af37] font-mono-tech tabular-nums">749 ج.م</span>
       </div>
+      <div id="cart-discount-summary" hidden class="text-[11px] text-emerald-400 font-bold"></div>
 
       <button id="optimistic-checkout-btn" type="button" class="w-full py-3 rounded-2xl bg-gradient-to-r from-[#d4af37] to-[#e6ccb2] hover:opacity-95 text-black font-black text-sm shadow-lg transition-all">
         💬 تأكيد وإرسال الطلب عبر واتساب (Optimistic UI + Confetti)
@@ -1155,8 +1174,9 @@
   <footer class="border-t border-zinc-800/80 bg-[#050507] py-8 px-4 mt-12">
     <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4 text-xs text-zinc-400">
       <div>
-        <strong class="text-white tracking-wider">MES STORE</strong> — ملابس رجالي · ستايل عصري · اختياراتك تبدأ من هنا · الطلبات والاستفسارات عبر واتساب
+        <strong id="store-footer-name" class="text-white tracking-wider">MES STORE</strong> — ملابس رجالي · ستايل عصري · اختياراتك تبدأ من هنا · الطلبات والاستفسارات عبر واتساب
       </div>
+      <div id="store-contact-links" class="w-full text-xs text-zinc-400 flex flex-wrap gap-2"></div>
       <div class="flex items-center gap-3">
         <button id="toggle-reduced-motion-btn" type="button" class="px-3 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-zinc-300">
           ♿ وضع تقليل الحركة (Reduced Motion): غير مفعّل
@@ -1165,6 +1185,61 @@
       </div>
     </div>
   </footer>
+
+
+  <!-- MES STORE Garment Motion Studio: image-specific, background-locked animation -->
+  <section id="gm-studio" aria-modal="true" role="dialog" aria-labelledby="gm-title">
+    <div class="gm-panel text-white" dir="rtl">
+      <div class="p-4 md:p-5 border-b border-zinc-800 flex items-center justify-between gap-3">
+        <div><div class="text-[10px] tracking-widest text-[#d4af37] font-mono-tech">MES STORE · GARMENT MOTION ENGINE</div><h2 id="gm-title" class="text-lg md:text-xl font-black">استوديو حركة الملابس</h2><p id="gm-product-name" class="text-xs text-zinc-400 mt-1">اختر صورة المنتج لبدء المعالجة</p></div>
+        <button id="gm-close" class="gm-button">✕ إغلاق</button>
+      </div>
+      <div class="p-4 grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-4">
+        <div class="space-y-3">
+          <div class="gm-stage"><canvas id="gm-editor-canvas" width="720" height="720"></canvas></div>
+          <div class="flex flex-wrap gap-2">
+            <label class="gm-button cursor-pointer">رفع صورة المنتج <input id="gm-image-upload" type="file" accept="image/*" class="hidden"></label>
+            <button id="gm-auto-mask" class="gm-button">تحديد تلقائي للخلفية البسيطة</button>
+            <button id="gm-clear-mask" class="gm-button">مسح التحديد</button>
+            <div class="w-full gm-control space-y-2">
+              <label for="gm-ai-endpoint" class="block text-xs font-bold">خدمة تحديد الصور (اختياري)</label>
+              <input id="gm-ai-endpoint" type="url" placeholder="https://your-server/api/segment" class="w-full bg-black border border-zinc-700 rounded-lg p-2 text-xs text-white" />
+              <button id="gm-ai-segment" class="gm-button w-full">تحديد مساحة الملابس</button>
+              <p class="text-[10px] text-zinc-500"></p>
+            </div>
+            <button id="gm-preview-toggle" class="gm-button active">▶ معاينة الحركة</button>
+          </div>
+          <p class="text-[11px] text-zinc-400 leading-6">حدد القطعة بعناية، ثم راجع حدودها قبل الحفظ.</p>
+          <div id="gm-status" class="gm-status">ارفع صورة حقيقية للمنتج. الرسومات الحالية في المتجر لا تحتوي على بيانات قماش كافية لمحاكاة الملابس.</div>
+        </div>
+        <div class="space-y-3">
+          <div class="gm-control space-y-2">
+            <label class="block text-xs font-bold">فئة الملابس</label>
+            <select id="gm-category" class="w-full bg-black border border-zinc-700 rounded-lg p-2 text-sm">
+              <option value="jacket">جاكت / معطف</option><option value="hoodie">هودي / سويت شيرت</option><option value="trousers">جينز / بنطلون</option><option value="shirt">قميص</option><option value="tshirt">تيشيرت</option><option value="dress">فستان</option><option value="generic">قطعة أخرى</option>
+            </select>
+            <div class="flex justify-between text-xs"><label for="gm-brush">حجم الفرشاة</label><b id="gm-brush-value">28 px</b></div>
+            <input id="gm-brush" type="range" min="5" max="100" value="28" class="w-full">
+            <div class="grid grid-cols-2 gap-2"><button id="gm-paint-mode" class="gm-button active">＋ تحديد الملابس</button><button id="gm-erase-mode" class="gm-button">－ ممحاة</button></div>
+          </div>
+          <div class="gm-control space-y-3">
+            <div><div class="flex justify-between text-xs"><label for="gm-speed">سرعة الحركة</label><b id="gm-speed-value">77%</b></div><input id="gm-speed" type="range" min="10" max="100" value="77" class="w-full"></div>
+            <div><div class="flex justify-between text-xs"><label for="gm-intensity">شدة الحركة</label><b id="gm-intensity-value">63%</b></div><input id="gm-intensity" type="range" min="5" max="80" value="63" class="w-full"></div>
+            <label class="flex items-center gap-2 text-xs"><input id="gm-sleeves" type="checkbox" checked> تحريك الأكمام</label>
+            <label class="flex items-center gap-2 text-xs"><input id="gm-body" type="checkbox" checked> تحريك الجسم والقماش</label>
+            <label class="flex items-center gap-2 text-xs"><input id="gm-edges" type="checkbox" checked> تحريك الأطراف</label>
+          </div>
+          <div class="gm-control space-y-2">
+            <button id="gm-save" class="gm-button primary w-full">حفظ الحركة لهذا المنتج</button>
+            <button id="gm-export" class="gm-button w-full">تنزيل ملف النشر JSON</button>
+            <label class="gm-button block text-center cursor-pointer">استيراد ملف منتج منشور <input id="gm-import" type="file" accept="application/json,.json" class="hidden"></label>
+            <button id="gm-delete" class="gm-button w-full">حذف إعداد الحركة المحفوظ</button>
+            <p class="text-[10px] text-zinc-500 leading-5">الحفظ محلي على نفس المتصفح والجهاز عبر IndexedDB. الحفظ المحلي خاص بهذا المتصفح. للنشر على جميع الزوار، نزّل JSON وضعه في assets/garment-motion/ باسم معرف المنتج مثل mes11.json.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
 
   <!-- =====================================================================
        COMPLETE INTERACTIVE ENGINE (ALL 22 MES PRODUCTS + 32 CATEGORIES)
@@ -1240,6 +1315,309 @@
         { id: 'mes22', title: 'سويت شيرت أسود سادة', category: 'هودي', price: 549, desc: 'تصميم أساسي أنيق باللون الأسود، مناسب للإطلالات اليومية', badge: 'Minimal Basic', motionTag: 'Micro-Interaction Ready', svgIcon: makeGarmentSvg('hoodie', '#0f0f12', '#d4af37') }
       ];
 
+      function storeSafeText(value) {
+        return String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+      }
+      function storeWhatsAppNumber() {
+        return String(STORE_CONTACT.whatsapp_number || '').replace(/[^0-9]/g, '');
+      }
+      function storeRuleIsCurrent(rule) {
+        if (!rule || rule.active !== true) return false;
+        const now = Date.now();
+        if (rule.starts_at && now < Date.parse(rule.starts_at)) return false;
+        if (rule.ends_at && now > Date.parse(rule.ends_at)) return false;
+        return true;
+      }
+      function storeDiscountForCart() {
+        const units = cartItems.reduce((sum, item) => sum + Number(item.qty || 0), 0);
+        const rawTotal = cartItems.reduce((sum, item) => sum + Number(item.price || 0) * Number(item.qty || 0), 0);
+        let best = { amount: 0, label: '' };
+        for (const rule of (STORE_DISCOUNTS.quantity_rules || [])) {
+          if (!storeRuleIsCurrent(rule) || units < Number(rule.min_units || 1)) continue;
+          let eligible = cartItems;
+          if (rule.scope === 'product') {
+            const ids = Array.isArray(rule.product_ids) ? rule.product_ids : [rule.product_id].filter(Boolean);
+            eligible = cartItems.filter(item => ids.includes(item.id));
+          } else if (rule.scope === 'category') {
+            const categories = Array.isArray(rule.categories) ? rule.categories : [rule.category].filter(Boolean);
+            eligible = cartItems.filter(item => categories.includes(item.category));
+          } else if (rule.scope !== 'cart') continue;
+          const eligibleUnits = eligible.reduce((sum, item) => sum + Number(item.qty || 0), 0);
+          if (!eligibleUnits || eligibleUnits < Number(rule.min_units || 1)) continue;
+          const subtotal = eligible.reduce((sum, item) => sum + Number(item.price || 0) * Number(item.qty || 0), 0);
+          let amount = 0;
+          if (rule.type === 'percentage') amount = subtotal * Math.max(0, Math.min(100, Number(rule.value) || 0)) / 100;
+          else if (rule.type === 'fixed_amount') amount = eligibleUnits * Math.max(0, Number(rule.value) || 0);
+          else if (rule.type === 'fixed_price') amount = eligible.reduce((sum, item) => sum + Math.max(0, Number(item.price) - Number(rule.value)) * Number(item.qty || 0), 0);
+          amount = Math.min(subtotal, Math.max(0, amount));
+          if (amount > best.amount) best = { amount, label: rule.description || ('خصم الكمية: ' + rule.min_units + ' وحدات') };
+        }
+        return best;
+      }
+      function getProductDiscountHint(product) {
+        const rules = (STORE_DISCOUNTS.quantity_rules || []).filter(rule => {
+          if (!storeRuleIsCurrent(rule)) return false;
+          if (rule.scope === 'product') return (rule.product_ids || [rule.product_id]).filter(Boolean).includes(product.id);
+          if (rule.scope === 'category') return (rule.categories || [rule.category]).filter(Boolean).includes(product.category);
+          return false;
+        }).sort((a,b) => Number(a.min_units || 1) - Number(b.min_units || 1));
+        return rules.length ? '<span class="block text-[10px] text-emerald-400 mt-1">' + storeSafeText(rules[0].description || ('خصم عند شراء ' + rules[0].min_units + ' وحدات')) + '</span>' : '';
+      }
+      async function loadStoreConfiguration() {
+        const readJson = async path => {
+          const response = await fetch(new URL('./' + path, document.baseURI), { cache: 'no-store' });
+          if (!response.ok) throw new Error(path + ' (' + response.status + ')');
+          return response.json();
+        };
+        try {
+          const contact = await readJson('data/contact.json');
+          if (contact && contact.version === 1) STORE_CONTACT = contact;
+          const wa = storeWhatsAppNumber();
+          const footerName = document.getElementById('store-footer-name');
+          if (footerName && STORE_CONTACT.store_name) footerName.textContent = STORE_CONTACT.store_name;
+          const footer = document.getElementById('store-contact-links');
+          if (footer) {
+            const links = [];
+            if (wa) links.push('<a class="text-[#d4af37] hover:underline" target="_blank" rel="noopener" href="https://wa.me/' + wa + '">واتساب المتجر</a>');
+            if (STORE_CONTACT.phone) links.push('<a class="hover:underline" href="tel:' + storeSafeText(STORE_CONTACT.phone) + '">' + storeSafeText(STORE_CONTACT.phone) + '</a>');
+            if (STORE_CONTACT.email) links.push('<a class="hover:underline" href="mailto:' + storeSafeText(STORE_CONTACT.email) + '">' + storeSafeText(STORE_CONTACT.email) + '</a>');
+            if (STORE_CONTACT.address) links.push('<span>' + storeSafeText(STORE_CONTACT.address) + '</span>');
+            if (STORE_CONTACT.instagram_url && /^https:\/\//i.test(STORE_CONTACT.instagram_url)) links.push('<a target="_blank" rel="noopener" href="' + storeSafeText(STORE_CONTACT.instagram_url) + '">Instagram</a>');
+            if (STORE_CONTACT.facebook_url && /^https:\/\//i.test(STORE_CONTACT.facebook_url)) links.push('<a target="_blank" rel="noopener" href="' + storeSafeText(STORE_CONTACT.facebook_url) + '">Facebook</a>');
+            if (STORE_CONTACT.tiktok_url && /^https:\/\//i.test(STORE_CONTACT.tiktok_url)) links.push('<a target="_blank" rel="noopener" href="' + storeSafeText(STORE_CONTACT.tiktok_url) + '">TikTok</a>');
+            footer.innerHTML = links.join(' <span class="text-zinc-600">·</span> ') +
+              (STORE_CONTACT.working_hours ? '<span class="block mt-1">' + storeSafeText(STORE_CONTACT.working_hours) + '</span>' : '') +
+              (STORE_CONTACT.footer_note ? '<span class="block mt-1">' + storeSafeText(STORE_CONTACT.footer_note) + '</span>' : '');
+          }
+        } catch (error) { console.warn('Store contact settings unavailable:', error.message); }
+        try {
+          const discounts = await readJson('data/discounts.json');
+          if (discounts && discounts.version === 1) {
+            STORE_DISCOUNTS = {
+              coupons: Array.isArray(discounts.coupons) ? discounts.coupons : [],
+              quantity_rules: Array.isArray(discounts.quantity_rules) ? discounts.quantity_rules : []
+            };
+          }
+        } catch (error) { console.warn('Store discount settings unavailable:', error.message); }
+        try {
+          const registry = await readJson('data/sections/index.json');
+          if (registry && registry.version === 1 && Array.isArray(registry.sections)) {
+            const entries = await Promise.all(registry.sections.map(async section => {
+              try { return [section.id, await readJson('data/sections/' + section.file)]; }
+              catch (error) { console.warn('Section settings unavailable:', section.id); return [section.id, null]; }
+            }));
+            STORE_SECTIONS = Object.fromEntries(entries.filter(entry => entry[1] && entry[1].version === 1));
+            const homeSettings = STORE_SECTIONS.home || {};
+            const heroTitle = document.getElementById('scramble-headline');
+            const heroSubtitle = document.getElementById('hero-subtitle');
+            if (heroTitle && homeSettings.hero_title) heroTitle.textContent = homeSettings.hero_title;
+            if (heroSubtitle && homeSettings.hero_subtitle) heroSubtitle.textContent = homeSettings.hero_subtitle;
+            const categorySettings = STORE_SECTIONS.categories || {};
+            const categoryTitle = document.getElementById('store-categories-title');
+            if (categoryTitle && categorySettings.title) categoryTitle.textContent = categorySettings.title;
+            const catalogSettings = STORE_SECTIONS.catalog || {};
+            const catalogTitle = document.getElementById('store-catalog-title');
+            if (catalogTitle && catalogSettings.title) catalogTitle.textContent = catalogSettings.title;
+            const sectionTargets = {
+              home: 'hero-showcase',
+              categories: 'visual-categories-showroom',
+              catalog: 'products-grid-section',
+              offers: 'interactive-tricks-section',
+              checkout: 'cart-drawer'
+            };
+            Object.entries(sectionTargets).forEach(([key,id]) => {
+              const config = STORE_SECTIONS[key];
+              const element = document.getElementById(id);
+              if (element && config && config.enabled === false) element.hidden = true;
+            });
+            const footerConfig = STORE_SECTIONS.footer;
+            const footerElement = document.querySelector('footer');
+            if (footerElement && footerConfig && footerConfig.enabled === false) footerElement.hidden = true;
+            const checkoutConfig = STORE_SECTIONS.checkout || {};
+            const checkoutButton = document.getElementById('optimistic-checkout-btn');
+            if (checkoutButton && checkoutConfig.enabled === false) checkoutButton.disabled = true;
+            const checkoutNote = document.querySelector('#cart-drawer [data-checkout-note]');
+            if (checkoutNote && checkoutConfig.shipping_note) checkoutNote.textContent = checkoutConfig.shipping_note;
+            const paymentMethods = document.getElementById('checkout-payment-methods');
+            if (paymentMethods && Array.isArray(checkoutConfig.payment_methods)) {
+              paymentMethods.textContent = checkoutConfig.payment_methods.length
+                ? 'طرق الدفع: ' + checkoutConfig.payment_methods.map(storeSafeText).join(' · ')
+                : '';
+              paymentMethods.hidden = !checkoutConfig.payment_methods.length;
+            }
+          }
+        } catch (error) { console.warn('Store section settings unavailable:', error.message); }
+        const coupon = (STORE_DISCOUNTS.coupons || []).find(item => item.active === true && storeRuleIsCurrent(item));
+        const codeElement = document.getElementById('store-coupon-code');
+        const couponButton = document.getElementById('copy-coupon-btn');
+        const couponCard = codeElement ? codeElement.closest('.rounded-3xl') : null;
+        const couponHeadline = document.getElementById('store-coupon-headline');
+        const couponDescription = document.getElementById('store-coupon-description');
+        if (coupon) {
+          if (codeElement) codeElement.textContent = coupon.code;
+          if (couponHeadline) couponHeadline.textContent = coupon.type === 'percentage'
+            ? 'خصم ' + Number(coupon.value) + '% على طلبك'
+            : 'خصم ' + Number(coupon.value).toLocaleString() + ' ج.م على طلبك';
+          if (couponDescription) couponDescription.textContent = coupon.description || 'استخدم الكود عند إتمام الطلب.';
+          if (couponButton) couponButton.disabled = false;
+        } else {
+          if (couponCard) couponCard.hidden = true;
+          if (couponButton) couponButton.disabled = true;
+        }
+        renderProducts(false);
+        renderCartDrawer();
+      }
+      function applyStoreCoupon(code) {
+        const coupon = (STORE_DISCOUNTS.coupons || []).find(item => item.code === code && item.active === true && storeRuleIsCurrent(item));
+        if (!coupon) return { ok: false, message: 'كود الخصم غير متاح حالياً.' };
+        const units = cartItems.reduce((sum, item) => sum + Number(item.qty || 0), 0);
+        if (units < Number(coupon.min_units || 1)) return { ok: false, message: 'هذا الكود يحتاج إلى ' + coupon.min_units + ' وحدات على الأقل.' };
+        const subtotal = cartItems.reduce((sum, item) => sum + Number(item.price || 0) * Number(item.qty || 0), 0);
+        let amount = 0;
+        if (coupon.type === 'percentage') amount = subtotal * Math.max(0, Math.min(100, Number(coupon.value) || 0)) / 100;
+        else if (coupon.type === 'fixed_amount') amount = Math.max(0, Number(coupon.value) || 0);
+        else return { ok: false, message: 'نوع الكوبون غير مدعوم.' };
+        activeCouponCode = coupon.code;
+        discountAmount = Math.min(subtotal, amount);
+        return { ok: true, message: coupon.description || 'تم تفعيل الخصم.' };
+      }
+
+      // Product data and media are loaded from the editable GitHub catalogue.
+      function normalizeCatalogPath(value) {
+        if (typeof value !== 'string') return '';
+        const path = value.trim();
+        if (!path) return '';
+        if (/^https:\/\//i.test(path) || /^\/?assets\/products\//i.test(path)) return path;
+        return '';
+      }
+      function resolveCatalogMedia(path) {
+        if (!path) return '';
+        try {
+          const url = new URL(path, document.baseURI);
+          return url.protocol === 'https:' || url.origin === location.origin ? url.href : '';
+        } catch (e) { return ''; }
+      }
+      function escapeStoreAttribute(value) {
+        return String(value ?? '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      }
+      function getProductCover(product) {
+        const media = product && product.media ? product.media : {};
+        return media.cover || (Array.isArray(media.images) ? media.images[0] : '') || '';
+      }
+      function renderProductVisual(product) {
+        const fallback = product.svgIcon || '';
+        const source = resolveCatalogMedia(getProductCover(product));
+        if (!source) return fallback;
+        return '<div class="relative w-full h-full">' + fallback +
+          '<img src="' + escapeStoreAttribute(source) + '" alt="' + escapeStoreAttribute(product.title) +
+          '" loading="lazy" decoding="async" class="absolute inset-0 z-10 w-full h-full object-cover" onerror="this.remove()"></div>';
+      }
+      function renderProductGallery(product) {
+        const media = product.media || {};
+        const cover = getProductCover(product);
+        const detailSettings = STORE_SECTIONS['product-details'] || {};
+        const images = detailSettings.show_gallery === false ? [] : [...new Set([cover, ...(Array.isArray(media.images) ? media.images : [])].filter(Boolean))]
+          .map(resolveCatalogMedia).filter(Boolean);
+        const videos = detailSettings.show_videos === false ? [] : (Array.isArray(media.videos) ? media.videos : []).map(resolveCatalogMedia).filter(Boolean);
+        const thumbnails = images.slice(1, 8).map((source, index) =>
+          '<img src="' + escapeStoreAttribute(source) + '" alt="' + escapeStoreAttribute(product.title) +
+          ' - ' + (index + 2) + '" loading="lazy" class="h-20 w-20 shrink-0 rounded-xl border border-zinc-700 object-cover">').join('');
+        const videoMarkup = videos.map(source =>
+          '<video controls playsinline preload="metadata" ' + (images[0] ? 'poster="' + escapeStoreAttribute(images[0]) + '"' : '') +
+          ' class="w-full rounded-xl bg-black border border-zinc-800"><source src="' + escapeStoreAttribute(source) +
+          '">المتصفح لا يدعم تشغيل هذا الفيديو.</video>').join('');
+        return (thumbnails ? '<div class="flex gap-2 overflow-x-auto py-2">' + thumbnails + '</div>' : '') +
+          (videoMarkup ? '<div class="mt-3 space-y-2"><h4 class="text-xs font-bold text-[#d4af37]">فيديوهات المنتج</h4>' + videoMarkup + '</div>' : '');
+      }
+      function syncCategoryFilters() {
+        const group = document.getElementById('category-filter-group');
+        if (!group) return;
+        const visible = PRODUCTS.filter(product => product.active !== false);
+        const labels = { 'جاكت':'🧥 الجواكت والمعاطف', 'هودي':'👕 هوديز وسويت شيرت', 'جينز':'👖 جينز', 'بناطيل':'🏃 بناطيل رياضية', ...((STORE_SECTIONS.categories || {}).labels || {}) };
+        const categories = [...new Set(visible.map(product => product.category).filter(Boolean))]
+          .sort((a, b) => a.localeCompare(b, 'ar'));
+        group.innerHTML =
+          '<button type="button" data-category="all" class="cat-filter-btn magnetic-btn px-4 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-200 font-bold text-xs border border-zinc-800 transition-all">كل المنتجات (' + visible.length + ')</button>' +
+          categories.map(category => '<button type="button" data-category="' + escapeStoreAttribute(category) +
+            '" class="cat-filter-btn magnetic-btn px-4 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-200 font-bold text-xs border border-zinc-800 transition-all">' +
+            escapeStoreAttribute(labels[category] || category) + ' (' + visible.filter(product => product.category === category).length + ')</button>').join('');
+        const active = [...group.querySelectorAll('.cat-filter-btn')]
+          .find(button => button.dataset.category === currentCategory) ||
+          group.querySelector('[data-category="all"]');
+        if (active) active.className = 'cat-filter-btn magnetic-btn px-4 py-2 rounded-xl bg-[#d4af37] text-black font-black text-xs transition-all';
+      }
+      async function loadStoreCatalog() {
+        try {
+          const response = await fetch(new URL('./data/products.json', document.baseURI), { cache: 'no-store' });
+          if (!response.ok) throw new Error('Catalogue request failed: ' + response.status);
+          const catalogue = await response.json();
+          if (!catalogue || catalogue.version !== 1 || !Array.isArray(catalogue.products) || !catalogue.products.length) {
+            throw new Error('Invalid product catalogue format.');
+          }
+          const existing = new Map(PRODUCTS.map(product => [product.id, product]));
+          const seen = new Set();
+          const next = catalogue.products.map((record, index) => {
+            if (!record || typeof record.id !== 'string' ||
+                !/^[a-z0-9][a-z0-9_-]{1,48}$/i.test(record.id) || seen.has(record.id)) {
+              throw new Error('Invalid or duplicate product ID at row ' + (index + 1));
+            }
+            seen.add(record.id);
+            const price = Number(record.price);
+            if (!Number.isFinite(price) || price < 0 || typeof record.title !== 'string' || !record.title.trim() ||
+                typeof record.category !== 'string' || !record.category.trim()) {
+              throw new Error('Invalid title, category or price for ' + record.id);
+            }
+            const visual = record.visual || {};
+            const type = ['jeans', 'pants', 'hoodie', 'jacket'].includes(visual.type) ? visual.type :
+              (/جينز/.test(record.category) ? 'jeans' : /بناطيل/.test(record.category) ? 'pants' :
+                /هودي|سويت/.test(record.category) ? 'hoodie' : 'jacket');
+            const color = /^#[0-9a-f]{6}$/i.test(visual.color || '') ? visual.color : '#27272a';
+            const accent = /^#[0-9a-f]{6}$/i.test(visual.accent || '') ? visual.accent : '#d4af37';
+            const sourceMedia = record.media || {};
+            const media = {
+              cover: normalizeCatalogPath(sourceMedia.cover),
+              images: Array.isArray(sourceMedia.images) ? sourceMedia.images.map(normalizeCatalogPath).filter(Boolean) : [],
+              videos: Array.isArray(sourceMedia.videos) ? sourceMedia.videos.map(normalizeCatalogPath).filter(Boolean) : []
+            };
+            return {
+              ...(existing.get(record.id) || {}),
+              ...record,
+              id: record.id,
+              price,
+              visual: { type, color, accent },
+              media,
+              svgIcon: makeGarmentSvg(type, color, accent),
+              active: record.active !== false
+            };
+          });
+          PRODUCTS.splice(0, PRODUCTS.length, ...next);
+          const validIds = new Set(PRODUCTS.map(product => product.id));
+          Object.keys(selectedSizes).forEach(id => { if (!validIds.has(id)) delete selectedSizes[id]; });
+          PRODUCTS.forEach(product => { selectedSizes[product.id] = selectedSizes[product.id] || 'L'; });
+          wishlistIds = new Set([...wishlistIds].filter(id => validIds.has(id)));
+          cartItems = cartItems.map(item => {
+            const fresh = PRODUCTS.find(product => product.id === item.id);
+            return fresh ? { ...fresh, size: item.size, qty: item.qty } : item;
+          });
+          displayedProducts = currentCategory === 'all'
+            ? PRODUCTS.filter(product => product.active !== false)
+            : PRODUCTS.filter(product => product.active !== false && product.category === currentCategory);
+          if (currentCategory !== 'all' && !displayedProducts.length) {
+            currentCategory = 'all';
+            displayedProducts = PRODUCTS.filter(product => product.active !== false);
+          }
+          syncCategoryFilters();
+          renderProducts(false);
+          renderCartDrawer();
+          const wishCount = document.getElementById('wishlist-count-badge');
+          if (wishCount) wishCount.textContent = wishlistIds.size;
+          if (typeof gmApplySavedCards === 'function') gmApplySavedCards().catch(() => {});
+          console.info('MES catalogue loaded:', PRODUCTS.length, 'products');
+        } catch (error) {
+          console.warn('Using the built-in MES catalogue fallback:', error.message);
+        }
+      }
+
       // Selected Size per Product ID
       const selectedSizes = {};
       PRODUCTS.forEach(p => { selectedSizes[p.id] = 'L'; });
@@ -1265,7 +1643,7 @@
           ]
         },
         {
-          title: '9–14. الشيدرز، الجسيمات، فيزياء النوابض، المؤشر، والتحريك بـ FLIP',
+          title: '9–14. الشيدرز، الجسيمات، الحركة المرنة، المؤشر، والتحريك بـ FLIP',
           items: [
             { name: 'FLIP 22-Product Shuffle (60fps)', desc: 'إعادة ترتيب الـ 22 منتجاً بانسيابية تامة عبر First-Last-Invert-Play.', action: 'flipShuffleDemo' },
             { name: 'Dynamic Island Spring Morph', desc: 'تمدد الجزيرة التفاعلية أعلى المتجر بنابض فيزيائي.', action: 'islandMorph' },
@@ -1299,9 +1677,9 @@
           ]
         },
         {
-          title: '23, 24, 30. التصور الرياضي، 4D Tesseract، SDF Smooth Union، و ASCII Raymarcher',
+          title: '23, 24, 30. التصور الرياضي، 4D Tesseract، أشكال متداخلة، و ASCII Raymarcher',
           items: [
-            { name: '4D Hypercube (Tesseract)', desc: 'مكعب رباعي الأبعاد يدور في المحاور الأربعة.', action: 'jumpMathTesseract' },
+            { name: 'أشكال هندسية', desc: 'مكعب رباعي الأبعاد يدور في المحاور الأربعة.', action: 'jumpMathTesseract' },
             { name: 'SDF Smooth Union Metaballs (smin)', desc: 'تلاحم كرات حقول المسافة الموقعة.', action: 'jumpMathSdf' },
             { name: 'ASCII 3D Raymarcher', desc: 'تصيير مجسم ثلاثي الأبعاد كحروف نصية مضيئة.', action: 'jumpMathAscii' },
             { name: 'Gravity Lensing Black Hole', desc: 'انحناء الضوء حول ثقب أسود يتحرك مع الفأرة.', action: 'jumpMathLensing' }
@@ -1310,7 +1688,7 @@
         {
           title: '26, 28, 29, 31. Houdini @property، التفاعل الصوتي FFT، وتفكيك النصوص الجزيئي',
           items: [
-            { name: 'Web Audio FFT Spectrum & Beat', desc: 'أعمدة ترددات صوتية وراسم إشارة يتفاعل مع الإيقاع.', action: 'jumpAudioBeat' },
+            { name: 'Web Audio الترددات الصوتية & Beat', desc: 'أعمدة ترددات صوتية وراسم إشارة يتفاعل مع الإيقاع.', action: 'jumpAudioBeat' },
             { name: 'Text Particle Dissolution', desc: 'تفكيك وتجميع الجزيئات الذهبية بتمرير الفأرة.', action: 'jumpTextDissolve' }
           ]
         }
@@ -1326,6 +1704,10 @@
       let wishlistIds = new Set(['mes8', 'mes11']);
       let cartItems = [{ ...PRODUCTS[7], size: 'L', qty: 1 }];
       let discountAmount = 0;
+      let activeCouponCode = '';
+      let STORE_CONTACT = {};
+      let STORE_DISCOUNTS = { coupons: [], quantity_rules: [] };
+      let STORE_SECTIONS = {};
       let soundEnabled = true;
       let audioCtx = null;
 
@@ -1482,7 +1864,7 @@
                   </div>
 
                   <div id="prod-visual-${p.id}" class="relative h-52 rounded-2xl bg-black/90 border border-zinc-800/80 flex items-center justify-center overflow-hidden liquid-hover cursor-pointer">
-                    ${p.svgIcon}
+                    ${renderProductVisual(p)}
                     <span class="motion-badge absolute bottom-1.5 right-1.5">${p.motionTag}</span>
                   </div>
 
@@ -1529,12 +1911,15 @@
                     <span class="text-lg font-black text-[#f5ebe0] font-mono-tech tabular-nums">${p.price.toLocaleString()}</span>
                     <span class="text-xs text-[#d4af37] font-bold mr-0.5">ج.م</span>
                     ${p.priceNote ? `<span class="text-[10px] text-amber-400 block">${p.priceNote}</span>` : ''}
+                    ${getProductDiscountHint(p)}
                   </div>
                   <button type="button" data-quick-id="${p.id}" class="quick-view-btn text-[11px] font-bold text-[#e6ccb2] hover:underline">
                     🔍 معاينة سريعة
                   </button>
                 </div>
 
+
+                <button type="button" data-gm-open="${p.id}" class="gm-admin-btn">🧥 إعداد / معاينة حركة الملابس</button>
                 <button type="button" data-add-id="${p.id}" class="add-to-cart-btn ripple-btn w-full py-2 rounded-xl bg-gradient-to-r from-[#d4af37] to-[#e6ccb2] hover:opacity-95 text-black font-black text-xs flex items-center justify-center gap-1.5 shadow-md active:scale-95 transition-transform">
                   <span>🛍️ أضف لطلب واتساب (Arc Clone)</span>
                 </button>
@@ -1633,6 +2018,16 @@
           btn.addEventListener('click', () => {
             const prod = PRODUCTS.find(p => p.id === btn.dataset.quickId);
             if (prod) openQuickViewModal(prod);
+          });
+        });
+
+
+        // Garment Motion Studio (isolated from cart, size and wishlist handlers)
+        document.querySelectorAll('[data-gm-open]').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const prod = PRODUCTS.find(p => p.id === btn.dataset.gmOpen);
+            if (prod) gmOpenStudio(prod);
           });
         });
 
@@ -1747,7 +2142,17 @@
         }
 
         const rawTotal = cartItems.reduce((s, i) => s + i.price * i.qty, 0);
-        const finalTotal = Math.max(0, rawTotal - discountAmount);
+        const quantityDiscount = storeDiscountForCart();
+        const couponDiscount = Math.min(discountAmount, Math.max(0, rawTotal - quantityDiscount.amount));
+        const finalTotal = Math.max(0, rawTotal - quantityDiscount.amount - couponDiscount);
+        const discountSummary = document.getElementById('cart-discount-summary');
+        if (discountSummary) {
+          const labels = [];
+          if (quantityDiscount.amount > 0) labels.push(storeSafeText(quantityDiscount.label) + ': ' + quantityDiscount.amount.toLocaleString() + ' ج.م');
+          if (couponDiscount > 0) labels.push('كوبون ' + storeSafeText(activeCouponCode) + ': ' + couponDiscount.toLocaleString() + ' ج.م');
+          discountSummary.textContent = labels.length ? 'تم تطبيق: ' + labels.join(' · ') : '';
+          discountSummary.hidden = !labels.length;
+        }
         animateNumberValue(cartTotalPrice, lastTotalAmount, finalTotal, 420, ' ج.م');
         lastTotalAmount = finalTotal;
 
@@ -1793,6 +2198,8 @@
         const name = document.getElementById('wa-customer-name').value.trim() || 'عميل MES المميز';
         const phone = document.getElementById('wa-customer-phone').value.trim() || '010XXXXXXXX';
         const addr = document.getElementById('wa-customer-address').value.trim() || 'القاهرة - الدفع عند الاستلام';
+        const quantityDiscount = storeDiscountForCart();
+        const couponDiscount = Math.min(discountAmount, Math.max(0, cartItems.reduce((sum, item) => sum + item.price * item.qty, 0) - quantityDiscount.amount));
         const itemsSummary = cartItems.map(i => `• ${i.title} (مقاس ${i.size}) × ${i.qty} = ${i.price * i.qty} ج.م`).join('<br/>');
         const preview = document.getElementById('wa-order-preview');
         preview.classList.remove('hidden');
@@ -1802,6 +2209,34 @@
           <div>${itemsSummary || '• طقم MES الكامل'}</div>
           <div class="font-mono-tech font-bold text-[#d4af37]">الإجمالي عند الاستلام: ${lastTotalAmount.toLocaleString()} ج.م</div>
         `;
+        if (quantityDiscount.amount > 0 || couponDiscount > 0) {
+          const discountLine = document.createElement('div');
+          discountLine.textContent = 'إجمالي الخصومات: ' + (quantityDiscount.amount + couponDiscount).toLocaleString() + ' ج.م';
+          preview.appendChild(discountLine);
+        }
+        const waNumber = storeWhatsAppNumber();
+        if (waNumber) {
+          const orderText = [
+            'طلب جديد من ' + (STORE_CONTACT.store_name || 'MES STORE'),
+            'العميل: ' + name,
+            'هاتف العميل: ' + phone,
+            'العنوان: ' + addr,
+            ...cartItems.map(item => item.title + ' | مقاس ' + item.size + ' | عدد ' + item.qty + ' | ' + (item.price * item.qty).toLocaleString() + ' جنيه'),
+            'الإجمالي: ' + lastTotalAmount.toLocaleString() + ' جنيه'
+          ].join('\\n');
+          const waLink = document.createElement('a');
+          waLink.href = 'https://wa.me/' + waNumber + '?text=' + encodeURIComponent(orderText);
+          waLink.target = '_blank';
+          waLink.rel = 'noopener';
+          waLink.className = 'inline-flex mt-2 px-3 py-2 rounded-lg bg-emerald-600 text-white font-bold';
+          waLink.textContent = 'إرسال الطلب إلى واتساب المتجر';
+          preview.appendChild(waLink);
+        } else {
+          const missingNumber = document.createElement('div');
+          missingNumber.className = 'mt-2 text-amber-300';
+          missingNumber.textContent = 'أضف رقم واتساب المتجر في data/contact.json لتفعيل إرسال الطلبات.';
+          preview.appendChild(missingNumber);
+        }
         const rect = e.currentTarget.getBoundingClientRect();
         spawnParticles(rect.left + rect.width / 2, rect.top, '#d4af37', 45);
         notifyDynamicIsland('💬 تم تجهيز طلب واتساب بنجاح مع احتفالية الجزيئات الذهبية!');
@@ -1819,13 +2254,15 @@
             ? 'cat-filter-btn magnetic-btn px-4 py-2 rounded-xl bg-[#d4af37] text-black font-black text-xs transition-all'
             : 'cat-filter-btn magnetic-btn px-4 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-200 font-bold text-xs border border-zinc-800 transition-all';
         });
-        displayedProducts = cat === 'all' ? [...PRODUCTS] : PRODUCTS.filter(p => p.category === cat);
+        displayedProducts = cat === 'all' ? PRODUCTS.filter(p => p.active !== false) : PRODUCTS.filter(p => p.active !== false && p.category === cat);
         renderProducts(true);
         notifyDynamicIsland(`⚡ تصفية قسم "${cat === 'all' ? 'كل المنتجات' : cat}" بحركة FLIP (${displayedProducts.length} قطعة)`);
       }
 
-      document.querySelectorAll('.cat-filter-btn').forEach(btn => {
-        btn.addEventListener('click', () => filterByCategory(btn.dataset.category));
+      const categoryFilterGroup = document.getElementById('category-filter-group');
+      categoryFilterGroup.addEventListener('click', event => {
+        const button = event.target.closest('.cat-filter-btn');
+        if (button) filterByCategory(button.dataset.category);
       });
 
       document.querySelectorAll('.nav-cat-link').forEach(btn => {
@@ -1959,7 +2396,7 @@
             setTimeout(() => {
               holdPct = 0;
               holdProg.style.width = '0%';
-              holdLbl.textContent = '⚡ اضغط مطولاً لطلب طقم كامل (Hold to Confirm)';
+              holdLbl.textContent = 'اطلب الطقم الكامل';
             }, 2200);
           }
         }, 35);
@@ -2244,13 +2681,17 @@
 
       document.getElementById('copy-coupon-btn').addEventListener('click', (e) => {
         playSynthSound('success');
-        discountAmount = 200;
+        const couponResult = applyStoreCoupon(document.getElementById('store-coupon-code').textContent.trim());
+        if (!couponResult.ok) {
+          notifyDynamicIsland(couponResult.message);
+          return;
+        }
         renderCartDrawer();
         document.getElementById('copy-coupon-icon').textContent = '✅';
-        document.getElementById('copy-coupon-text').textContent = 'تم تفعيل خصم 200 ج.م في السلة!';
+        document.getElementById('copy-coupon-text').textContent = couponResult.message;
         const r = e.currentTarget.getBoundingClientRect();
         spawnParticles(r.left + r.width / 2, r.top, '#d4af37', 32);
-        notifyDynamicIsland('🎉 تم خصم 200 ج.م من إجمالي سلة MES STORE فوراً!');
+        notifyDynamicIsland('🎉 ' + couponResult.message);
       });
 
       // Before / After Slider
@@ -2275,7 +2716,7 @@
         const curSz = selectedSizes[prod.id] || 'L';
         qvBody.innerHTML = `
           <div class="h-72 rounded-2xl bg-black border border-zinc-800 overflow-hidden relative">
-            ${prod.svgIcon}
+            ${renderProductVisual(prod)}
             <span class="absolute bottom-3 right-3 px-2.5 py-1 rounded-lg bg-black/80 text-[#d4af37] text-[11px] font-bold border border-[#d4af37]/40">✨ خامة أصلية مضمونة 100%</span>
           </div>
           <div class="space-y-3.5">
@@ -2287,6 +2728,7 @@
             <p class="text-xs text-zinc-300 leading-relaxed">${prod.desc} — مصمم بقصة عصرية مريحة وخياطة مزدوجة متينة تناسب الخروجات اليومية والإطلالات الشتوية الأنيقة.</p>
             <div class="flex items-baseline gap-2">
               <span class="text-3xl font-black text-[#d4af37] font-mono-tech">${prod.price.toLocaleString()} ج.م</span>
+              ${getProductDiscountHint(prod)}
               <span class="text-xs text-emerald-400 font-bold">✔ متوفر في المخزون · الدفع عند الاستلام</span>
             </div>
             <div class="p-3 rounded-xl bg-black/70 border border-zinc-800 text-xs text-zinc-300 space-y-1">
@@ -2298,6 +2740,10 @@
             </button>
           </div>
         `;
+        const mediaDetails = renderProductGallery(prod);
+        const quickViewStage = qvBody.querySelector('.h-72');
+        if (mediaDetails && quickViewStage) quickViewStage.insertAdjacentHTML('afterend', mediaDetails);
+        if(typeof gmMountQuickView==='function') gmMountQuickView(prod);
         qvBackdrop.classList.remove('hidden');
         qvBackdrop.classList.add('flex');
         requestAnimationFrame(() => {
@@ -2312,6 +2758,7 @@
       }
 
       function closeQuickViewModal() {
+        if(typeof gmStopQuickView==='function') gmStopQuickView();
         qvBackdrop.classList.add('opacity-0');
         qvModal.classList.remove('scale-100');
         qvModal.classList.add('scale-90');
@@ -3113,9 +3560,387 @@
         notifyDynamicIsland(`📏 تم ضبط مقاس المتجر بالكامل على ${rec} تلقائياً!`);
       });
 
+
+      // -------------------------------------------------------------------
+      // MES GARMENT MOTION ENGINE — per-product image segmentation + mesh
+      // -------------------------------------------------------------------
+      if(new URLSearchParams(location.search).get('gm-admin')==='1')document.body.classList.add('gm-admin');
+      const GM_DB_NAME = 'mes-store-garment-motion-v1';
+      const GM_STORE_NAME = 'product-motion';
+      const gmCanvas = document.getElementById('gm-editor-canvas');
+      const gmCtx = gmCanvas.getContext('2d', { willReadFrequently: true });
+      const gmStudio = document.getElementById('gm-studio');
+      const gmStatus = document.getElementById('gm-status');
+      const gmMaskCanvas = document.createElement('canvas');
+      const gmMaskCtx = gmMaskCanvas.getContext('2d');
+      const gmImage = new Image();
+      let gmCurrentProduct = null, gmImageReady = false, gmPainting = false;
+      let gmBrushMode = 'paint', gmPreviewing = true, gmLastPoint = null;
+      let gmSavedCache = new Map(), gmCardCanvases = new Map();
+      const gmProfiles = {
+        jacket:{sleeves:true,body:true,edges:true,frequency:2.1,kind:'upper'},
+        hoodie:{sleeves:true,body:true,edges:true,frequency:1.8,kind:'upper'},
+        shirt:{sleeves:true,body:true,edges:false,frequency:1.65,kind:'upper'},
+        tshirt:{sleeves:true,body:true,edges:false,frequency:1.5,kind:'upper'},
+        trousers:{sleeves:false,body:true,edges:true,frequency:2.0,kind:'lower'},
+        dress:{sleeves:true,body:true,edges:true,frequency:1.45,kind:'flow'},
+        generic:{sleeves:true,body:true,edges:true,frequency:1.5,kind:'generic'}
+      };
+      function gmOpenDB(){
+        return new Promise((resolve,reject)=>{
+          const req=indexedDB.open(GM_DB_NAME,1);
+          req.onupgradeneeded=()=>{if(!req.result.objectStoreNames.contains(GM_STORE_NAME))req.result.createObjectStore(GM_STORE_NAME,{keyPath:'id'});};
+          req.onsuccess=()=>resolve(req.result); req.onerror=()=>reject(req.error);
+        });
+      }
+      async function gmDBAction(mode,fn){
+        const db=await gmOpenDB();
+        return new Promise((resolve,reject)=>{
+          const tx=db.transaction(GM_STORE_NAME,mode), store=tx.objectStore(GM_STORE_NAME);
+          let req; try{req=fn(store);}catch(e){db.close();reject(e);return;}
+          tx.oncomplete=()=>{db.close();resolve(req&&req.result);};
+          tx.onerror=()=>{db.close();reject(tx.error);};
+          tx.onabort=()=>{db.close();reject(tx.error||new Error('IndexedDB transaction aborted'));};
+        });
+      }
+      const gmGet=id=>gmDBAction('readonly',st=>st.get(id));
+      const gmPut=record=>gmDBAction('readwrite',st=>st.put(record));
+      const gmDelete=id=>gmDBAction('readwrite',st=>st.delete(id));
+      function gmSetStatus(msg){if(gmStatus)gmStatus.textContent=msg;}
+      function gmProfileFor(product){
+        const c=(product.category+' '+product.title).toLowerCase();
+        if(/جينز|بنطلون|بناطيل|pants|jeans/.test(c))return 'trousers';
+        if(/هودي|سويت|hoodie|sweat/.test(c))return 'hoodie';
+        if(/تيشيرت|t-shirt|tshirt/.test(c))return 'tshirt';
+        if(/قميص|shirt/.test(c))return 'shirt';
+        if(/فستان|dress/.test(c))return 'dress';
+        if(/جاكت|معطف|jacket|coat/.test(c))return 'jacket';
+        return 'generic';
+      }
+      let gmPreviewAssets=null;
+      function gmFitCanvas(){
+        const w=gmImage.naturalWidth,h=gmImage.naturalHeight,scale=Math.min(1,1000/Math.max(w,h));
+        const nw=Math.max(1,Math.round(w*scale)),nh=Math.max(1,Math.round(h*scale));
+        gmCanvas.width=gmMaskCanvas.width=nw;gmCanvas.height=gmMaskCanvas.height=nh;
+        gmMaskCtx.clearRect(0,0,nw,nh);gmCtx.clearRect(0,0,nw,nh);gmCtx.drawImage(gmImage,0,0,nw,nh);
+        gmImageReady=true;gmPreviewing=false;gmPreviewAssets=null;gmDrawEditor();
+        gmSetStatus('الصورة جاهزة. حدد مساحة الملابس بالفرشاة أو جرّب التحديد التلقائي.');
+      }
+      function gmLoadImageURL(url,onready){
+        gmImageReady=false;gmPreviewAssets=null;
+        gmImage.onload=()=>{gmFitCanvas();if(onready)onready();};
+        gmImage.onerror=()=>gmSetStatus('تعذر قراءة الصورة. جرّب ملف JPG أو PNG آخر.');
+        gmImage.src=url;
+        if(gmImage.complete&&gmImage.naturalWidth){gmFitCanvas();if(onready)onready();}
+      }
+      function gmDrawEditor(){
+        if(!gmImageReady)return;
+        gmCtx.clearRect(0,0,gmCanvas.width,gmCanvas.height);
+        if(gmPreviewing&&gmPreviewAssets){
+          gmCtx.drawImage(gmPreviewAssets.background,0,0,gmCanvas.width,gmCanvas.height);
+          gmDrawMotion(gmCtx,gmPreviewAssets.garment,performance.now()/1000,gmReadSettings(),document.getElementById('gm-category').value);
+          return;
+        }
+        gmCtx.drawImage(gmImage,0,0,gmCanvas.width,gmCanvas.height);
+        const overlay=document.createElement('canvas');overlay.width=gmCanvas.width;overlay.height=gmCanvas.height;
+        const o=overlay.getContext('2d');o.drawImage(gmMaskCanvas,0,0);o.globalCompositeOperation='source-in';o.fillStyle='rgba(212,175,55,.55)';o.fillRect(0,0,overlay.width,overlay.height);
+        gmCtx.drawImage(overlay,0,0);
+      }
+      function gmPreparePreview(){
+        if(!gmImageReady)throw new Error('ارفع صورة أولاً');
+        const w=gmCanvas.width,h=gmCanvas.height,original=document.createElement('canvas');
+        original.width=w;original.height=h;original.getContext('2d').drawImage(gmImage,0,0,w,h);
+        const background=document.createElement('canvas');background.width=w;background.height=h;background.getContext('2d').drawImage(original,0,0);
+        gmInpaintBackground(background,gmMaskCanvas);
+        const garment=document.createElement('canvas');garment.width=w;garment.height=h;
+        const gc=garment.getContext('2d');gc.drawImage(original,0,0);gc.globalCompositeOperation='destination-in';gc.drawImage(gmMaskCanvas,0,0);
+        gmPreviewAssets={background,garment};gmPreviewLoop();
+      }
+      function gmPreviewLoop(){
+        if(!gmPreviewing||!gmStudio.classList.contains('open'))return;
+        gmDrawEditor();requestAnimationFrame(gmPreviewLoop);
+      }
+      function gmReadSettings(){
+        return {speed:Number(document.getElementById('gm-speed').value),intensity:Number(document.getElementById('gm-intensity').value),
+          sleeves:document.getElementById('gm-sleeves').checked,body:document.getElementById('gm-body').checked,edges:document.getElementById('gm-edges').checked};
+      }
+      function gmPointerPoint(e){
+        const r=gmCanvas.getBoundingClientRect();
+        return {x:(e.clientX-r.left)*gmCanvas.width/r.width,y:(e.clientY-r.top)*gmCanvas.height/r.height};
+      }
+      function gmStroke(a,b){
+        gmPreviewAssets=null;
+        const brush=Number(document.getElementById('gm-brush').value);
+        gmMaskCtx.save(); gmMaskCtx.lineCap='round'; gmMaskCtx.lineJoin='round'; gmMaskCtx.lineWidth=brush;
+        gmMaskCtx.globalCompositeOperation=gmBrushMode==='paint'?'source-over':'destination-out';
+        gmMaskCtx.strokeStyle='rgba(255,255,255,1)'; gmMaskCtx.beginPath(); gmMaskCtx.moveTo(a.x,a.y); gmMaskCtx.lineTo(b.x,b.y); gmMaskCtx.stroke();
+        if(a.x===b.x&&a.y===b.y){gmMaskCtx.beginPath();gmMaskCtx.arc(a.x,a.y,brush/2,0,Math.PI*2);gmMaskCtx.fillStyle='white';gmMaskCtx.fill();}
+        gmMaskCtx.restore(); gmDrawEditor();
+      }
+      gmCanvas.addEventListener('pointerdown',e=>{if(!gmImageReady)return;gmPreviewing=false;gmPreviewAssets=null;document.getElementById('gm-preview-toggle').textContent='▶ معاينة الحركة';gmPainting=true;gmLastPoint=gmPointerPoint(e);gmCanvas.setPointerCapture(e.pointerId);gmStroke(gmLastPoint,gmLastPoint);});
+      gmCanvas.addEventListener('pointermove',e=>{if(!gmPainting)return;const p=gmPointerPoint(e);gmStroke(gmLastPoint,p);gmLastPoint=p;});
+      ['pointerup','pointercancel','lostpointercapture'].forEach(ev=>gmCanvas.addEventListener(ev,()=>{gmPainting=false;gmLastPoint=null;}));
+      document.getElementById('gm-image-upload').addEventListener('change',e=>{
+        const f=e.target.files&&e.target.files[0]; if(!f)return;
+        if(!f.type.startsWith('image/')){gmSetStatus('الملف ليس صورة مدعومة.');return;}
+        if(f.size>15*1024*1024){gmSetStatus('حجم الصورة يتجاوز 15MB.');return;}
+        const url=URL.createObjectURL(f); gmLoadImageURL(url,()=>URL.revokeObjectURL(url));
+      });
+      document.getElementById('gm-auto-mask').addEventListener('click',()=>{
+        if(!gmImageReady)return;
+        const w=gmCanvas.width,h=gmCanvas.height,im=gmCtx.getImageData(0,0,w,h),d=im.data;
+        const pts=[[0,0],[w-1,0],[0,h-1],[w-1,h-1],[Math.floor(w/2),0],[Math.floor(w/2),h-1]];
+        let rr=0,gg=0,bb=0;pts.forEach(p=>{const i=(p[1]*w+p[0])*4;rr+=d[i];gg+=d[i+1];bb+=d[i+2];});
+        rr/=pts.length;gg/=pts.length;bb/=pts.length;
+        const md=gmMaskCtx.createImageData(w,h),m=md.data;
+        for(let i=0;i<d.length;i+=4){const dist=Math.hypot(d[i]-rr,d[i+1]-gg,d[i+2]-bb);if(dist>58){m[i]=m[i+1]=m[i+2]=255;m[i+3]=255;}}
+        gmMaskCtx.putImageData(md,0,0);gmPreviewAssets=null;gmPreviewing=false;gmDrawEditor();gmSetStatus('تم إنشاء تحديد أولي من اختلاف ألوان الخلفية. راجع الحواف وصححها بالفرشاة والممحاة.');
+      });
+
+      const gmAIEndpoint=document.getElementById('gm-ai-endpoint');
+      try{gmAIEndpoint.value=localStorage.getItem('mes-gm-ai-endpoint')||'';}catch(e){}
+      gmAIEndpoint.addEventListener('change',()=>{try{localStorage.setItem('mes-gm-ai-endpoint',gmAIEndpoint.value.trim());}catch(e){}});
+      document.getElementById('gm-ai-segment').addEventListener('click',async()=>{
+        const endpoint=gmAIEndpoint.value.trim();
+        if(!gmImageReady){gmSetStatus('ارفع صورة أولاً.');return;}
+        if(!endpoint){gmSetStatus('أدخل عنوان خدمة تحديد الصور أولاً، أو استخدم أدوات التحديد اليدوي.');return;}
+        try{
+          gmSetStatus('جارٍ تحليل الصورة...');
+          const uploadCanvas=document.createElement('canvas');uploadCanvas.width=gmCanvas.width;uploadCanvas.height=gmCanvas.height;
+          uploadCanvas.getContext('2d').drawImage(gmImage,0,0,gmCanvas.width,gmCanvas.height);
+          const blob=await new Promise(resolve=>uploadCanvas.toBlob(resolve,'image/jpeg',.9));
+          if(!blob)throw new Error('تعذر تجهيز الصورة للإرسال.');
+          const form=new FormData();form.append('image',blob,'garment.jpg');
+          const response=await fetch(endpoint,{method:'POST',body:form});
+          if(!response.ok)throw new Error('تعذر إكمال تحليل الصورة (HTTP '+response.status);
+          let maskBlob;
+          if((response.headers.get('content-type')||'').includes('application/json')){
+            const payload=await response.json(),maskValue=payload.mask||payload.maskUrl;
+            if(!maskValue)throw new Error('استجابة الخدمة غير مكتملة.');
+            if(maskValue.startsWith('data:')){const parts=maskValue.split(',');maskBlob=await (await fetch(maskValue)).blob();}
+            else maskBlob=await (await fetch(new URL(maskValue,endpoint))).blob();
+          }else maskBlob=await response.blob();
+          const maskURL=URL.createObjectURL(maskBlob),maskImage=new Image();
+          maskImage.onload=()=>{gmMaskCtx.clearRect(0,0,gmMaskCanvas.width,gmMaskCanvas.height);gmMaskCtx.drawImage(maskImage,0,0,gmMaskCanvas.width,gmMaskCanvas.height);URL.revokeObjectURL(maskURL);gmPreviewAssets=null;gmPreviewing=false;gmDrawEditor();gmSetStatus('اكتمل التحديد. راجع الحدود قبل الحفظ.');};
+          maskImage.onerror=()=>{URL.revokeObjectURL(maskURL);gmSetStatus('تعذر قراءة نتيجة التحديد.');};
+          maskImage.src=maskURL;
+        }catch(err){gmSetStatus('تعذر تحليل الصورة: '+(err.message||'تحقق من CORS وعنوان الخدمة.'));}
+      });
+      document.getElementById('gm-clear-mask').addEventListener('click',()=>{gmMaskCtx.clearRect(0,0,gmMaskCanvas.width,gmMaskCanvas.height);gmPreviewAssets=null;gmPreviewing=false;gmDrawEditor();gmSetStatus('تم مسح التحديد.');});
+      document.getElementById('gm-paint-mode').addEventListener('click',()=>{gmBrushMode='paint';document.getElementById('gm-paint-mode').classList.add('active');document.getElementById('gm-erase-mode').classList.remove('active');});
+      document.getElementById('gm-erase-mode').addEventListener('click',()=>{gmBrushMode='erase';document.getElementById('gm-erase-mode').classList.add('active');document.getElementById('gm-paint-mode').classList.remove('active');});
+      document.getElementById('gm-brush').addEventListener('input',e=>document.getElementById('gm-brush-value').textContent=e.target.value+' px');
+      ['speed','intensity'].forEach(k=>document.getElementById('gm-'+k).addEventListener('input',e=>document.getElementById('gm-'+k+'-value').textContent=e.target.value+'%'));
+      ['sleeves','body','edges'].forEach(k=>document.getElementById('gm-'+k).addEventListener('change',()=>{if(gmPreviewing)gmDrawEditor();}));
+      document.getElementById('gm-preview-toggle').addEventListener('click',e=>{
+        if(gmPreviewing){gmPreviewing=false;gmDrawEditor();e.currentTarget.textContent='▶ معاينة الحركة';e.currentTarget.classList.remove('active');return;}
+        try{gmPreparePreview();gmPreviewing=true;e.currentTarget.textContent='Ⅱ إيقاف المعاينة';e.currentTarget.classList.add('active');gmPreviewLoop();}
+        catch(err){gmSetStatus(err.message||'تعذر بدء المعاينة.');}
+      });
+      document.getElementById('gm-category').addEventListener('change',()=>{if(gmPreviewing)gmDrawEditor();});
+      function gmOpenStudio(product){
+        gmCurrentProduct=product; gmStudio.classList.add('open'); document.getElementById('gm-product-name').textContent=product.title+' · '+product.category;
+        document.getElementById('gm-category').value=gmProfileFor(product);
+        document.getElementById('gm-speed').value=77;document.getElementById('gm-intensity').value=63;
+        document.getElementById('gm-speed-value').textContent='77%';document.getElementById('gm-intensity-value').textContent='63%';
+        document.getElementById('gm-sleeves').checked=true;document.getElementById('gm-body').checked=true;document.getElementById('gm-edges').checked=true;
+        gmImageReady=false;gmCtx.clearRect(0,0,gmCanvas.width,gmCanvas.height);gmMaskCtx.clearRect(0,0,gmMaskCanvas.width,gmMaskCanvas.height);
+        gmGet(product.id).then(rec=>{
+          const catalogSource = getProductCover(product);
+          if(rec && (!catalogSource || rec.sourceUrl === catalogSource)){document.getElementById('gm-category').value=rec.category;document.getElementById('gm-speed').value=rec.settings.speed;document.getElementById('gm-intensity').value=rec.settings.intensity;
+            ['sleeves','body','edges'].forEach(k=>document.getElementById('gm-'+k).checked=rec.settings[k]);
+            document.getElementById('gm-speed-value').textContent=rec.settings.speed+'%';document.getElementById('gm-intensity-value').textContent=rec.settings.intensity+'%';
+            gmLoadImageURL(rec.original,()=>{const maskImg=new Image();maskImg.onload=()=>{gmMaskCtx.clearRect(0,0,gmMaskCanvas.width,gmMaskCanvas.height);gmMaskCtx.drawImage(maskImg,0,0,gmMaskCanvas.width,gmMaskCanvas.height);gmDrawEditor();};maskImg.src=rec.mask;});
+            gmSetStatus('تم تحميل إعداد الحركة المحفوظ. يمكنك تعديله أو معاينته.');
+          }else if(catalogSource){
+            const sourceUrl=resolveCatalogMedia(catalogSource);
+            if(sourceUrl){gmLoadImageURL(sourceUrl);gmSetStatus('تم تحميل صورة المنتج من مكتبة المتجر. حدد مساحة الملابس لبدء إعداد الحركة.');}
+            else gmSetStatus('مسار صورة المنتج غير صالح.');
+          }else gmSetStatus('ارفع صورة المنتج الأصلية للبدء. لا توجد صورة فعلية مرفقة بهذا المنتج حالياً.');
+        }).catch(()=>gmSetStatus('تعذر فتح التخزين المحلي في هذا المتصفح.'));
+      }
+      document.getElementById('gm-close').addEventListener('click',()=>gmStudio.classList.remove('open'));
+      gmStudio.addEventListener('click',e=>{if(e.target===gmStudio)gmStudio.classList.remove('open');});
+      function gmInpaintBackground(imageCanvas,maskCanvas){
+        const w=imageCanvas.width,h=imageCanvas.height,ctx=imageCanvas.getContext('2d');
+        const src=ctx.getImageData(0,0,w,h),md=maskCanvas.getContext('2d').getImageData(0,0,w,h);
+        const data=src.data,mask=md.data,total=w*h,known=new Uint8Array(total),queue=new Int32Array(total);
+        let head=0,tail=0;
+        for(let p=0;p<total;p++){
+          if(mask[p*4+3]<40){known[p]=1;queue[tail++]=p;}
+        }
+        while(head<tail){
+          const p=queue[head++],x=p%w,y=(p-x)/w,a=p*4;
+          if(x>0){const q=p-1;if(!known[q]){const b=q*4;data[b]=data[a];data[b+1]=data[a+1];data[b+2]=data[a+2];data[b+3]=255;known[q]=1;queue[tail++]=q;}}
+          if(x<w-1){const q=p+1;if(!known[q]){const b=q*4;data[b]=data[a];data[b+1]=data[a+1];data[b+2]=data[a+2];data[b+3]=255;known[q]=1;queue[tail++]=q;}}
+          if(y>0){const q=p-w;if(!known[q]){const b=q*4;data[b]=data[a];data[b+1]=data[a+1];data[b+2]=data[a+2];data[b+3]=255;known[q]=1;queue[tail++]=q;}}
+          if(y<h-1){const q=p+w;if(!known[q]){const b=q*4;data[b]=data[a];data[b+1]=data[a+1];data[b+2]=data[a+2];data[b+3]=255;known[q]=1;queue[tail++]=q;}}
+        }
+        ctx.putImageData(src,0,0);return imageCanvas;
+      }
+      function gmAffineTriangle(ctx,img,s0,s1,s2,d0,d1,d2){
+        const den=s0.x*(s1.y-s2.y)+s1.x*(s2.y-s0.y)+s2.x*(s0.y-s1.y);if(Math.abs(den)<.001)return;
+        const a=(d0.x*(s1.y-s2.y)+d1.x*(s2.y-s0.y)+d2.x*(s0.y-s1.y))/den;
+        const c=(d0.x*(s2.x-s1.x)+d1.x*(s0.x-s2.x)+d2.x*(s1.x-s0.x))/den;
+        const e=(d0.x*(s1.x*s2.y-s2.x*s1.y)+d1.x*(s2.x*s0.y-s0.x*s2.y)+d2.x*(s0.x*s1.y-s1.x*s0.y))/den;
+        const b=(d0.y*(s1.y-s2.y)+d1.y*(s2.y-s0.y)+d2.y*(s0.y-s1.y))/den;
+        const d=(d0.y*(s2.x-s1.x)+d1.y*(s0.x-s2.x)+d2.y*(s1.x-s0.x))/den;
+        const f=(d0.y*(s1.x*s2.y-s2.x*s1.y)+d1.y*(s2.x*s0.y-s0.x*s2.y)+d2.y*(s0.x*s1.y-s1.x*s0.y))/den;
+        ctx.save();ctx.beginPath();ctx.moveTo(d0.x,d0.y);ctx.lineTo(d1.x,d1.y);ctx.lineTo(d2.x,d2.y);ctx.closePath();ctx.clip();ctx.setTransform(a,b,c,d,e,f);ctx.drawImage(img,0,0);ctx.restore();
+      }
+      function gmDrawMotion(ctx,garment,time,settings,profileName){
+        const w=ctx.canvas.width,h=ctx.canvas.height;
+        const type=profileName||document.getElementById('gm-category').value,profile=gmProfiles[type]||gmProfiles.generic;
+        const amp=(settings.intensity/100)*Math.min(w,h)*.027,phase=time*profile.frequency*(settings.speed/77);
+        const cols=8,rows=10,src=[],dst=[];
+        for(let y=0;y<=rows;y++)for(let x=0;x<=cols;x++){
+          const nx=x/cols,ny=y/rows,px=nx*w,py=ny*h;
+          let dx=0,dy=0,side=nx<.5?-1:1;
+          const edge=Math.max(0,Math.min(1,(Math.abs(nx-.5)*2-.30)/.70));
+          const lower=Math.max(0,Math.min(1,(ny-.42)/.58));
+          if(profile.kind==='lower'){
+            dx=side*amp*.55*Math.sin(phase+ny*7+side)*lower;
+            dy=amp*.18*Math.sin(phase+ny*5)*lower;
+          }else if(profile.kind==='flow'){
+            dx=side*amp*Math.sin(phase+ny*4+nx*3)*edge;
+            dy=amp*.30*Math.sin(phase+ny*5)*Math.max(0,(ny-.25)/.75);
+          }else{
+            const sleeve=settings.sleeves?Math.max(0,Math.min(1,(Math.abs(nx-.5)-.18)/.32))*Math.max(0,Math.min(1,(ny-.15)/.45)):0;
+            const body=settings.body?Math.max(0,1-Math.abs(nx-.5)*1.8)*Math.max(0,Math.min(1,(ny-.15)/.7)):0;
+            dx=side*amp*(sleeve*.65*Math.sin(phase+ny*4+side)+body*.13*Math.sin(phase+ny*3));
+            dy=amp*.18*Math.cos(phase+nx*3)*body;
+          }
+          if(!settings.edges)dx*=1-edge*.7;
+          const point={x:px,y:py};src.push(point);dst.push({x:px+dx,y:py+dy});
+        }
+        ctx.save();ctx.globalAlpha=1;
+        for(let y=0;y<rows;y++)for(let x=0;x<cols;x++){
+          const i=y*(cols+1)+x,j=i+1,k=i+cols+1,l=k+1;
+          gmAffineTriangle(ctx,garment,src[i],src[j],src[k],dst[i],dst[j],dst[k]);
+          gmAffineTriangle(ctx,garment,src[j],src[l],src[k],dst[j],dst[l],dst[k]);
+        }
+        ctx.restore();
+      }
+      async function gmBuildRecord(){
+        const w=gmCanvas.width,h=gmCanvas.height;if(!gmImageReady||!w||!h)throw new Error('ارفع صورة أولاً');
+        const maskData=gmMaskCtx.getImageData(0,0,w,h).data;let selected=0;for(let i=3;i<maskData.length;i+=4)if(maskData[i]>40)selected++;
+        if(selected<Math.max(80,w*h*.002))throw new Error('حدد مساحة الملابس أولاً بالفرشاة أو التحديد التلقائي.');
+        const originalCanvas=document.createElement('canvas');originalCanvas.width=w;originalCanvas.height=h;originalCanvas.getContext('2d').drawImage(gmImage,0,0,w,h);
+        const cleanCanvas=document.createElement('canvas');cleanCanvas.width=w;cleanCanvas.height=h;cleanCanvas.getContext('2d').drawImage(originalCanvas,0,0);gmInpaintBackground(cleanCanvas,gmMaskCanvas);
+        const settings=gmReadSettings(),mask=gmMaskCanvas.toDataURL('image/png');
+        return {id:gmCurrentProduct.id,productTitle:gmCurrentProduct.title,category:document.getElementById('gm-category').value,
+          settings:settings,original:originalCanvas.toDataURL('image/jpeg',.92),mask:mask,background:cleanCanvas.toDataURL('image/jpeg',.92),
+          width:w,height:h,sourceUrl:getProductCover(gmCurrentProduct),updatedAt:new Date().toISOString(),engineVersion:'1.0.0-mes'};
+      }
+      document.getElementById('gm-save').addEventListener('click',async()=>{
+        try{gmSetStatus('جارٍ تجهيز الخلفية الثابتة وطبقة الملابس...');const rec=await gmBuildRecord();await gmPut(rec);gmSavedCache.delete(rec.id);gmSetStatus('تم حفظ إعداد الحركة محلياً. ستظهر معاينة الحركة على بطاقة المنتج بعد تحديثها.');gmStudio.classList.remove('open');gmApplySavedCards();}
+        catch(e){gmSetStatus(e.message||'تعذر حفظ المنتج.');}
+      });
+
+      document.getElementById('gm-export').addEventListener('click',async()=>{
+        try{
+          const rec=gmImageReady?await gmBuildRecord():await gmGet(gmCurrentProduct.id);
+          if(!rec)throw new Error('لا توجد بيانات محفوظة للتصدير.');
+          const blob=new Blob([JSON.stringify(rec)],{type:'application/json'});
+          const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=rec.id+'.json';a.click();
+          setTimeout(()=>URL.revokeObjectURL(url),1500);
+          gmSetStatus('تم تنزيل ملف النشر. ارفعه إلى assets/garment-motion/'+rec.id+'.json داخل المستودع.');
+        }catch(e){gmSetStatus(e.message||'تعذر تصدير الملف.');}
+      });
+      document.getElementById('gm-import').addEventListener('change',async e=>{
+        const f=e.target.files&&e.target.files[0];if(!f)return;
+        try{
+          const rec=JSON.parse(await f.text());
+          if(!rec.id||!rec.original||!rec.background||!rec.mask||!rec.settings||!rec.width||!rec.height)throw new Error('ملف النشر غير مكتمل.');
+          await gmPut(rec);gmSavedCache.delete(rec.id);await gmApplySavedCards();
+          gmSetStatus('تم استيراد حزمة '+rec.id+' بنجاح.');
+        }catch(err){gmSetStatus(err.message||'تعذر استيراد الملف.');}
+        e.target.value='';
+      });
+      document.getElementById('gm-delete').addEventListener('click',async()=>{
+        if(!gmCurrentProduct)return;await gmDelete(gmCurrentProduct.id);gmSavedCache.delete(gmCurrentProduct.id);gmCardCanvases.delete(gmCurrentProduct.id);gmSetStatus('تم حذف إعداد الحركة المحفوظ لهذا المنتج.');gmStudio.classList.remove('open');
+        const el=document.getElementById('prod-visual-'+gmCurrentProduct.id);if(el){const p=PRODUCTS.find(x=>x.id===gmCurrentProduct.id);el.innerHTML=renderProductVisual(p)+'<span class="motion-badge absolute bottom-1.5 right-1.5">'+p.motionTag+'</span>';}
+      });
+      async function gmImageFromURL(url){return new Promise((resolve,reject)=>{const im=new Image();im.onload=()=>resolve(im);im.onerror=reject;im.src=url;});}
+      async function gmGetAssets(id){
+        if(gmSavedCache.has(id))return gmSavedCache.get(id);
+        let rec=await gmGet(id);
+        if(!rec){
+          try{
+            const remoteURL=new URL('assets/garment-motion/'+id+'.json',document.baseURI);
+            const response=await fetch(remoteURL,{cache:'no-cache'});
+            if(response.ok){rec=await response.json();if(rec&&rec.id===id&&rec.background&&rec.original&&rec.mask&&rec.settings)await gmPut(rec);else rec=null;}
+          }catch(e){}
+        }
+        if(!rec)return null;
+        const assets={record:rec,bg:await gmImageFromURL(rec.background),garment:await gmImageFromURL(rec.original),mask:await gmImageFromURL(rec.mask)};
+        const garmentCanvas=document.createElement('canvas');garmentCanvas.width=rec.width;garmentCanvas.height=rec.height;
+        const gctx=garmentCanvas.getContext('2d');gctx.drawImage(assets.garment,0,0);gctx.globalCompositeOperation='destination-in';gctx.drawImage(assets.mask,0,0,rec.width,rec.height);assets.garmentCanvas=garmentCanvas;
+        gmSavedCache.set(id,assets);return assets;
+      }
+      function gmRenderStored(ctx,assets,time,profileName){
+        const rec=assets.record,w=ctx.canvas.width,h=ctx.canvas.height;ctx.clearRect(0,0,w,h);ctx.drawImage(assets.bg,0,0,w,h);
+        const p=gmProfiles[rec.category]||gmProfiles[profileName]||gmProfiles.generic,st=rec.settings,amp=(st.intensity/100)*Math.min(w,h)*.027,phase=time*p.frequency*(st.speed/77);
+        const sw=assets.garmentCanvas.width,sh=assets.garmentCanvas.height;
+        const cols=7,rows=9,src=[],dst=[];
+        for(let y=0;y<=rows;y++)for(let x=0;x<=cols;x++){
+          const nx=x/cols,ny=y/rows,px=nx*w,py=ny*h,sx=nx*sw,sy=ny*sh,side=nx<.5?-1:1;
+          const edge=Math.max(0,Math.min(1,(Math.abs(nx-.5)*2-.30)/.70)),lower=Math.max(0,Math.min(1,(ny-.42)/.58));
+          let dx=0,dy=0;
+          if(p.kind==='lower'){dx=side*amp*.55*Math.sin(phase+ny*7+side)*lower;dy=amp*.18*Math.sin(phase+ny*5)*lower;}
+          else if(p.kind==='flow'){dx=side*amp*Math.sin(phase+ny*4+nx*3)*edge;dy=amp*.30*Math.sin(phase+ny*5)*Math.max(0,(ny-.25)/.75);}
+          else{const sleeve=st.sleeves?Math.max(0,Math.min(1,(Math.abs(nx-.5)-.18)/.32))*Math.max(0,Math.min(1,(ny-.15)/.45)):0;const body=st.body?Math.max(0,1-Math.abs(nx-.5)*1.8)*Math.max(0,Math.min(1,(ny-.15)/.7)):0;dx=side*amp*(sleeve*.65*Math.sin(phase+ny*4+side)+body*.13*Math.sin(phase+ny*3));dy=amp*.18*Math.cos(phase+nx*3)*body;}
+          if(!st.edges)dx*=1-edge*.7;src.push({x:sx,y:sy});dst.push({x:px+dx,y:py+dy});
+        }
+        for(let y=0;y<rows;y++)for(let x=0;x<cols;x++){const i=y*(cols+1)+x,j=i+1,k=i+cols+1,l=k+1;gmAffineTriangle(ctx,assets.garmentCanvas,src[i],src[j],src[k],dst[i],dst[j],dst[k]);gmAffineTriangle(ctx,assets.garmentCanvas,src[j],src[l],src[k],dst[j],dst[l],dst[k]);}
+      }
+      async function gmApplySavedCards(){
+        const cards=Array.from(document.querySelectorAll('[id^="prod-visual-"]'));
+        for(const visual of cards){
+          const id=visual.id.replace('prod-visual-','');let assets;
+          const p=PRODUCTS.find(x=>x.id===id);if(!p)continue;
+          try{assets=await gmGetAssets(id);}catch(e){continue;}if(!assets)continue;
+          const currentSource=getProductCover(p);
+          if(currentSource && assets.record.sourceUrl!==currentSource)continue;
+          visual.innerHTML='';const c=document.createElement('canvas');c.width=480;c.height=Math.max(1,Math.round(480*assets.record.height/assets.record.width));c.className='gm-card-canvas';c.setAttribute('aria-label','معاينة حركة '+p.title);visual.appendChild(c);
+          const badge=document.createElement('span');badge.className='motion-badge absolute bottom-1.5 right-1.5';badge.textContent='GARMENT MOTION';visual.appendChild(badge);
+          gmCardCanvases.set(id,{canvas:c,assets,profile:gmProfileFor(p),visible:true});
+        }
+      }
+      if('IntersectionObserver'in window){
+        const gmObserver=new IntersectionObserver(entries=>entries.forEach(e=>{const id=e.target.dataset.gmCardId,entry=gmCardCanvases.get(id);if(entry)entry.visible=e.isIntersecting;}),{rootMargin:'120px'});
+        const oldApply=gmApplySavedCards;
+        gmApplySavedCards=async function(){await oldApply();document.querySelectorAll('.gm-card-canvas').forEach(c=>{const wrap=c.closest('[id^="prod-visual-"]');if(wrap){c.dataset.gmCardId=wrap.id.replace('prod-visual-','');gmObserver.observe(c);}});};
+      }
+
+      let gmQuickViewRaf=0;
+      function gmStopQuickView(){if(gmQuickViewRaf)cancelAnimationFrame(gmQuickViewRaf);gmQuickViewRaf=0;}
+      async function gmMountQuickView(product){
+        gmStopQuickView();
+        try{
+          const assets=await gmGetAssets(product.id);if(!assets)return;
+          const currentSource=getProductCover(product);if(currentSource && assets.record.sourceUrl!==currentSource)return;
+          const stage=qvBody.querySelector('.h-72');if(!stage)return;
+          stage.innerHTML='';
+          const c=document.createElement('canvas');c.width=480;c.height=Math.round(480*assets.record.height/assets.record.width);
+          c.style.width='100%';c.style.height='100%';c.style.objectFit='contain';stage.appendChild(c);
+          const render=now=>{if(!c.isConnected)return;gmRenderStored(c.getContext('2d'),assets,now/1000,gmProfileFor(product));gmQuickViewRaf=requestAnimationFrame(render);};
+          gmQuickViewRaf=requestAnimationFrame(render);
+        }catch(e){}
+      }
+      function gmCardLoop(now){
+        gmCardCanvases.forEach(entry=>{if(entry.visible&&entry.canvas.isConnected&&!document.body.classList.contains('reduced-motion'))gmRenderStored(entry.canvas.getContext('2d'),entry.assets,now/1000,entry.profile);});
+        requestAnimationFrame(gmCardLoop);
+      }
+      requestAnimationFrame(gmCardLoop);
+      gmApplySavedCards().catch(()=>{});
+
       // Initial Render
       renderProducts(false);
+      gmApplySavedCards().catch(()=>{});
       renderCartDrawer();
+      loadStoreCatalog();
+      loadStoreConfiguration();
     })();
   </script>
 </body>

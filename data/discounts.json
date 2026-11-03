@@ -1,0 +1,34 @@
+{
+  "version": 1,
+  "currency": "EGP",
+  "coupons": [
+    {
+      "code": "MESVIP200",
+      "active": true,
+      "type": "fixed_amount",
+      "value": 200,
+      "min_units": 1,
+      "description": "خصم 200 جنيه على الطلب"
+    }
+  ],
+  "quantity_rules": [
+    {
+      "id": "buy-2-save-5",
+      "active": true,
+      "scope": "cart",
+      "min_units": 2,
+      "type": "percentage",
+      "value": 5,
+      "description": "خصم 5% عند شراء وحدتين أو أكثر"
+    },
+    {
+      "id": "buy-3-save-10",
+      "active": true,
+      "scope": "cart",
+      "min_units": 3,
+      "type": "percentage",
+      "value": 10,
+      "description": "خصم 10% عند شراء 3 وحدات أو أكثر"
+    }
+  ]
+}

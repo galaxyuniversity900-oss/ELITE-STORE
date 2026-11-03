@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "enabled": true,
+  "payment_methods": [
+    "الدفع عند الاستلام"
+  ],
+  "shipping_note": "يتم تأكيد تفاصيل الشحن عبر واتساب"
+}

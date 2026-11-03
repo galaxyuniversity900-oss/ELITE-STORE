@@ -1,0 +1,40 @@
+{
+  "version": 1,
+  "sections": [
+    {
+      "id": "home",
+      "file": "home.json",
+      "label": "الرئيسية"
+    },
+    {
+      "id": "catalog",
+      "file": "catalog.json",
+      "label": "المنتجات"
+    },
+    {
+      "id": "categories",
+      "file": "categories.json",
+      "label": "الأقسام والتصنيفات"
+    },
+    {
+      "id": "offers",
+      "file": "offers.json",
+      "label": "العروض"
+    },
+    {
+      "id": "product-details",
+      "file": "product-details.json",
+      "label": "تفاصيل المنتج"
+    },
+    {
+      "id": "checkout",
+      "file": "checkout.json",
+      "label": "الطلب والدفع"
+    },
+    {
+      "id": "footer",
+      "file": "footer.json",
+      "label": "التذييل والتواصل"
+    }
+  ]
+}
