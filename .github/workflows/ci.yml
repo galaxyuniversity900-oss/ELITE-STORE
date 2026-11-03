@@ -103,3 +103,5 @@ jobs:
         run: docker compose -f infra/docker/docker-compose.yml down -v
       - name: Verify garment motion engine
         run: node scripts/verify-garment-motion.mjs
+      - name: Verify commercial checkout readiness
+        run: node scripts/verify-commercial-readiness.mjs
