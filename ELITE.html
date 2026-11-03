@@ -1913,9 +1913,7 @@
               <div class="pt-3 mt-2.5 border-t border-zinc-800/80 space-y-2.5">
                 <div class="flex items-baseline justify-between">
                   <div>
-                    <span class="text-lg font-black text-[#f5ebe0] font-mono-tech tabular-nums">${p.price.toLocaleString()}</span>
-                    <span class="text-xs text-[#d4af37] font-bold mr-0.5">ج.م</span>
-                    ${p.priceNote ? `<span class="text-[10px] text-amber-400 block">${p.priceNote}</span>` : ''}
+                    ${p.priceNote ? `<span class="text-sm font-bold text-amber-300">${storeSafeText(p.priceNote)}</span>` : `<span class="text-lg font-black text-[#f5ebe0] font-mono-tech tabular-nums">${p.price.toLocaleString()}</span><span class="text-xs text-[#d4af37] font-bold mr-0.5">ج.م</span>`}
                     ${getProductDiscountHint(p)}
                   </div>
                   <button type="button" data-quick-id="${p.id}" class="quick-view-btn text-[11px] font-bold text-[#e6ccb2] hover:underline">
