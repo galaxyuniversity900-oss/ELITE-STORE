@@ -7,7 +7,7 @@ const engine = readFileSync(new URL('../assets/js/fabric-ripple.js', import.meta
 
 assert.equal(products.products.length, 22, 'Expected the full 22-product catalogue');
 assert.equal(new Set(products.products.map(product => product.id)).size, 22, 'Product IDs must be unique');
-assert.ok(products.products.every(product => product.visual?.type && product.svgIcon), 'Every catalogue item must retain its product illustration');
+assert.ok(products.products.every(product => product.visual?.type && product.visual?.color && product.visual?.accent), 'Every catalogue item must retain its product illustration');
 
 const photoCount = products.products.filter(product =>
   Boolean(product.media?.cover) || (Array.isArray(product.media?.images) && product.media.images.some(Boolean))
