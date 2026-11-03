@@ -93,3 +93,5 @@ jobs:
         run: node scripts/verify-commercial-readiness.mjs
       - name: Verify product image lab
         run: npm run verify:product-image-lab
+      - name: Verify photography workflow security
+        run: node scripts/verify-photography-workflow.mjs
