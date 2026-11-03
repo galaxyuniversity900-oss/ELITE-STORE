@@ -1,0 +1,98 @@
+name: Generate MES STORE product photography
+
+on:
+  workflow_dispatch:
+    inputs:
+      product_ids:
+        description: "Optional comma-separated product IDs (blank = all 22 products)"
+        required: false
+        type: string
+        default: ""
+      limit:
+        description: "Maximum number of products to process (0 = all)"
+        required: false
+        type: number
+        default: 0
+      force:
+        description: "Regenerate existing photographs"
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: mes-store-product-photography
+  cancel-in-progress: false
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Validate generation credentials
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          if [ -z "$OPENAI_API_KEY" ]; then
+            echo "::error::Repository Actions secret OPENAI_API_KEY is missing. Add an OpenAI API key in Settings > Secrets and variables > Actions."
+            exit 1
+          fi
+
+      - name: Generate two photographs per selected product
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_IMAGE_MODEL: gpt-image-2
+        run: |
+          args=()
+          if [ -n "${{ inputs.product_ids }}" ]; then args+=(--product-ids "${{ inputs.product_ids }}"); fi
+          if [ "${{ inputs.limit }}" -gt 0 ]; then args+=(--limit "${{ inputs.limit }}"); fi
+          if [ "${{ inputs.force }}" = "true" ]; then args+=(--force); fi
+          python scripts/generate-product-photography.py "${args[@]}"
+
+      - name: Validate generated media and catalogue references
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          data=json.loads(Path("data/products.json").read_text(encoding="utf-8"))
+          missing=[]
+          for p in data["products"]:
+              media=p.get("media", {})
+              if media.get("photography", {}).get("source") != "ai-generated":
+                  continue
+              for key in ("cover",):
+                  path=Path(media[key])
+                  if not path.is_file() or path.stat().st_size < 10000:
+                      missing.append(f"{p['id']}:{key}")
+              for path in media.get("images", []):
+                  if not Path(path).is_file() or Path(path).stat().st_size < 10000:
+                      missing.append(f"{p['id']}:{path}")
+          if missing:
+              raise SystemExit("Missing or invalid generated photos: " + ", ".join(missing))
+          print("Generated product photo references validated.")
+          PY
+
+      - name: Commit generated product photography
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/products.json assets/products/
+          if git diff --cached --quiet; then
+            echo "No new product photographs to commit."
+            exit 0
+          fi
+          git commit -m "Add photorealistic MES STORE product photography"
+          git push origin HEAD:main
