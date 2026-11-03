@@ -7,6 +7,15 @@ const html = readFileSync(new URL('../ELITE.html', import.meta.url), 'utf8');
 const catalogue = readJson('data/products.json');
 const fabricShader = readFileSync(new URL('../assets/js/fabric-ripple.js', import.meta.url), 'utf8');
 new vm.Script(fabricShader, { filename: 'assets/js/fabric-ripple.js' });
+const premiumUx = readFileSync(new URL('../assets/js/premium-store-ux.js', import.meta.url), 'utf8');
+const premiumCss = readFileSync(new URL('../assets/css/premium-store-ux.css', import.meta.url), 'utf8');
+new vm.Script(premiumUx, { filename: 'assets/js/premium-store-ux.js' });
+assert.ok(html.includes('assets/js/premium-store-ux.js'), 'Premium retail UX module must be loaded');
+assert.ok(html.includes('window.MESStoreProducts = PRODUCTS'), 'Product catalogue must be exposed to the UX module');
+for (const token of ['uniform vec4 masses[4]', 'normalStrength', 'rimIntensity', 'swapTexture(src,duration)', 'setMaterial(name)', 'IntersectionObserver', 'MESFabricMaterials']) assert.ok(fabricShader.includes(token), 'Missing shader capability: ' + token);
+for (const token of ['openProductQuickView', 'flyToCart', 'mes-recently-viewed', 'mes-sticky-buy', 'mes-size-sheet', 'mes-heart-burst', 'pointerdown', 'touchmove', 'mes-swatch']) assert.ok(premiumUx.includes(token), 'Missing retail UX capability: ' + token);
+assert.ok(premiumCss.includes('.mes-qv-backdrop') && premiumCss.includes('.mes-sticky-buy'), 'Premium UX styles missing');
+
 assert.ok(html.includes('assets/js/fabric-ripple.js'), 'WebGL fabric shader must be loaded by the storefront');
 assert.ok(html.includes('data-fabric-ripple="on"'), 'Product cover images must opt into the fabric shader');
 for (const token of ['class FabricRippleEffect', 'uLensPoints[8]', 'uLensStrength', 'uLensSwirl', 'texture2D(uTexture,sampleUv)', 'requestAnimationFrame', 'IntersectionObserver', 'fabric-ripple-fallback']) {
