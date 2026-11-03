@@ -36,7 +36,7 @@ style();scaffold();
 document.addEventListener('click',e=>{
 let q=e.target.closest('.quick-view-btn,[data-quick-id],.product-card .liquid-hover');if(q){let c=q.closest('.product-card'),p=productFor(c),im=imageFor(c);if(p)openProductQuickView(im||q,im?.src||'',material(p));return;}
 let rc=e.target.closest('[data-recent]');if(rc){let p=(window.MESStoreProducts||[]).find(x=>x.id===rc.dataset.recent);if(p){S.product=p;openProductQuickView(null,p.media?.cover||p.media?.images?.[0]||'',material(p));}return;}
-let add=e.target.closest('.add-to-cart-btn,[data-add-id],#mes-qv-add,#mes-sticky-add');if(add){let p=S.product||productFor(add.closest('.product-card'));if(p){fly(imageFor(add.closest('.product-card'))||$('#mes-qv-img'));toast('تمت إضافة المنتج إلى السلة');}return;}
+let add=e.target.closest('.add-to-cart-btn,[data-add-id],#mes-qv-add,#mes-sticky-add');if(add){let p=S.product||productFor(add.closest('.product-card'));if(add.id==='mes-qv-add'&&p){let real=$('[data-add-id="'+CSS.escape(p.id)+'"]');if(real){real.click();close();}else toast('تعذر إضافة المنتج: زر السلة الأصلي غير متاح');return;}if(p){fly(imageFor(add.closest('.product-card'))||$('#mes-qv-img'));toast('تمت إضافة المنتج إلى السلة');}return;}
 let w=e.target.closest('.wish-btn,[data-wish-id]');if(w){heart(w);toast(w.classList.contains('loved')?'أُضيف إلى المفضلة':'أُزيل من المفضلة');return;}
 if(e.target.closest('.mes-qv-close')){close();$('#mes-size-sheet').classList.remove('open');return;}
 if(e.target.id==='mes-qv-size'){$('#mes-size-sheet').classList.add('open');return;}
