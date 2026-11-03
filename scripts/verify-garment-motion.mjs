@@ -16,6 +16,13 @@ for (const token of ['uniform vec4 masses[4]', 'normalStrength', 'rimIntensity',
 for (const token of ['openProductQuickView', 'flyToCart', 'mes-recently-viewed', 'mes-sticky-buy', 'mes-size-sheet', 'mes-heart-burst', 'pointerdown', 'touchmove', 'mes-swatch']) assert.ok(premiumUx.includes(token), 'Missing retail UX capability: ' + token);
 assert.ok(premiumCss.includes('.mes-qv-backdrop') && premiumCss.includes('.mes-sticky-buy'), 'Premium UX styles missing');
 
+assert.ok(html.includes('assets/js/mes-store-orchestrator.js'), 'Unified storefront orchestrator must be loaded');
+const orchestrator = readText('assets/js/mes-store-orchestrator.js');
+const orchestratorCss = readText('assets/css/mes-store-orchestrator.css');
+for (const token of ['MESStore','MESFabricRipple.scan','MutationObserver','mes:catalog-rendered','mes:product-image-ready','prefers-reduced-motion','mes-low-stock','mes-card-rating']) assert.ok(orchestrator.includes(token), 'Missing orchestrator capability: ' + token);
+assert.ok(orchestratorCss.includes('.mes-low-stock') && orchestratorCss.includes('.mes-card-rating'), 'Orchestrator styles missing');
+new vm.Script(orchestrator, { filename: 'assets/js/mes-store-orchestrator.js' });
+
 assert.ok(html.includes('assets/js/fabric-ripple.js'), 'WebGL fabric shader must be loaded by the storefront');
 assert.ok(html.includes('data-fabric-ripple="on"'), 'Product cover images must opt into the fabric shader');
 for (const token of ['class FabricRippleEffect', 'uniform vec4 masses[4]', 'lensRadius', 'normalStrength', 'rimIntensity', 'texture2D(texA,uvw)', 'requestAnimationFrame', 'IntersectionObserver', 'swapTexture(src,duration)']) {
