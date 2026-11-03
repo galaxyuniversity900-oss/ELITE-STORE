@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { OrderStatus, PaymentStatus } from '@prisma/client';
+import { OrderStatus, PaymentStatus, Prisma } from '@prisma/client';
 import { randomUUID } from 'node:crypto';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -62,7 +62,7 @@ export class DemoCommerceService {
 
   async dispatch(orderNumber: string, phone: string) {
     const order = await this.ownedOrder(orderNumber, phone);
-    if (![OrderStatus.CONFIRMED, OrderStatus.PROCESSING].includes(order.status)) {
+    if (order.status !== OrderStatus.CONFIRMED && order.status !== OrderStatus.PROCESSING) {
       throw new BadRequestException('Demo dispatch requires a confirmed or processing order');
     }
     if (order.shipment) return { demo: true, shipment: order.shipment };
