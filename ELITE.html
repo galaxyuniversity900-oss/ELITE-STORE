@@ -2042,6 +2042,10 @@
             const id = btn.dataset.addId;
             const prod = PRODUCTS.find(p => p.id === id);
             if (!prod) return;
+            if (prod.priceNote) {
+              notifyDynamicIsland('هذا المنتج غير متاح للطلب حتى يعتمد المتجر سعره النهائي.');
+              return;
+            }
             playSynthSound('success');
             btn.classList.remove('animate-squash-stretch');
             void btn.offsetWidth;
@@ -2148,12 +2152,15 @@
 
         const rawTotal = cartItems.reduce((s, i) => s + i.price * i.qty, 0);
         const quantityDiscount = storeDiscountForCart();
-        const couponDiscount = Math.min(discountAmount, Math.max(0, rawTotal - quantityDiscount.amount));
-        const finalTotal = Math.max(0, rawTotal - quantityDiscount.amount - couponDiscount);
+        const couponCandidate = Math.min(discountAmount, rawTotal);
+        const useCoupon = couponCandidate > quantityDiscount.amount;
+        const appliedQuantityDiscount = useCoupon ? 0 : quantityDiscount.amount;
+        const couponDiscount = useCoupon ? couponCandidate : 0;
+        const finalTotal = Math.max(0, rawTotal - appliedQuantityDiscount - couponDiscount);
         const discountSummary = document.getElementById('cart-discount-summary');
         if (discountSummary) {
           const labels = [];
-          if (quantityDiscount.amount > 0) labels.push(storeSafeText(quantityDiscount.label) + ': ' + quantityDiscount.amount.toLocaleString() + ' ج.م');
+          if (appliedQuantityDiscount > 0) labels.push(storeSafeText(quantityDiscount.label) + ': ' + appliedQuantityDiscount.toLocaleString() + ' ج.م');
           if (couponDiscount > 0) labels.push('كوبون ' + storeSafeText(activeCouponCode) + ': ' + couponDiscount.toLocaleString() + ' ج.م');
           discountSummary.textContent = labels.length ? 'تم تطبيق: ' + labels.join(' · ') : '';
           discountSummary.hidden = !labels.length;
@@ -2239,8 +2246,11 @@
 
         const rawTotal = cartItems.reduce((sum, item) => sum + Number(item.price || 0) * Number(item.qty || 0), 0);
         const quantityDiscount = storeDiscountForCart();
-        const couponDiscount = Math.min(discountAmount, Math.max(0, rawTotal - quantityDiscount.amount));
-        const totalDiscount = quantityDiscount.amount + couponDiscount;
+        const couponCandidate = Math.min(discountAmount, rawTotal);
+        const useCoupon = couponCandidate > quantityDiscount.amount;
+        const appliedQuantityDiscount = useCoupon ? 0 : quantityDiscount.amount;
+        const couponDiscount = useCoupon ? couponCandidate : 0;
+        const totalDiscount = appliedQuantityDiscount + couponDiscount;
         const finalTotal = Math.max(0, rawTotal - totalDiscount);
         const heading = document.createElement('strong');
         heading.className = 'block text-emerald-200';
