@@ -7,6 +7,7 @@
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <script defer src="./assets/js/fabric-ripple.js"></script>
+  <script defer src="./assets/js/premium-store-ux.js"></script>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
@@ -1315,6 +1316,7 @@
         { id: 'mes21', title: 'جاكت جلد أسود بياقة بنية', category: 'جاكت', price: 1299, desc: 'تفاصيل متباينة وشكل مميز', badge: 'Contrast Collar', motionTag: 'Dual-Tone 3D Flip', svgIcon: makeGarmentSvg('jacket', '#18181b', '#b45309') },
         { id: 'mes22', title: 'سويت شيرت أسود سادة', category: 'هودي', price: 549, desc: 'تصميم أساسي أنيق باللون الأسود، مناسب للإطلالات اليومية', badge: 'Minimal Basic', motionTag: 'Micro-Interaction Ready', svgIcon: makeGarmentSvg('hoodie', '#0f0f12', '#d4af37') }
       ];
+      window.MESStoreProducts = PRODUCTS;
 
       function storeSafeText(value) {
         return String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
