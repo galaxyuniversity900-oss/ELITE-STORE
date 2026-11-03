@@ -4,7 +4,7 @@
   "coupons": [
     {
       "code": "MESVIP200",
-      "active": true,
+      "active": false,
       "type": "fixed_amount",
       "value": 200,
       "min_units": 1,
@@ -14,7 +14,7 @@
   "quantity_rules": [
     {
       "id": "buy-2-save-5",
-      "active": true,
+      "active": false,
       "scope": "cart",
       "min_units": 2,
       "type": "percentage",
@@ -23,7 +23,7 @@
     },
     {
       "id": "buy-3-save-10",
-      "active": true,
+      "active": false,
       "scope": "cart",
       "min_units": 3,
       "type": "percentage",
