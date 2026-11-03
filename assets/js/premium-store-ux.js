@@ -1,0 +1,57 @@
+/* MES premium retail interaction layer */
+(()=>{'use strict';
+const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)],reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const S={recent:[],product:null,qty:1,drag:null,spin:0,tilt:0,vy:0};
+const money=n=>Number(n||0).toLocaleString('en-US')+' EGP';
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function style(){if($('#mes-premium-css'))return;let l=document.createElement('link');l.id='mes-premium-css';l.rel='stylesheet';l.href='./assets/css/premium-store-ux.css';document.head.append(l);}
+function scaffold(){
+if(!$('#mes-toast-stack'))document.body.insertAdjacentHTML('beforeend','<div id="mes-toast-stack" aria-live="polite"></div>');
+if(!$('#mes-recently-viewed')){let x=document.createElement('section');x.id='mes-recently-viewed';x.className='mes-recent-section';x.innerHTML='<div class="mes-section-head"><span>MES / YOUR ROTATION</span><h2>شوهدت مؤخراً</h2></div><div class="mes-recent-track" id="mes-recent-track"></div>';($('#products-grid-section')||$('main')||document.body).append(x);}
+if(!$('#mes-sticky-buy'))document.body.insertAdjacentHTML('beforeend','<aside id="mes-sticky-buy" class="mes-sticky-buy"><b id="mes-sticky-price">—</b><div class="mes-qty"><button data-qty="-1">−</button><b id="mes-sticky-qty">1</b><button data-qty="1">+</button></div><button id="mes-sticky-add">أضف للسلة</button></aside>');
+if(!$('#mes-premium-qv'))document.body.insertAdjacentHTML('beforeend','<div id="mes-premium-qv" class="mes-qv-backdrop"><section class="mes-qv" role="dialog" aria-modal="true"><button class="mes-qv-close">×</button><div class="mes-qv-stage"><div class="mes-qv-rotator"><img id="mes-qv-img" alt=""></div><button class="mes-zoom-reset">إعادة الضبط</button></div><div class="mes-qv-info"><small>MES / PRODUCT VIEW</small><h2 id="mes-qv-title"></h2><p id="mes-qv-desc"></p><strong id="mes-qv-price"></strong><div id="mes-qv-swatches" class="mes-swatches"></div><div class="mes-qv-actions"><button id="mes-qv-size">دليل المقاسات</button><button id="mes-qv-add">أضف للسلة</button></div><small>اسحب الصورة للدوران · اسحب لأسفل للإغلاق</small></div></section></div>');
+if(!$('#mes-size-sheet'))document.body.insertAdjacentHTML('beforeend','<div id="mes-size-sheet" class="mes-sheet-backdrop"><section class="mes-size-sheet"><button class="mes-qv-close" data-size-close>×</button><small>MES FIT GUIDE</small><h2>دليل المقاسات</h2><table><tr><th>المقاس</th><th>الوزن</th><th>الصدر</th></tr><tr><td>S</td><td>55–65</td><td>92–98</td></tr><tr><td>M</td><td>65–75</td><td>98–104</td></tr><tr><td>L</td><td>75–85</td><td>104–110</td></tr><tr><td>XL</td><td>85–95</td><td>110–116</td></tr><tr><td>XXL</td><td>95–110</td><td>116–124</td></tr></table><div class="mes-size-calc"><label>الطول سم<input id="mes-height" type="number" placeholder="175"></label><label>الوزن كجم<input id="mes-weight" type="number" placeholder="75"></label><button id="mes-calc-size">احسب المقاس</button><output id="mes-size-result"></output></div></section></div>');
+}
+function toast(t){let n=document.createElement('div');n.className='mes-toast';n.textContent=t;$('#mes-toast-stack').append(n);requestAnimationFrame(()=>n.classList.add('show'));setTimeout(()=>{n.classList.remove('show');setTimeout(()=>n.remove(),250)},2500);}
+function bump(n){if(!n)return;n.classList.remove('mes-bump');void n.offsetWidth;n.classList.add('mes-bump');setTimeout(()=>n.classList.remove('mes-bump'),400);}
+function productFor(card){let b=card?.querySelector('[data-quick-id],[data-add-id],[data-wish-id]'),id=b?.dataset.quickId||b?.dataset.addId||b?.dataset.wishId;return (window.PRODUCTS||[]).find(p=>p.id===id)||null;}
+function imageFor(card){return $('img',card)||$('[data-fabric-ripple-canvas]',card);}
+function material(p){let s=(p?.category+' '+p?.visual?.type).toLowerCase();return /جلد|leather/.test(s)?'leather':/mesh|sneaker|shoe|شبك/.test(s)?'mesh':'fabric';}
+function fly(source){let target=$('#cart-icon')||$('[data-cart-icon]')||$('#open-cart-drawer-btn');if(!source||!target||reduced)return;let a=source.getBoundingClientRect(),b=target.getBoundingClientRect(),n=source.cloneNode(true);n.className='mes-fly-clone';n.style.cssText='left:'+(a.left+a.width/2)+'px;top:'+(a.top+a.height/2)+'px;width:'+Math.min(a.width,120)+'px;height:'+Math.min(a.height,120)+'px';document.body.append(n);n.animate([{transform:'translate(-50%,-50%) scale(1)',opacity:1},{transform:'translate(calc(-50% + '+(b.left-a.left)+'px),calc(-50% + '+(b.top-a.top-60)+'px)) scale(.08)',opacity:0}],{duration:680,easing:'cubic-bezier(.2,.8,.25,1)'}).onfinish=()=>n.remove();bump(target);}
+function recent(){let t=$('#mes-recent-track');if(!t)return;t.innerHTML=S.recent.map(p=>'<button class="mes-recent-card" data-recent="'+esc(p.id)+'"><span>'+((p.media?.cover||p.media?.images?.[0])?'<img src="'+esc(p.media.cover||p.media.images[0])+'" alt="">':'MES')+'</span><b>'+esc(p.title)+'</b><small>'+money(p.price)+'</small></button>').join('');}
+function openProductQuickView(thumbnailElement,imageSrc,materialPreset){
+let card=thumbnailElement?.closest('.product-card'),p=productFor(card)||S.product;if(!p)return;S.product=p;S.qty=1;
+let img=$('#mes-qv-img'),src=imageSrc||imageFor(card)?.src||'';img.src=src;img.alt=p.title||'Product';
+$('#mes-qv-title').textContent=p.title||'';$('#mes-qv-desc').textContent=p.desc||'';$('#mes-qv-price').textContent=money(p.price);$('#mes-sticky-price').textContent=money(p.price);$('#mes-sticky-qty').textContent='1';
+let modal=$('#mes-premium-qv');modal.classList.add('open');document.body.classList.add('mes-qv-open');S.recent=[p,...S.recent.filter(x=>x.id!==p.id)].slice(0,8);recent();
+let variants=p.media?.variants||p.variants||[];$('#mes-qv-swatches').innerHTML=variants.map((v,i)=>'<button class="mes-swatch '+(!i?'active':'')+'" data-src="'+esc(v.cover||v.image||'')+'" data-material="'+esc(v.material||materialPreset||material(p))+'" style="--swatch:'+esc(v.color||'#777')+'"></button>').join('')||'<small>الألوان والخامات حسب التوفر</small>';
+if(!reduced&&window.FabricRippleEffect&&img.complete&&img.naturalWidth){modal._effect?.destroy();modal._effect=new FabricRippleEffect(img,{material:materialPreset||material(p)});}
+if(!reduced)$('.mes-qv',modal).animate([{transform:'translateY(28px) scale(.84)',opacity:0},{transform:'translateY(-5px) scale(1.02)',opacity:1,offset:.8},{transform:'none',opacity:1}],{duration:520,easing:'cubic-bezier(.2,1.35,.35,1)'});
+}
+window.openProductQuickView=openProductQuickView;
+function close(){let m=$('#mes-premium-qv');m.classList.remove('open');document.body.classList.remove('mes-qv-open');m._effect?.destroy();m._effect=null;S.product=null;}
+function heart(b){b.classList.toggle('loved');bump(b);if(!reduced){let r=b.getBoundingClientRect(),x=document.createElement('span');x.className='mes-heart-burst';x.style.left=(r.left+r.width/2)+'px';x.style.top=(r.top+r.height/2)+'px';for(let i=0;i<8;i++){let z=document.createElement('i');z.textContent=i%2?'✦':'♥';z.style.setProperty('--a',(i*45)+'deg');x.append(z)}document.body.append(x);setTimeout(()=>x.remove(),700);}}
+function init(){
+style();scaffold();
+document.addEventListener('click',e=>{
+let q=e.target.closest('.quick-view-btn,[data-quick-id],.product-card .liquid-hover');if(q){let c=q.closest('.product-card'),p=productFor(c),im=imageFor(c);if(p)openProductQuickView(im||q,im?.src||'',material(p));return;}
+let rc=e.target.closest('[data-recent]');if(rc){let p=(window.PRODUCTS||[]).find(x=>x.id===rc.dataset.recent);if(p){S.product=p;openProductQuickView(null,p.media?.cover||p.media?.images?.[0]||'',material(p));}return;}
+let add=e.target.closest('.add-to-cart-btn,[data-add-id],#mes-qv-add,#mes-sticky-add');if(add){let p=S.product||productFor(add.closest('.product-card'));if(p){fly(imageFor(add.closest('.product-card'))||$('#mes-qv-img'));toast('تمت إضافة المنتج إلى السلة');}return;}
+let w=e.target.closest('.wish-btn,[data-wish-id]');if(w){heart(w);toast(w.classList.contains('loved')?'أُضيف إلى المفضلة':'أُزيل من المفضلة');return;}
+if(e.target.closest('.mes-qv-close')){close();$('#mes-size-sheet').classList.remove('open');return;}
+if(e.target.id==='mes-qv-size'){$('#mes-size-sheet').classList.add('open');return;}
+if(e.target.id==='mes-calc-size'){let h=+$('#mes-height').value,w=+$('#mes-weight').value;if(h<140||h>220||w<40||w>180){$('#mes-size-result').textContent='أدخل قيماً صحيحة.';return;}$('#mes-size-result').textContent='المقاس المقترح: '+(w<65?'S':w<75?'M':w<85?'L':w<95?'XL':'XXL');return;}
+if(e.target.dataset.qty){S.qty=Math.max(1,Math.min(10,S.qty+(+e.target.dataset.qty)));$('#mes-sticky-qty').textContent=S.qty;return;}
+if(e.target.id==='mes-sticky-add'){let p=S.product;if(p){let b=$('[data-add-id="'+CSS.escape(p.id)+'"]');b?.click();}return;}
+let sw=e.target.closest('.mes-swatch');if(sw){let im=$('#mes-qv-img');im.style.opacity='.3';setTimeout(()=>{im.src=sw.dataset.src;im.dataset.material=sw.dataset.material;im.style.opacity='1'},120);$$('.mes-swatch').forEach(x=>x.classList.toggle('active',x===sw));return;}
+if(e.target.id==='mes-premium-qv'||e.target.id==='mes-size-sheet'){close();$('#mes-size-sheet').classList.remove('open');}
+});
+let stage=$('.mes-qv-stage'),rot=$('.mes-qv-rotator');if(stage&&rot&&!reduced){stage.addEventListener('pointerdown',e=>{if(e.target.closest('button'))return;stage.setPointerCapture(e.pointerId);S.drag={x:e.clientX,y:e.clientY,last:e.clientX};});stage.addEventListener('pointermove',e=>{if(!S.drag)return;let dx=e.clientX-S.drag.last,dy=e.clientY-S.drag.y;S.spin+=dx*.65;S.tilt=Math.max(-25,Math.min(25,S.tilt-dy*.25));S.vy=dx*.65;S.drag.last=e.clientX;S.drag.y=e.clientY;rot.style.transform='perspective(1000px) rotateX('+S.tilt+'deg) rotateY('+S.spin+'deg)';});let end=()=>{if(!S.drag)return;S.drag=null;let tick=()=>{S.spin+=S.vy;S.tilt*=.9;S.vy*=.94;rot.style.transform='perspective(1000px) rotateX('+S.tilt+'deg) rotateY('+S.spin+'deg)';if(Math.abs(S.vy)>.1||Math.abs(S.tilt)>.2)requestAnimationFrame(tick)};requestAnimationFrame(tick)};stage.addEventListener('pointerup',end);stage.addEventListener('pointercancel',end);stage.addEventListener('dblclick',()=>{S.spin=S.tilt=0;rot.style.transform=''});}
+let sy=0;$('#mes-premium-qv').addEventListener('touchstart',e=>sy=e.touches[0].clientY,{passive:true});$('#mes-premium-qv').addEventListener('touchend',e=>{if(e.changedTouches[0].clientY-sy>100)close()},{passive:true});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')close()});
+if('IntersectionObserver'in window){let target=$('#products-grid-section');if(target){let io=new IntersectionObserver(es=>$('#mes-sticky-buy').classList.toggle('visible',!es[0].isIntersecting&&!!S.product));io.observe(target);}}
+let grid=$('#products-grid')||$('#products-container')||$('.products-grid');if(grid&&'MutationObserver'in window)new MutationObserver(()=>$$('.product-card',grid).forEach((c,i)=>{c.classList.add('mes-grid-in');c.style.setProperty('--delay',Math.min(i,12)*30+'ms')})).observe(grid,{childList:true});
+window.MESStoreUX={openProductQuickView,toast,flyToCart:fly,heartBurst:heart};
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
+})();
