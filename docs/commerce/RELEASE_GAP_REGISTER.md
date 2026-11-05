@@ -1,6 +1,6 @@
 # MES STORE — Release Gap Register
 
-Status: engineering backlog derived from the repository state on 2026-11-02.
+Status: engineering backlog derived from the repository state on 2026-11-05.
 Scope: preserve the existing static storefront and extend the current monorepo in place.
 This register is not a claim that any listed control has passed verification.
 
@@ -14,12 +14,12 @@ This register is not a claim that any listed control has passed verification.
 |---|---|---|
 | CI and full-stack verification | CI workflow defines schema, type, test, build, Docker and HTTP smoke checks | Latest workflow run on the exact release commit is green; preserve logs/artifacts for failures |
 | Admin session security | Short-lived bearer token is held in browser session storage, per commerce policy | Move to a server-managed HttpOnly, Secure, SameSite session/BFF design; add CSRF protections where applicable; verify logout/revocation and session expiry |
-| Authentication abuse controls | Login and role checks exist; edge/API rate limiting remains listed as outstanding | Enforced limits, generic auth errors, lockout/backoff policy and automated abuse tests |
+| Authentication abuse controls | API guard now limits login to 5 attempts per IP/email pair and 30 per IP per 15 minutes, and registration to 3 per IP per hour; counters are process-local | Enforce shared limits at the trusted edge/API gateway; use a shared atomic store for multiple replicas; add monitoring and verify production proxy IP handling |
 | Authorization and object ownership | Admin routes have role guards; guest cart is session-ID based | Negative tests for IDOR, cross-session cart access, inactive accounts, role changes and every admin mutation |
 | Checkout correctness | COD checkout uses idempotency and tracked-stock transaction logic; shipping/discount totals are zero in this API path | Integration tests for concurrent checkout, retries, insufficient stock, inactive products, malformed fulfilment data and duplicate keys; server-side verified shipping/coupon rules before enabling them |
 | Database invariants | Follow-up SQL migration adds CHECK constraints for product prices/stock, cart quantities, order totals, line totals and payment amounts; cart service rejects combined line quantities above 20 | Apply both migrations on clean and representative existing databases; verify the negative cases are rejected and valid checkout rows pass |
 | Migration safety | Initial and commerce-integrity Prisma migrations and deployment command exist | Validate migration against a clean database and a representative existing database; backup and restore rehearsal; never baseline without schema comparison |
-| Production infrastructure | Compose host ports now bind to loopback by default; GitHub Pages deploys only static storefront | Document and verify production hosting for API, web/admin, database, TLS, private networking, secrets, health/readiness, rollback and persistent storage |
+| Production infrastructure | Compose host ports bind to loopback by default; GitHub Pages deploys only static storefront | Document and verify production hosting for API, web/admin, database, TLS, private networking, secrets, health/readiness, rollback and persistent storage |
 | Recovery and operations | Backups, monitoring and incident readiness are documented as outstanding | Automated encrypted backups, restore drill, RPO/RTO, alerts, structured redacted logs and incident runbooks |
 
 ## P1 — complete before calling the commerce platform feature-complete
