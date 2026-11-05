@@ -60,6 +60,7 @@ export default async function HomePage() {
           <a href="/account">حسابي</a>
           <a href="/track">تتبع الطلب</a>
           <a className="nav-store-link" href={storefrontUrl}>المتجر الكامل</a>
+          <a className="whatsapp-link" href="https://wa.me/201558309605" target="_blank" rel="noopener noreferrer">واتساب المتجر</a>
         </nav>
       </header>
 
@@ -158,6 +159,7 @@ export default async function HomePage() {
       <footer className="site-footer">
         <a className="brand" href="/">MES STORE</a>
         <p>ملابس رجالي · MEN'S COLLECTION</p>
+        <a className="footer-whatsapp" href="https://wa.me/201558309605" target="_blank" rel="noopener noreferrer">واتساب: +201558309605</a>
         <span>© {new Date().getFullYear()} MES STORE</span>
       </footer>
     </main>
