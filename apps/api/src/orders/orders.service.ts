@@ -139,7 +139,7 @@ export class OrdersService {
         });
   
         return { order, created: true };
-        }, { isolationLevel: Prisma.TransactionLevel.Serializable });
+        }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
       if (outcome.created && this.whatsapp) {
         const notification = await this.whatsapp.notifyStore(outcome.order).catch(() => ({
           sent: false,
