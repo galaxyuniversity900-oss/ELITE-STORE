@@ -7,7 +7,7 @@ export class WhatsAppNotificationsService {
   async notifyStore(order: any): Promise<StoreNotificationResult> {
     const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
     const accessToken = process.env.WHATSAPP_ACCESS_TOKEN;
-    const recipient = (process.env.WHATSAPP_ORDER_RECIPIENT ?? '201558309605').replace(/\\D/g, '');
+    const recipient = (process.env.WHATSAPP_ORDER_RECIPIENT ?? '201558309605').replace(/\D/g, '');
     const templateName = process.env.WHATSAPP_ORDER_TEMPLATE_NAME;
     const language = process.env.WHATSAPP_ORDER_TEMPLATE_LANGUAGE ?? 'ar';
     const apiVersion = process.env.WHATSAPP_API_VERSION;
