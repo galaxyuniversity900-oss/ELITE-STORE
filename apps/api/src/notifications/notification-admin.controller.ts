@@ -1,4 +1,5 @@
-import { Controller, Get, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, Post, Query, Req, UseGuards } from '@nestjs/common';
+import { Request } from 'express';
 import { NotificationChannel, NotificationStatus, UserRole } from '@prisma/client';
 import { AuthGuard } from '../auth/auth.guard';
 import { Roles } from '../auth/roles.decorator';
@@ -10,6 +11,11 @@ import { NotificationOutboxService } from './notification-outbox.service';
 @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
 export class NotificationAdminController {
   constructor(private readonly outbox: NotificationOutboxService) {}
+
+  @Post(':id/retry')
+  retry(@Param('id') id: string, @Req() request: Request & { user?: { id: string } }) {
+    return this.outbox.retryDeadNotification(id, request.user?.id ?? 'unknown-admin');
+  }
 
   @Get()
   list(
