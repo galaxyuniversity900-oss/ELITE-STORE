@@ -54,4 +54,21 @@ if (replay.id !== first.id || replay.storeNotification?.queued !== false
   throw new Error('Idempotent checkout replay did not return the original order safely');
 }
 
+const admin = await request('/auth/login', {
+  method: 'POST',
+  headers,
+  body: JSON.stringify({
+    email: 'admin@example.test',
+    password: 'ci-only-bootstrap-password-12345',
+  }),
+});
+const history = await request('/admin/notifications?limit=100', {
+  headers: { Authorization: `Bearer ${admin.accessToken}` },
+});
+const orderNotifications = (history.items ?? []).filter((item) => item.orderId === first.id);
+if (orderNotifications.length !== 2
+  || new Set(orderNotifications.map((item) => item.channel)).size !== 2) {
+  throw new Error('Protected admin notification history did not expose both order channels');
+}
+
 process.stdout.write(first.id);
