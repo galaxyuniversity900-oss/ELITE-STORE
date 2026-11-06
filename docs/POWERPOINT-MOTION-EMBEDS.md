@@ -66,6 +66,7 @@ Example:
 
 - Prefer MP4 for PowerPoint timelines; do not upload the original PPTX to the public site.
 - Keep video muted when autoplaying. Browsers generally block autoplay with sound.
+- Motion entries mount with a maximum of three concurrent workers. Each entry failure is isolated so later entries can still render without creating an unbounded burst of media work.
 - Use a poster, preload metadata, and concise clips. Avoid multiple simultaneous autoplay videos.
 - The integration only accepts same-origin media paths. Lottie runtime is loaded from a pinned CDN version only when a Lottie entry is configured.
 - The visitor's prefers-reduced-motion setting disables automatic motion and exposes video controls.
