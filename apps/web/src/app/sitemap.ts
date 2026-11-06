@@ -5,5 +5,8 @@ const canonicalStoreUrl =
   process.env.NEXT_PUBLIC_CANONICAL_URL ?? new URL('ELITE.html', siteBase).toString();
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  return [{ url: canonicalStoreUrl, priority: 1 }];
+  return [
+    { url: siteBase, priority: 1 },
+    { url: canonicalStoreUrl, priority: 0.9 },
+  ];
 }
