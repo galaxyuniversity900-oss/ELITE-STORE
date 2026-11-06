@@ -95,6 +95,42 @@ describe('NotificationOutboxService', () => {
     }));
   });
 
+  it('uses provider recipient configuration added after the notification was queued', async () => {
+    const notification = {
+      id: 'outbox-configured-later',
+      channel: NotificationChannel.EMAIL,
+      recipient: null,
+      payload: { orderNumber: 'MES-LATER', subject: 'New order', customerName: 'Test', customerPhone: '0100', total: '245', currency: 'EGP', items: [], address: '' },
+      dedupeKey: 'order-later:ORDER_CREATED:EMAIL',
+      attempts: 1,
+      maxAttempts: 8,
+      lockToken: 'lock-later',
+    };
+    prisma.notificationOutbox.findMany.mockResolvedValueOnce([]).mockResolvedValueOnce([{ id: notification.id }]);
+    let activeLock = '';
+    prisma.notificationOutbox.updateMany.mockImplementation(async (args: any) => {
+      if (args.data.status === NotificationStatus.PROCESSING) activeLock = args.data.lockToken;
+      return { count: 1 };
+    });
+    prisma.notificationOutbox.findUnique.mockImplementation(async () => ({ ...notification, lockToken: activeLock }));
+    prisma.notificationDeliveryAttempt.create.mockResolvedValue({ id: 'attempt-later' });
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ id: 'resend-later-1' }),
+    }) as never;
+    process.env.ORDER_NOTIFICATION_EMAIL = 'orders@example.test';
+    process.env.RESEND_API_KEY = 'test-key';
+    process.env.RESEND_FROM_EMAIL = 'MES STORE <orders@example.test>';
+
+    const service = new NotificationOutboxService(prisma as never);
+    await service.processBatch();
+
+    const request = (global.fetch as jest.Mock).mock.calls[0][1];
+    expect(JSON.parse(request.body).to).toEqual(['orders@example.test']);
+    expect(request.headers['Idempotency-Key']).toBe(notification.dedupeKey);
+  });
+
   it('schedules retry after a transient provider 503 response', async () => {
     const notification = {
       id: 'outbox-2',
