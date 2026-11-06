@@ -39,6 +39,7 @@ Configure Resend webhooks for the email events `email.sent`, `email.delivered`, 
 
 ## Delivery semantics and limitations
 
+- The checkout response preserves the existing `storeNotification` field for compatibility: `sent: false, queued: true, reason: 'queued'` means the notification is durably queued, not that delivery failed.
 - The order is not rolled back when a provider is unavailable. Notification work remains durable and retries according to policy.
 - `SENT` means the provider accepted the send request and returned a message ID. It does **not** mean the recipient received or read the message. Provider webhook statuses are stored separately in `providerStatus` and the delivery-event history.
 - Outbox deduplication prevents duplicate event creation. Resend also receives the stable idempotency key. WhatsApp Cloud API does not provide a general send idempotency key; if the provider accepts a message but the worker crashes before persisting the response, a retry can still cause a duplicate WhatsApp message. This is the unavoidable at-least-once delivery boundary without provider-side idempotency.
