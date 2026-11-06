@@ -15,3 +15,59 @@
 @media(prefers-reduced-motion:reduce){.mes-qv,.mes-toast,.mes-sticky-buy,.mes-grid-in{animation:none!important;transition:opacity .12s!important}.mes-fly-clone,.mes-heart-burst{display:none!important}}
 .mes-qv-rating{display:flex;align-items:center;gap:8px;color:#aaa;font-size:11px}.mes-stars{display:inline-block;overflow:hidden;color:var(--mes-gold);letter-spacing:2px;transform-origin:right;clip-path:inset(0 100% 0 0);transition:clip-path .75s ease}.open .mes-stars{clip-path:inset(0 0 0 0)}.mes-stock{color:#f0b65b;font-size:11px;font-weight:800}.mes-image-loading{position:relative;background:linear-gradient(100deg,#16161a 20%,#29292e 42%,#16161a 64%);background-size:220% 100%;animation:mesSkeleton 1.2s linear infinite}@keyframes mesSkeleton{to{background-position-x:-220%}}
 .mes-qv-actions button:disabled,#mes-sticky-add:disabled{opacity:.45;cursor:not-allowed;filter:grayscale(.4)}
+
+
+/* MES luxury menswear art direction — presentation layer only */
+:root{--mes-ink:#090909;--mes-panel:#12110f;--mes-panel-soft:#191713;--mes-champagne:#d8c39a;--mes-gold:#c6a66b;--mes-muted:#a79e90;--mes-line:rgba(216,195,154,.18);--mes-serif:Georgia,"Times New Roman",serif}
+body{background:var(--mes-ink);color:#f2eee7}
+body>header{background:rgba(9,9,9,.94)!important;border-color:var(--mes-line)!important;backdrop-filter:blur(18px)}
+body>header .max-w-7xl{min-height:76px}
+#replay-preloader-btn>div:first-child{border-radius:2px!important;background:linear-gradient(145deg,#ddc99f,#9d8050)!important;box-shadow:none!important}
+#replay-preloader-btn .text-xl{font-family:var(--mes-serif)!important;font-size:22px!important;letter-spacing:.2em!important;font-weight:500!important}
+#dynamic-island{border-radius:2px!important;background:#12110f!important;border-color:var(--mes-line)!important}
+#hero-showcase{border-radius:2px!important;border-color:var(--mes-line)!important;background:linear-gradient(115deg,#171510 0%,#0b0b0a 56%,#17140f 100%)!important;box-shadow:none!important;padding:clamp(28px,5vw,72px)!important}
+#hero-showcase h1{font-family:var(--mes-serif)!important;font-size:clamp(48px,7.2vw,92px)!important;font-weight:500!important;letter-spacing:-.045em!important;line-height:1.12!important}
+#hero-showcase .mes-gold-text{color:var(--mes-champagne)!important}
+#hero-showcase .rounded-2xl,#hero-showcase .rounded-3xl{border-radius:2px!important}
+#hero-showcase .bg-gradient-to-r{background:var(--mes-champagne)!important;color:#17140f!important}
+#hero-showcase .bg-gradient-to-br{background:#171510!important}
+#hero-showcase .border-zinc-800,#hero-showcase .border-zinc-700{border-color:var(--mes-line)!important}
+#products-grid-section>.rounded-3xl{border-radius:2px!important;background:transparent!important;border:0!important;padding:0!important}
+#products-grid-section h2{font-family:var(--mes-serif)!important;font-size:clamp(30px,4vw,48px)!important;font-weight:500!important;letter-spacing:-.025em}
+#products-grid-section .text-xs.font-mono-tech{letter-spacing:.22em!important;color:var(--mes-champagne)!important}
+#category-filter-group{gap:8px!important}
+#category-filter-group .cat-filter-btn{border-radius:2px!important;border-color:var(--mes-line)!important;background:#14120f!important;color:#d9d0c1!important;padding:10px 15px!important;transition:background .2s ease,border-color .2s ease,color .2s ease!important}
+#category-filter-group .cat-filter-btn[aria-pressed=true],#category-filter-group .cat-filter-btn.active{background:var(--mes-champagne)!important;color:#17140f!important;border-color:var(--mes-champagne)!important}
+#products-grid{gap:18px!important}
+.product-card{border-radius:2px!important;background:#12110f!important;border:1px solid var(--mes-line)!important;padding:14px!important;box-shadow:none!important;overflow:hidden!important}
+.product-card:hover{border-color:rgba(216,195,154,.55)!important;box-shadow:0 18px 44px #0008!important}
+.product-card .backface-hidden.space-y-2\.5{display:flex;flex-direction:column;gap:14px!important}
+.product-card [id^="prod-visual-"]{height:clamp(220px,24vw,310px)!important;border-radius:2px!important;background:#1c1a16!important;border-color:var(--mes-line)!important}
+.product-card h3{font-family:var(--mes-serif)!important;font-size:19px!important;font-weight:500!important;letter-spacing:.01em}
+.product-card p{color:#aaa295!important;line-height:1.8!important}
+.product-card .rounded-full,.product-card .rounded-xl,.product-card .rounded-lg{border-radius:2px!important}
+.product-card .size-pill-btn{border-radius:0!important;border:1px solid var(--mes-line)!important;width:31px!important;height:31px!important}
+.product-card .size-pill-btn.bg-\[\#d4af37\]{background:var(--mes-champagne)!important;color:#17140f!important}
+.product-card .pt-3.mt-2\.5{border-color:var(--mes-line)!important}
+.product-card .quick-view-btn{color:var(--mes-champagne)!important}
+.product-card .add-to-cart-btn{border-radius:2px!important;background:var(--mes-champagne)!important;color:#17140f!important;box-shadow:none!important;min-height:44px!important;letter-spacing:.02em}
+.product-card .gm-admin-btn{border-radius:2px!important;border-color:var(--mes-line)!important;background:#191713!important;color:#d9c9a7!important}
+.product-card .dir-overlay{border-radius:0!important;background:var(--mes-champagne)!important;color:#17140f!important}
+#cart-header-btn{border-radius:2px!important;background:var(--mes-champagne)!important;color:#17140f!important;box-shadow:none!important}
+#wishlist-header-btn,#cart-header-btn{border-radius:2px!important}
+#category-filter-group button:focus-visible,.product-card button:focus-visible,#cart-header-btn:focus-visible{outline:2px solid var(--mes-champagne)!important;outline-offset:3px!important}
+#mes-premium-qv .mes-qv,#mes-size-sheet .mes-size-sheet{border-radius:2px!important;border-color:var(--mes-line)!important;background:#11100e!important}
+#mes-premium-qv .mes-qv-info h2,#mes-size-sheet h2{font-family:var(--mes-serif)!important;font-weight:500!important}
+#mes-premium-qv button,#mes-size-sheet button{border-radius:2px!important}
+#mes-sticky-buy{border-radius:2px!important;background:rgba(17,16,14,.96)!important;border-color:var(--mes-line)!important}
+#mes-sticky-add,#mes-qv-add{border-radius:2px!important;background:var(--mes-champagne)!important;color:#17140f!important}
+#mes-toast-stack .mes-toast{border-radius:2px!important;background:#171510!important;border-color:var(--mes-line)!important}
+footer{border-color:var(--mes-line)!important}
+@media(max-width:700px){#hero-showcase{padding:24px!important}#hero-showcase h1{font-size:clamp(42px,12vw,62px)!important}#products-grid{gap:10px!important}.product-card{padding:9px!important}.product-card [id^="prod-visual-"]{height:190px!important}.product-card h3{font-size:16px!important}.product-card .size-pill-btn{width:27px!important;height:27px!important}}
+@media(prefers-reduced-motion:reduce){#hero-showcase *,#products-grid-section *{scroll-behavior:auto!important;animation-duration:.01ms!important;transition-duration:.01ms!important}}
+
+
+/* Crawlable links to generated canonical product detail pages */
+.mes-product-seo-link{display:inline-flex;align-items:center;gap:6px;margin-top:7px;color:#d8c39a;font-size:10px;font-weight:700;text-decoration:none;transition:color .2s ease,transform .2s ease}
+.mes-product-seo-link:hover{color:#f0e2c5;transform:translateX(-2px);text-decoration:underline;text-underline-offset:3px}
+.mes-product-seo-link:focus-visible{outline:2px solid #d8c39a;outline-offset:3px}

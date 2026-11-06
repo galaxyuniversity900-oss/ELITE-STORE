@@ -1,4 +1,12 @@
+import type { Metadata } from 'next';
+
 export const dynamic = 'force-dynamic';
+
+const publicSiteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+
+export const metadata: Metadata = {
+  alternates: publicSiteUrl ? { canonical: '/' } : undefined,
+};
 
 const storefrontUrl =
   process.env.NEXT_PUBLIC_STOREFRONT_URL ??
