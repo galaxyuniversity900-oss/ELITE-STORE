@@ -15,6 +15,7 @@ jobs:
     timeout-minutes: 30
     env:
       POSTGRES_PASSWORD: ci-only-postgres-password-12345
+      DATABASE_URL: postgresql://mes_store:ci-only-postgres-password-12345@localhost:5432/mes_store?schema=public
       REDIS_PASSWORD: ci-only-redis-password-12345
       JWT_SECRET: ci-only-jwt-secret-at-least-32-characters-long
       BOOTSTRAP_ADMIN_EMAIL: admin@example.test
@@ -67,6 +68,9 @@ jobs:
           constraint_count=$(docker compose -f infra/docker/docker-compose.yml exec -T postgres psql -U mes_store -d mes_store -Atc "SELECT COUNT(*) FROM pg_constraint WHERE conname IN ('products_price_positive_check','products_compare_at_price_nonnegative_check','products_stock_nonnegative_check','cart_items_quantity_range_check','cart_items_unit_price_nonnegative_check','orders_totals_nonnegative_check','orders_total_reconciliation_check','orders_discount_within_total_check','order_items_quantity_positive_check','order_items_amounts_nonnegative_check','order_items_line_total_check','payments_amount_nonnegative_check')")
           test "$constraint_count" = "12"
           echo "Database integrity constraints: $constraint_count/12"
+          notification_tables=$(docker compose -f infra/docker/docker-compose.yml exec -T postgres psql -U mes_store -d mes_store -Atc "SELECT COUNT(*) FROM pg_tables WHERE schemaname='public' AND tablename IN ('notification_outbox','notification_delivery_attempts','notification_delivery_events')")
+          test "$notification_tables" = "3"
+          echo "Notification outbox tables: $notification_tables/3"
           curl --silent --show-error --fail --retry 10 --retry-all-errors --retry-delay 2 http://localhost:4000/api/products -o /tmp/api-products.json
           node -e "const x=JSON.parse(require('fs').readFileSync('/tmp/api-products.json','utf8')); if (!x || !Array.isArray(x.items)) process.exit(1); console.log('API products smoke test: OK')"
           web_ready=0
