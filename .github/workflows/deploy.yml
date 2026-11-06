@@ -32,7 +32,7 @@ jobs:
       - name: Assemble static storefront
         run: |
           mkdir -p _site
-          cp index.html ELITE.html robots.txt sitemap.xml _site/
+          cp index.html ELITE.html _site/
           cp -R data _site/data
           if [ -d assets ]; then cp -R assets _site/assets; fi
           node scripts/generate-static-seo.mjs --output _site --site-url https://galaxyuniversity900-oss.github.io/ELITE-STORE
