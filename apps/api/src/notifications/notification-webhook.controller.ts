@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  Body,
   Controller,
   ForbiddenException,
   Get,
@@ -43,7 +44,7 @@ export class NotificationWebhookController {
   async receiveWhatsApp(
     @Req() request: RawBodyRequest<Request>,
     @Headers('x-hub-signature-256') signature: string | undefined,
-    body: any,
+    @Body() body: any,
   ) {
     this.verifyMetaSignature(request.rawBody, signature);
     const statuses: WhatsAppStatus[] = [];
