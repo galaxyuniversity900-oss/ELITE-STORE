@@ -228,8 +228,12 @@ export class NotificationOutboxService implements OnModuleInit, OnModuleDestroy 
       throw error;
     }
 
-    await this.prisma.notificationOutbox.update({
-      where: { id: notification.id },
+    // Provider webhooks can arrive out of order; never let an older event overwrite a newer state.
+    await this.prisma.notificationOutbox.updateMany({
+      where: {
+        id: notification.id,
+        OR: [{ providerStatusAt: null }, { providerStatusAt: { lte: occurredAt } }],
+      },
       data: { providerStatus: status, providerStatusAt: occurredAt },
     });
     return { recorded: true };
