@@ -11,15 +11,22 @@ const input: CheckoutDto = {
 };
 
 describe('OrdersService', () => {
+  let notifications: { enqueueOrderCreated: jest.Mock };
+
+  beforeEach(() => {
+    notifications = { enqueueOrderCreated: jest.fn().mockResolvedValue({ count: 2 }) };
+  });
+
   it('rejects checkout when no active cart exists', async () => {
     const tx = {
       order: { findUnique: jest.fn().mockResolvedValue(null) },
       cart: { findUnique: jest.fn().mockResolvedValue(null) },
     };
     const prisma = { $transaction: jest.fn((work: (client: unknown) => unknown) => work(tx)) };
-    const service = new OrdersService(prisma as never);
+    const service = new OrdersService(prisma as never, notifications as never);
 
     await expect(service.checkout('session-id', 'checkout-test-0001', input)).rejects.toBeInstanceOf(NotFoundException);
+    expect(notifications.enqueueOrderCreated).not.toHaveBeenCalled();
   });
 
   it('rejects checkout for an empty cart', async () => {
@@ -34,12 +41,13 @@ describe('OrdersService', () => {
       },
     };
     const prisma = { $transaction: jest.fn((work: (client: unknown) => unknown) => work(tx)) };
-    const service = new OrdersService(prisma as never);
+    const service = new OrdersService(prisma as never, notifications as never);
 
     await expect(service.checkout('session-id', 'checkout-test-0001', input)).rejects.toBeInstanceOf(BadRequestException);
+    expect(notifications.enqueueOrderCreated).not.toHaveBeenCalled();
   });
 
-  it('creates a COD order, reserves tracked stock and converts the cart atomically', async () => {
+  it('creates the order and enqueues notifications inside the same transaction', async () => {
     const tx = {
       cart: {
         findUnique: jest.fn().mockResolvedValue({
@@ -66,6 +74,11 @@ describe('OrdersService', () => {
         create: jest.fn().mockImplementation(({ data }) => Promise.resolve({
           id: 'order-1',
           orderNumber: data.orderNumber,
+          customerName: data.customerName,
+          customerPhone: data.customerPhone,
+          grandTotal: data.grandTotal,
+          currency: data.currency,
+          shippingAddress: data.shippingAddress,
           items: data.items.create,
           payments: data.payments.create,
         })),
@@ -74,7 +87,7 @@ describe('OrdersService', () => {
     const prisma = {
       $transaction: jest.fn((work: (client: unknown) => unknown) => work(tx)),
     };
-    const service = new OrdersService(prisma as never);
+    const service = new OrdersService(prisma as never, notifications as never);
 
     const result = await service.checkout('session-id', 'checkout-test-0001', input);
 
@@ -90,19 +103,25 @@ describe('OrdersService', () => {
     expect(orderData.shippingTotal.toString()).toBe('45');
     expect(orderData.grandTotal.toString()).toBe('245');
     expect(orderData.payments.create.provider).toBe('cash_on_delivery');
+    expect(notifications.enqueueOrderCreated).toHaveBeenCalledTimes(1);
+    expect(notifications.enqueueOrderCreated).toHaveBeenCalledWith(tx, expect.objectContaining({
+      id: 'order-1',
+      orderNumber: expect.any(String),
+    }));
     expect(tx.cart.update).toHaveBeenCalledWith({
       where: { id: 'cart-1' },
       data: { status: CartStatus.CONVERTED },
     });
   });
-  it('reuses the order when checkout is retried with the same key', async () => {
+
+  it('reuses the order when checkout is retried with the same key and does not enqueue again', async () => {
     const previous = { id: 'order-existing', items: [], payments: [] };
     const tx = { order: { findUnique: jest.fn().mockResolvedValue(previous) } };
     const prisma = { $transaction: jest.fn((work: (client: unknown) => unknown) => work(tx)) };
-    const service = new OrdersService(prisma as never);
+    const service = new OrdersService(prisma as never, notifications as never);
 
     await expect(service.checkout('session-id', 'retry-test-0001', input)).resolves.toBe(previous);
     expect(tx.order.findUnique).toHaveBeenCalledTimes(1);
+    expect(notifications.enqueueOrderCreated).not.toHaveBeenCalled();
   });
-
 });
