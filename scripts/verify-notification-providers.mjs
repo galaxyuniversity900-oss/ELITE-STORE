@@ -88,6 +88,19 @@ const graphBase = `https://graph.facebook.com/${env.WHATSAPP_API_VERSION}`;
 const graphHeaders = { Authorization: `Bearer ${env.WHATSAPP_ACCESS_TOKEN}` };
 let approvedTemplate = false;
 let verifiedSender = false;
+let phoneBelongsToWaba = false;
+
+try {
+  const phoneUrl = new URL(`${graphBase}/${encodeURIComponent(env.WHATSAPP_BUSINESS_ACCOUNT_ID)}/phone_numbers`);
+  phoneUrl.searchParams.set('fields', 'id,display_phone_number,verified_name,quality_rating,code_verification_status');
+  const phoneResponse = await requestJson(phoneUrl, { headers: graphHeaders });
+  const phone = (Array.isArray(phoneResponse.data) ? phoneResponse.data : [])
+    .find((item) => String(item.id) === env.WHATSAPP_PHONE_NUMBER_ID);
+  phoneBelongsToWaba = Boolean(phone);
+  check(phoneBelongsToWaba, 'Configured WhatsApp Phone Number ID belongs to the configured WABA');
+} catch (error) {
+  failures.push(`Meta phone-number verification failed: ${error.message}`);
+}
 
 try {
   const url = new URL(`${graphBase}/${encodeURIComponent(env.WHATSAPP_BUSINESS_ACCOUNT_ID)}/message_templates`);
@@ -123,8 +136,11 @@ try {
   const domain = domains.find((item) => String(item.name ?? '').toLowerCase() === senderDomain);
   check(Boolean(domain), 'Resend sender domain exists in the configured account');
   if (domain) {
-    verifiedSender = String(domain.status ?? '').toLowerCase() === 'verified';
-    check(verifiedSender, 'Resend sender domain status is verified');
+    const statusVerified = String(domain.status ?? '').toLowerCase() === 'verified';
+    const sendingEnabled = String(domain.capabilities?.sending ?? '').toLowerCase() === 'enabled';
+    verifiedSender = statusVerified && sendingEnabled;
+    check(statusVerified, 'Resend sender domain status is verified');
+    check(sendingEnabled, 'Resend sender domain sending capability is enabled');
   }
 } catch (error) {
   failures.push(`Resend sender-domain verification failed: ${error.message}`);
@@ -147,7 +163,7 @@ if (!LIVE) {
   process.exit(0);
 }
 
-if (!approvedTemplate || !verifiedSender) {
+if (!approvedTemplate || !verifiedSender || !phoneBelongsToWaba) {
   console.error('Live sending blocked because template approval or sender verification did not pass.');
   process.exit(1);
 }
