@@ -73,7 +73,7 @@ const admin = (await call('/auth/login', {
     email: process.env.BOOTSTRAP_ADMIN_EMAIL ?? 'admin@example.test',
     password: process.env.BOOTSTRAP_ADMIN_PASSWORD ?? 'ci-only-bootstrap-password-12345',
   }),
-})).body;
+}, 201)).body;
 if (!admin.accessToken || !['ADMIN', 'SUPER_ADMIN'].includes(admin.user?.role)) {
   throw new Error('CI administrator authentication did not return a valid admin session');
 }
