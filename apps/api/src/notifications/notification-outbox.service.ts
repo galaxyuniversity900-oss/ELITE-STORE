@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Injectable,
   Logger,
   OnModuleDestroy,
@@ -140,6 +141,43 @@ export class NotificationOutboxService implements OnModuleInit, OnModuleDestroy 
     } finally {
       this.running = false;
     }
+  }
+
+  async retryDeadNotification(id: string, actorId: string) {
+    const current = await this.prisma.notificationOutbox.findUnique({
+      where: { id },
+      select: { id: true, status: true },
+    });
+    if (!current) throw new BadRequestException('Notification record not found');
+    if (current.status !== NotificationStatus.DEAD) {
+      throw new BadRequestException('Only dead notifications can be manually retried');
+    }
+    const now = new Date();
+    await this.prisma.$transaction(async (tx) => {
+      const updated = await tx.notificationOutbox.updateMany({
+        where: { id, status: NotificationStatus.DEAD },
+        data: {
+          status: NotificationStatus.PENDING,
+          maxAttempts: { increment: 8 },
+          availableAt: now,
+          lastError: null,
+          lockedAt: null,
+          lockToken: null,
+        },
+      });
+      if (updated.count !== 1) throw new BadRequestException('Notification state changed; refresh and retry');
+      await tx.notificationDeliveryEvent.create({
+        data: {
+          notificationId: id,
+          provider: 'admin',
+          providerEventId: randomUUID(),
+          status: 'manual_retry_requested',
+          occurredAt: now,
+          metadata: { actorId },
+        },
+      });
+    });
+    return { queued: true, notificationId: id };
   }
 
   async listForAdmin(page = 1, limit = 50, status?: NotificationStatus, channel?: NotificationChannel) {
