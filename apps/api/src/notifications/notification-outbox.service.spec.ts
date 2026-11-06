@@ -63,9 +63,13 @@ describe('NotificationOutboxService', () => {
       maxAttempts: 8,
       lockToken: 'lock-1',
     };
-    prisma.notificationOutbox.findMany.mockResolvedValue([]);
-    prisma.notificationOutbox.updateMany.mockResolvedValue({ count: 1 });
-    prisma.notificationOutbox.findUnique.mockResolvedValue(notification);
+    prisma.notificationOutbox.findMany.mockResolvedValueOnce([]).mockResolvedValueOnce([{ id: 'outbox-1' }]);
+    let activeLock = '';
+    prisma.notificationOutbox.updateMany.mockImplementation(async (args: any) => {
+      if (args.data.status === NotificationStatus.PROCESSING) activeLock = args.data.lockToken;
+      return { count: 1 };
+    });
+    prisma.notificationOutbox.findUnique.mockImplementation(async () => ({ ...notification, lockToken: activeLock }));
     prisma.notificationDeliveryAttempt.create.mockResolvedValue({ id: 'attempt-1' });
     global.fetch = jest.fn().mockResolvedValue({
       ok: true,
@@ -102,9 +106,13 @@ describe('NotificationOutboxService', () => {
       maxAttempts: 8,
       lockToken: 'lock-2',
     };
-    prisma.notificationOutbox.findMany.mockResolvedValue([]);
-    prisma.notificationOutbox.updateMany.mockResolvedValue({ count: 1 });
-    prisma.notificationOutbox.findUnique.mockResolvedValue(notification);
+    prisma.notificationOutbox.findMany.mockResolvedValueOnce([]).mockResolvedValueOnce([{ id: 'outbox-2' }]);
+    let activeLock = '';
+    prisma.notificationOutbox.updateMany.mockImplementation(async (args: any) => {
+      if (args.data.status === NotificationStatus.PROCESSING) activeLock = args.data.lockToken;
+      return { count: 1 };
+    });
+    prisma.notificationOutbox.findUnique.mockImplementation(async () => ({ ...notification, lockToken: activeLock }));
     prisma.notificationDeliveryAttempt.create.mockResolvedValue({ id: 'attempt-2' });
     global.fetch = jest.fn().mockResolvedValue({
       ok: false,
