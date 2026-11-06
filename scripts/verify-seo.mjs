@@ -75,6 +75,8 @@ try {
   assert.match(deploy, /node scripts\/generate-static-seo\.mjs --output _site/);
   assert.doesNotMatch(deploy, /cp index\.html ELITE\.html robots\.txt sitemap\.xml _site\//);
   assert.match(layout, /NEXT_PUBLIC_SITE_URL/);
+  const nextRobots = await readFile(path.join(root, 'apps/web/src/app/robots.ts'), 'utf8');
+  assert.doesNotMatch(nextRobots, /disallow:.*\\/account|disallow:.*\\/track/, 'Noindex pages must remain crawlable so crawlers can read the noindex directive');
   assert.match(layout, /NEXT_PUBLIC_SITE_URL/);
   assert.match(homepage, /alternates: publicSiteUrl \? \{ canonical: '\/' \}/);
   assert.match(accountPage, /index: false/);
