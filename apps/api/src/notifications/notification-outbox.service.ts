@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Injectable,
   Logger,
+  NotFoundException,
   OnModuleDestroy,
   OnModuleInit,
 } from '@nestjs/common';
@@ -148,7 +149,7 @@ export class NotificationOutboxService implements OnModuleInit, OnModuleDestroy 
       where: { id },
       select: { id: true, status: true },
     });
-    if (!current) throw new BadRequestException('Notification record not found');
+    if (!current) throw new NotFoundException('Notification record not found');
     if (current.status !== NotificationStatus.DEAD) {
       throw new BadRequestException('Only dead notifications can be manually retried');
     }
