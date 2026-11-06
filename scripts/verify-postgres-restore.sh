@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-COMPOSE_FILE="\${COMPOSE_FILE:-infra/docker/docker-compose.yml}"
-SOURCE_DB="\${SOURCE_DB:-mes_store}"
-DB_USER="\${DB_USER:-mes_store}"
+COMPOSE_FILE="${COMPOSE_FILE:-infra/docker/docker-compose.yml}"
+SOURCE_DB="${SOURCE_DB:-mes_store}"
+DB_USER="${DB_USER:-mes_store}"
 DUMP_FILE="$(mktemp)"
-RESTORE_DB="\${RESTORE_DB:-mes_store_restore_ci}"
+RESTORE_DB="${RESTORE_DB:-mes_store_restore_ci}"
 cleanup() {
   docker compose -f "$COMPOSE_FILE" exec -T postgres dropdb -U "$DB_USER" --if-exists "$RESTORE_DB" >/dev/null 2>&1 || true
   rm -f "$DUMP_FILE"
