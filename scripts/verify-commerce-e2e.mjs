@@ -26,7 +26,7 @@ const cart = (await call(`/cart/${sessionId}/items`, {
   method: 'POST',
   headers: jsonHeaders,
   body: JSON.stringify({ productId: product.id, quantity: 1 }),
-})).body;
+}, 201)).body;
 if (!Array.isArray(cart.items) || cart.items.length !== 1
   || cart.items[0].productId !== product.id || cart.items[0].quantity !== 1) {
   throw new Error('Cart did not persist the selected product and quantity');
