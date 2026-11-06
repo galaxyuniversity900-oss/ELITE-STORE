@@ -84,7 +84,7 @@ export class NotificationWebhookController {
     @Headers('svix-id') eventId: string | undefined,
     @Headers('svix-timestamp') timestamp: string | undefined,
     @Headers('svix-signature') signature: string | undefined,
-    body: any,
+    @Body() body: any,
   ) {
     this.verifyResendSignature(request.rawBody, eventId, timestamp, signature);
     const emailId = body?.data?.email_id ?? body?.data?.id;
