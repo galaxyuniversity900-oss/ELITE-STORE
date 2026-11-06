@@ -93,7 +93,7 @@ for (const entry of entries) {
   const title = p.title + ' | MES STORE';
   const description = String(p.desc || ('تعرّف على ' + p.title + ' من مجموعة MES STORE للملابس الرجالي.')).slice(0,300);
   const offer = entry.hasPrice ? {'@type':'Offer',url:entry.url,priceCurrency:data.currency || 'EGP',price:entry.price.toFixed(2),seller:{'@type':'Organization',name:'MES STORE'}} : undefined;
-  const productSchema = {'@context':'https://schema.org','@type':'Product',name:p.title,description:description,sku:String(p.id),category:p.category || undefined,brand:{'@type':'Brand',name:'MES STORE'},image:entry.image ? [entry.image] : undefined,url:entry.url,inLanguage:'ar-EG',offers:offer};
+  const productSchema = {'@context':'https://schema.org','@type':'Product',name:p.title,description:description,sku:String(p.id),category:p.category || undefined,brand:{'@type':'Brand',name:'MES STORE'},image:entry.image ? [entry.image] : undefined,url:entry.url,offers:offer};
   Object.keys(productSchema).forEach((key)=>productSchema[key] === undefined && delete productSchema[key]);
   const breadcrumb = {'@context':'https://schema.org','@type':'BreadcrumbList',itemListElement:[
     {'@type':'ListItem',position:1,name:'الرئيسية',item:homeUrl},
