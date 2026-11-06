@@ -34,7 +34,7 @@ const entries = products.map((p) => {
   let image = '';
   if (rawImage) { try { const parsed = new URL(rawImage, base); if (parsed.protocol === 'https:' || parsed.protocol === 'http:') image = parsed.href; } catch {} }
   const price = Number(p.price);
-  return { product:p, key, url, image, price, hasPrice:!p.priceNote && Number.isFinite(price) && price >= 0 };
+  return { product:p, key, url, image, price, hasPrice:!p.priceNote && Number.isFinite(price) && price > 0 };
 });
 const listingUrl = absolute('ELITE.html');
 const homeUrl = base.href;
