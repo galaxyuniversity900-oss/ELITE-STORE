@@ -19,8 +19,8 @@ const slug = (value, id) => {
 const data = JSON.parse(await readFile(path.join(root, 'data/products.json'), 'utf8'));
 const contact = JSON.parse(await readFile(path.join(root, 'data/contact.json'), 'utf8'));
 if (!Array.isArray(data.products)) throw new Error('products.json has no products array');
-const whatsappNumber = String(contact.whatsapp_number || '').replace(/\\D/g, '');
-const validWhatsApp = /^\\d{8,15}$/.test(whatsappNumber);
+const whatsappNumber = String(contact.whatsapp_number || '').replace(/\D/g, '');
+const validWhatsApp = /^\d{8,15}$/.test(whatsappNumber);
 const publicPhone = String(contact.phone || '').trim();
 const products = data.products.filter((p) => p && p.active !== false && p.id && p.title);
 const seen = new Set();
@@ -127,7 +127,7 @@ for (const entry of entries) {
 const indexPath = path.join(output,'index.html');
 let index = await readFile(indexPath,'utf8');
 index = metadata(index,'MES STORE | المتجر الرسمي للملابس الرجالي','المتجر الرسمي لـ MES STORE. اكتشف مجموعة الملابس الرجالي وتصفح أحدث القطع.',homeUrl,'');
-if (validWhatsApp) index = index.replace(/https:\\/\\/wa\\.me\\/\\d+/g, 'https://wa.me/' + whatsappNumber);
+if (validWhatsApp) index = index.replace(/https:\/\/wa\.me\/\d+/g, 'https://wa.me/' + whatsappNumber);
 const organizationSchema = {'@context':'https://schema.org','@type':'Organization',name:contact.store_name || 'MES STORE',url:homeUrl};
 if (publicPhone) organizationSchema.contactPoint = {'@type':'ContactPoint',telephone:publicPhone,contactType:'customer service',availableLanguage:['Arabic']};
 index = structured(index,organizationSchema);
