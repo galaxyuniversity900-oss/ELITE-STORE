@@ -27,7 +27,9 @@ This is a CI regression profile, not a production capacity certification. Produc
 
 ## Backup and restore
 
-`npm run qa:postgres:restore` creates a PostgreSQL custom-format backup, restores it into a fresh disposable database, and compares row counts for products, orders, order items, payments and notification outbox/attempt/event tables. This proves the tested dump can be restored in CI; it does not prove production backup scheduling, encryption, off-site retention, PITR, or an agreed RPO/RTO.
+`npm run qa:postgres:restore` creates a PostgreSQL custom-format backup and restores it into a fresh disposable database. It then compares every public table using both row counts and deterministic MD5 checksums over sorted JSON row representations, compares every public sequence's `last_value` and `is_called` state, and checks restored schema object counts for constraints, indexes, triggers, views and routines. Restore runs with `pg_restore --exit-on-error`; any restore error or mismatch fails the gate.
+
+This validates logical dump/restore consistency for the disposable CI database. It does not prove production backup scheduling, encryption, off-site retention, point-in-time recovery (PITR), backup immutability, or an agreed RPO/RTO. Never point this test at production.
 
 ## Running locally
 
