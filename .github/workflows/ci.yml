@@ -2,7 +2,7 @@ name: MES STORE CI
 
 on:
   push:
-    branches: [main, completion/storefront-experience]
+    branches: [main, completion/storefront-experience, admin/notification-center]
   pull_request:
     branches: [main, completion/storefront-experience]
 
@@ -83,8 +83,13 @@ jobs:
           done
           test "$admin_ready" -eq 1
           grep -qi "تسجيل دخول الإدارة" /tmp/admin.html
+          curl --silent --show-error --fail http://localhost:3001/notifications -o /tmp/admin-notifications.html
+          grep -qi "مركز الإشعارات" /tmp/admin-notifications.html
           curl --silent --show-error --fail -X POST http://localhost:4000/api/auth/login -H 'Content-Type: application/json' -d '{"email":"admin@example.test","password":"ci-only-bootstrap-password-12345"}' -o /tmp/admin-login.json
           node -e "const x=JSON.parse(require('fs').readFileSync('/tmp/admin-login.json','utf8')); if (!x.accessToken || x.user.role !== 'SUPER_ADMIN') process.exit(1); console.log('Admin authentication smoke test: OK')"
+          admin_token=$(node -e "process.stdout.write(JSON.parse(require('fs').readFileSync('/tmp/admin-login.json','utf8')).accessToken)")
+          curl --silent --show-error --fail http://localhost:4000/api/admin/notifications/metrics?windowMinutes=60 -H "Authorization: Bearer $admin_token" -o /tmp/outbox-metrics.json
+          node -e "const x=JSON.parse(require('fs').readFileSync('/tmp/outbox-metrics.json','utf8')); if (!x.queue || !x.delivery || !Array.isArray(x.alerts) || typeof x.delivery.failureRatePercent !== 'number') process.exit(1); console.log('Admin Outbox metrics smoke test: OK')"
           if [ -s scripts/verify-notification-outbox.mjs ]; then
             order_id=$(node scripts/verify-notification-outbox.mjs)
             test -n "$order_id"
