@@ -37,6 +37,7 @@ type Notification = {
   deliveryEvents: DeliveryEvent[];
 };
 type PageResult = { items: Notification[]; total: number; page: number; limit: number; pages: number };
+type OutboxMetrics = { sampledAt: string; windowMinutes: number; queue: { pending: number; due: number; processing: number; sent: number; dead: number; staleProcessing: number; oldestPendingAgeSeconds: number }; delivery: { attempts: number; successful: number; failed: number; failureRatePercent: number; averageSendDurationMs: number | null; p95SendDurationMs: number | null; measuredAttempts: number }; thresholds: Record<string, number>; alerts: Array<{ code: string; severity: 'warning' | 'critical'; title: string; message: string; value: number; threshold: number }> };
 
 const statusLabels: Record<string, string> = {
   PENDING: 'في الانتظار',
@@ -96,6 +97,9 @@ export default function NotificationCenterPage() {
   const [notice, setNotice] = useState('');
   const [loading, setLoading] = useState(false);
   const [retryingId, setRetryingId] = useState<string | null>(null);
+  const [metrics, setMetrics] = useState<OutboxMetrics | null>(null);
+  const [metricsWindow, setMetricsWindow] = useState(60);
+  const [metricsError, setMetricsError] = useState('');
 
   const requestHeaders = useMemo(() => ({
     Accept: 'application/json',
@@ -130,6 +134,18 @@ export default function NotificationCenterPage() {
     }
   }, [token, page, status, channel, requestHeaders]);
 
+  const loadMetrics = useCallback(async () => {
+    if (!token) return;
+    try {
+      const response = await fetch(API + '/admin/notifications/metrics?windowMinutes=' + metricsWindow, { headers: requestHeaders, cache: 'no-store' });
+      const data = await response.json().catch(() => null);
+      if (!response.ok) throw new Error(data?.message ?? 'تعذر تحميل مؤشرات Outbox');
+      setMetrics(data as OutboxMetrics);
+      setMetricsError('');
+    } catch (cause) {
+      setMetricsError(cause instanceof Error ? cause.message : 'تعذر تحميل مؤشرات Outbox');
+    }
+  }, [token, metricsWindow, requestHeaders]);
   useEffect(() => {
     const saved = window.sessionStorage.getItem('mes_admin_token');
     if (saved) setToken(saved);
@@ -138,6 +154,15 @@ export default function NotificationCenterPage() {
   useEffect(() => {
     if (token) void loadNotifications();
   }, [token, loadNotifications]);
+  useEffect(() => {
+    if (!token) return;
+    void loadMetrics();
+    const interval = window.setInterval(() => {
+      void loadMetrics();
+      void loadNotifications(true);
+    }, 30_000);
+    return () => window.clearInterval(interval);
+  }, [token, loadMetrics, loadNotifications]);
 
   async function login(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -239,6 +264,36 @@ export default function NotificationCenterPage() {
 
       {notice && <p className="notification-notice" role="status">{notice}</p>}
       {error && <p className="error" role="alert">{error}</p>}
+
+      <section className="outbox-monitor panel" aria-live="polite">
+        <div className="panel-heading">
+          <div><span className="eyebrow">LIVE OPERATIONS / 30 SEC REFRESH</span><h2>مراقبة Outbox والتنبيهات</h2></div>
+          <div className="monitor-controls">
+            <label>نافذة القياس
+              <select value={metricsWindow} onChange={event => setMetricsWindow(Number(event.target.value))}>
+                <option value={15}>آخر 15 دقيقة</option><option value={60}>آخر ساعة</option><option value={360}>آخر 6 ساعات</option><option value={1440}>آخر 24 ساعة</option>
+              </select>
+            </label>
+            <button className="secondary" onClick={() => void loadMetrics()}>تحديث المؤشرات</button>
+          </div>
+        </div>
+        {metricsError && <p className="error">{metricsError}</p>}
+        {!metrics && !metricsError ? <p className="notification-muted">جارٍ جمع مؤشرات Outbox…</p> : metrics && <>
+          <div className="outbox-kpis">
+            <article><small>Pending Queue</small><strong>{metrics.queue.pending}</strong><span>{metrics.queue.due} جاهز للمعالجة</span></article>
+            <article><small>Processing</small><strong>{metrics.queue.processing}</strong><span>{metrics.queue.staleProcessing} عمليات متجاوزة للمهلة</span></article>
+            <article><small>Dead Letter Queue</small><strong className={metrics.queue.dead ? 'metric-danger' : ''}>{metrics.queue.dead}</strong><span>إشعارات فشل نهائي</span></article>
+            <article><small>Failure Rate</small><strong className={metrics.delivery.failureRatePercent >= metrics.thresholds.failureRatePercent ? 'metric-danger' : ''}>{metrics.delivery.failureRatePercent.toFixed(2)}%</strong><span>{metrics.delivery.failed} فشل من {metrics.delivery.attempts} محاولة</span></article>
+            <article><small>Average Send Time</small><strong>{metrics.delivery.averageSendDurationMs === null ? '—' : (metrics.delivery.averageSendDurationMs / 1000).toFixed(2) + 's'}</strong><span>من {metrics.delivery.measuredAttempts} محاولة مكتملة</span></article>
+            <article><small>P95 Send Time</small><strong>{metrics.delivery.p95SendDurationMs === null ? '—' : (metrics.delivery.p95SendDurationMs / 1000).toFixed(2) + 's'}</strong><span>زمن 95% من المحاولات ضمنه</span></article>
+            <article><small>Oldest Pending</small><strong>{metrics.queue.oldestPendingAgeSeconds ? Math.floor(metrics.queue.oldestPendingAgeSeconds / 60) + 'm' : '0m'}</strong><span>عمر أقدم إشعار منتظر</span></article>
+            <article><small>Accepted by Provider</small><strong>{metrics.queue.sent}</strong><span>إجمالي سجلات SENT</span></article>
+          </div>
+          <div className="outbox-alert-heading"><strong>تنبيهات الإدارة النشطة</strong><span className={metrics.alerts.length ? 'alert-count active' : 'alert-count'}>{metrics.alerts.length} تنبيه</span></div>
+          {metrics.alerts.length ? <div className="outbox-alerts">{metrics.alerts.map(alert => <article key={alert.code} className={'outbox-alert ' + alert.severity}><div><strong>{alert.title}</strong><p>{alert.message}</p><small>القيمة الحالية: {alert.value} · حد التنبيه: {alert.threshold}</small></div><span>{alert.severity === 'critical' ? 'حرج' : 'تحذير'}</span></article>)}</div> : <p className="outbox-all-clear">لا توجد تنبيهات نشطة. مؤشرات Outbox ضمن الحدود الحالية.</p>}
+          <p className="monitor-footnote">آخر تحديث: {date(metrics.sampledAt)} · يتم التحديث تلقائياً كل 30 ثانية · نافذة القياس: {metrics.windowMinutes} دقيقة.</p>
+        </>}
+      </section>
 
       <section className="notification-stats" aria-label="ملخص النتائج الحالية">
         <article><small>إجمالي النتائج المطابقة</small><strong>{result?.total ?? '—'}</strong></article>
