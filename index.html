@@ -3,16 +3,38 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta http-equiv="refresh" content="0; url=./ELITE.html">
-  <meta name="description" content="MES STORE — مجموعة ملابس رجالي مختارة. انتقل إلى المتجر لاستكشاف المجموعة." />
-  <link rel="canonical" href="https://galaxyuniversity900-oss.github.io/ELITE-STORE/ELITE.html">
-  <title>MES STORE | Men's Collection</title>
+  <title>MES STORE | المتجر الرسمي للملابس الرجالي</title>
+  <meta name="description" content="المتجر الرسمي لـ MES STORE. اكتشف مجموعة الملابس الرجالي وتصفح أحدث القطع.">
+  <meta name="theme-color" content="#090909">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{color-scheme:dark;--bg:#090909;--panel:#14120f;--gold:#d8c39a;--muted:#aaa195;--line:rgba(216,195,154,.2)}
+    *{box-sizing:border-box}body{margin:0;background:var(--bg);color:#f1ede5;font-family:Cairo,Arial,sans-serif}
+    main{width:min(1120px,calc(100% - 40px));min-height:100svh;margin:auto;display:grid;grid-template-columns:1fr .8fr;align-items:center;gap:clamp(30px,7vw,90px)}
+    .eyebrow{color:var(--gold);font-size:11px;letter-spacing:.2em;font-weight:700}
+    h1{font:500 clamp(58px,9vw,112px)/.98 'Cormorant Garamond',Georgia,serif;letter-spacing:-.04em;margin:20px 0}
+    p{max-width:520px;color:var(--muted);line-height:2;font-size:15px}
+    .actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:30px}
+    a{display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:0 20px;text-decoration:none;font-size:13px}
+    .primary{background:var(--gold);color:#17140f;font-weight:700}.secondary{border:1px solid var(--line);color:var(--gold)}
+    .monogram{aspect-ratio:1;display:grid;place-items:center;border:1px solid var(--line);background:linear-gradient(145deg,#191713,#0b0b0a);color:var(--gold);font:clamp(90px,15vw,170px) 'Cormorant Garamond',Georgia,serif;position:relative}
+    .monogram:after{content:"";position:absolute;inset:12%;border:1px solid rgba(216,195,154,.2);border-radius:50%}
+    footer{grid-column:1/-1;border-top:1px solid var(--line);padding:20px 0;color:#837b70;font-size:11px}
+    @media(max-width:700px){main{grid-template-columns:1fr;align-content:center;padding:60px 0}.monogram{max-width:280px;justify-self:center;grid-row:1}footer{margin-top:10px}}
+  </style>
 </head>
 <body>
   <main>
-    <h1>MES STORE — Men's Collection</h1>
-    <p>تصفّح مجموعة الملابس الرجالي من MES STORE.</p>
-    <p><a href="./ELITE.html">دخول متجر MES STORE</a></p>
+    <section>
+      <p class="eyebrow">MES STORE · MEN'S COLLECTION</p>
+      <h1>تفاصيل تصنع حضورك.</h1>
+      <p>اكتشف اختيارات MES STORE من الملابس الرجالي. قطع مختارة، تفاصيل واضحة، وتجربة تسوّق مباشرة.</p>
+      <div class="actions"><a class="primary" href="./ELITE.html">اكتشف المجموعة ←</a><a class="secondary" href="https://wa.me/201558309605" rel="noopener noreferrer">تواصل معنا</a></div>
+    </section>
+    <div class="monogram" aria-hidden="true">MES</div>
+    <footer>MES STORE · MEN'S COLLECTION · © 2026</footer>
   </main>
 </body>
 </html>
