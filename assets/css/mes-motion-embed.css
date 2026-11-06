@@ -1,0 +1,10 @@
+/* MES Motion Embed — quiet luxury frame for PowerPoint-exported motion assets */
+.mes-motion-embed{position:relative;display:block;width:100%;max-width:100%;margin:clamp(16px,3vw,34px) auto;overflow:hidden;background:#11100e;border:1px solid rgba(216,195,154,.22);color:#f2eee7}
+.mes-motion-embed__stage{position:relative;display:grid;place-items:center;min-height:120px;width:100%;overflow:hidden;background:#090909}
+.mes-motion-embed__media,.mes-motion-embed__poster{display:block;width:100%;height:auto;max-height:min(72vh,760px);object-fit:contain}
+.mes-motion-embed__stage video{width:100%;height:100%;max-height:min(72vh,760px);object-fit:contain;background:#090909}
+.mes-motion-embed__poster{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;z-index:1;pointer-events:none}
+.mes-motion-embed figcaption{padding:9px 13px;color:#c8bda9;font-size:12px;letter-spacing:.025em;border-top:1px solid rgba(216,195,154,.14)}
+.mes-motion-embed__stage.is-failed{min-height:90px}
+.mes-motion-embed__stage.is-failed::after{content:"تعذر تحميل الحركة؛ تحقق من ملف الوسائط ومساره.";padding:18px;color:#c8bda9;font-size:12px;text-align:center}
+@media(prefers-reduced-motion:reduce){.mes-motion-embed video{animation:none!important;transition:none!important}.mes-motion-embed__stage{scroll-behavior:auto}}
