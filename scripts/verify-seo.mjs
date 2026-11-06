@@ -53,7 +53,7 @@ try {
       .replace(/^-+|-+$/g, '').slice(0, 70) || 'product';
     const id = String(product.id).toLowerCase().replace(/[^a-z0-9-]/g, '');
     const slug = name + '-' + id;
-    const url = siteBase + 'products/' + slug + '/';
+    const url = new URL('products/' + slug + '/', siteBase).href;
     assert.ok(urls.includes(url), 'Missing sitemap entry for ' + product.id);
     const page = await read('products/' + slug + '/index.html');
     assert.match(page, /name="description"/);
