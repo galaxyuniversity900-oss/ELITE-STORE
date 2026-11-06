@@ -32,7 +32,7 @@ jobs:
       - name: Assemble static storefront
         run: |
           mkdir -p _site
-          cp index.html ELITE.html _site/
+          cp index.html ELITE.html robots.txt sitemap.xml _site/
           cp -R data _site/data
           if [ -d assets ]; then cp -R assets _site/assets; fi
 
