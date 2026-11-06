@@ -121,6 +121,8 @@ jobs:
         run: node scripts/verify-garment-motion.mjs
       - name: Verify commercial checkout readiness
         run: node scripts/verify-commercial-readiness.mjs
+      - name: Verify PowerPoint motion embeds
+        run: npm run verify:motion-embeds
       - name: Verify product image lab
         run: npm run verify:product-image-lab
       - name: Verify photography workflow security
