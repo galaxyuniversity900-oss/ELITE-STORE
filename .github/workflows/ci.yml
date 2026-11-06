@@ -2,9 +2,9 @@ name: MES STORE CI
 
 on:
   push:
-    branches: [main, completion/storefront-experience, notifications/distributed-worker, notifications/provider-production-readiness, security/commerce-webhook-admin-hardening]
+    branches: [main, completion/storefront-experience, notifications/distributed-worker, notifications/provider-production-readiness, security/commerce-webhook-admin-hardening, qa/commerce-e2e-load-restore]
   pull_request:
-    branches: [main, completion/storefront-experience, notifications/provider-production-readiness]
+    branches: [main, completion/storefront-experience, notifications/provider-production-readiness, security/commerce-webhook-admin-hardening]
 
 permissions:
   contents: read
@@ -12,7 +12,7 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     env:
       POSTGRES_PASSWORD: ci-only-postgres-password-12345
       DATABASE_URL: postgresql://mes_store:ci-only-postgres-password-12345@localhost:5432/mes_store?schema=public
@@ -98,6 +98,16 @@ jobs:
             test "$dedupe_count" = "2"
             echo "Transactional outbox checkout smoke test: OK (2 channels, 2 unique dedupe keys)"
           fi
+      - name: Run full commerce E2E journey
+        env:
+          API_BASE_URL: http://127.0.0.1:4000/api
+          BOOTSTRAP_ADMIN_EMAIL: admin@example.test
+          BOOTSTRAP_ADMIN_PASSWORD: ci-only-bootstrap-password-12345
+        run: npm run qa:commerce:e2e
+      - name: Run storefront load test (k6)
+        run: npm run qa:storefront:load
+      - name: Verify PostgreSQL backup and restore
+        run: npm run qa:postgres:restore
       - name: Show container logs on failure
         if: failure()
         run: docker compose -f infra/docker/docker-compose.yml logs --no-color
