@@ -17,11 +17,12 @@ try {
   });
   if (run.status !== 0) throw new Error('SEO generator failed: ' + (run.stderr || run.stdout || run.error));
   const read = (file) => readFile(path.join(output, file), 'utf8');
-  const [home, listing, sitemap, robots, productsText, deploy, layout, accountPage, trackPage] = await Promise.all([
+  const [home, listing, sitemap, robots, productsText, deploy, layout, homepage, accountPage, trackPage] = await Promise.all([
     read('index.html'), read('ELITE.html'), read('sitemap.xml'), read('robots.txt'),
     readFile(path.join(root, 'data/products.json'), 'utf8'),
     readFile(path.join(root, '.github/workflows/deploy.yml'), 'utf8'),
     readFile(path.join(root, 'apps/web/src/app/layout.tsx'), 'utf8'),
+    readFile(path.join(root, 'apps/web/src/app/page.tsx'), 'utf8'),
     readFile(path.join(root, 'apps/web/src/app/account/page.tsx'), 'utf8'),
     readFile(path.join(root, 'apps/web/src/app/track/page.tsx'), 'utf8'),
   ]);
@@ -74,7 +75,8 @@ try {
   assert.match(deploy, /node scripts\/generate-static-seo\.mjs --output _site/);
   assert.doesNotMatch(deploy, /cp index\.html ELITE\.html robots\.txt sitemap\.xml _site\//);
   assert.match(layout, /NEXT_PUBLIC_SITE_URL/);
-  assert.match(layout, /alternates:/);
+  assert.match(layout, /NEXT_PUBLIC_SITE_URL/);
+  assert.match(homepage, /alternates: publicSiteUrl \? \{ canonical: '\/' \}/);
   assert.match(accountPage, /index: false/);
   assert.match(trackPage, /index: false/);
   console.log('SEO verification passed: ' + products.length + ' active products, unique canonicals, Product and BreadcrumbList JSON-LD, CollectionPage/ItemList, robots.txt, ' + urls.length + ' sitemap URLs, Next.js metadata and private-route noindex.');
