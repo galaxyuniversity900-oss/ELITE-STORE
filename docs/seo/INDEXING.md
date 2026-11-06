@@ -21,7 +21,7 @@ The homepage Organization schema and WhatsApp links are populated from `data/con
 ## Crawl controls
 
 - Public homepage, collection and active product pages are indexable.
-- Customer account and order-tracking routes in the Next.js application are marked `noindex`.
+- Customer account and order-tracking routes in the Next.js application are marked `noindex` and remain crawlable so search engines can read that directive.
 - The static robots policy disallows crawling raw `/data/` files.
 - The optional garment-motion editor query is not exposed in the sitemap.
 - No private customer data or order details are included in structured data.
