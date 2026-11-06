@@ -4,7 +4,7 @@ on:
   push:
     branches: [main, completion/storefront-experience, notifications/distributed-worker, notifications/provider-production-readiness, security/commerce-webhook-admin-hardening]
   pull_request:
-    branches: [main, completion/storefront-experience, notifications/provider-production-readiness]
+    branches: [main, completion/storefront-experience, notifications/provider-production-readiness, security/commerce-webhook-admin-hardening]
 
 permissions:
   contents: read
