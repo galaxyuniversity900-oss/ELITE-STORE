@@ -4,7 +4,10 @@
   "private": true,
   "description": "MES STORE commerce platform monorepo",
   "packageManager": "npm@11.6.2",
-  "workspaces": ["packages/*", "apps/*"],
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
   "scripts": {
     "build": "turbo run build",
     "dev": "turbo run dev --parallel",
@@ -19,7 +22,9 @@
     "db:validate": "prisma validate --schema=prisma/schema.prisma",
     "db:push": "prisma db push --schema=prisma/schema.prisma",
     "db:migrate": "prisma migrate dev --schema=prisma/schema.prisma",
-    "db:migrate:deploy": "prisma migrate deploy --schema=prisma/schema.prisma"
+    "db:migrate:deploy": "prisma migrate deploy --schema=prisma/schema.prisma",
+    "notifications:providers": "node scripts/verify-notification-providers.mjs",
+    "notifications:providers:live": "node scripts/verify-notification-providers.mjs --send-live"
   },
   "devDependencies": {
     "prisma": "6.19.0",
