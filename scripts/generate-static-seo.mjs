@@ -121,7 +121,7 @@ for (const entry of entries) {
     '<main><div class="media">' + media + '</div><section><p class="kicker">' + esc(p.category || "MEN'S COLLECTION") + ' · MES STORE</p>',
     '<h1>' + esc(p.title) + '</h1><p class="description">' + esc(description) + '</p><p class="price">' + esc(price) + '</p>',
     '<div class="actions"><a class="button primary" href="' + esc(whatsapp) + '" rel="noopener noreferrer">استفسر واطلب عبر واتساب</a><a class="button" href="' + esc(listingUrl) + '">العودة للمجموعة</a></div>',
-    '<a class="back" href="' + esc(listingUrl) + '">← العودة إلى متجر MES STORE</a></section></main><footer>MES STORE · MEN\\'S COLLECTION</footer></div></body></html>'
+    '<a class="back" href="' + esc(listingUrl) + '">← العودة إلى متجر MES STORE</a></section></main><footer>MES STORE · MEN\'S COLLECTION</footer></div></body></html>'
   ].join('\n');
   const target = path.join(output,'products',entry.key,'index.html');
   await mkdir(path.dirname(target),{recursive:true});
