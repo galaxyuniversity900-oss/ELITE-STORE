@@ -150,13 +150,20 @@
       if (!response.ok) throw new Error('Motion configuration HTTP ' + response.status);
       const config = await response.json();
       if (config.version !== 1 || !Array.isArray(config.items)) throw new Error('Unsupported motion configuration');
-      const results = await Promise.allSettled(config.items.map((item) => mount(item)));
-      results.forEach((result, index) => {
-        if (result.status === 'rejected') {
+      let nextIndex = 0;
+      const worker = async () => {
+        while (nextIndex < config.items.length) {
+          const index = nextIndex++;
           const item = config.items[index];
-          console.warn('[MES Motion Embed] Entry failed independently:', item?.id || index, result.reason);
+          try {
+            await mount(item);
+          } catch (error) {
+            console.warn('[MES Motion Embed] Entry failed independently:', item?.id || index, error);
+          }
         }
-      });
+      };
+      const workerCount = Math.min(3, config.items.length);
+      await Promise.allSettled(Array.from({ length: workerCount }, () => worker()));
     } catch (error) { console.warn('[MES Motion Embed] Motion configuration not applied:', error); }
   }
   reducedMotion.addEventListener?.('change', () => {
