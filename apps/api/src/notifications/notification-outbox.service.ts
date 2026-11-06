@@ -249,6 +249,7 @@ export class NotificationOutboxService implements OnModuleInit, OnModuleDestroy 
     });
     if (!notification) return { recorded: false, reason: 'message_not_found' };
 
+    let duplicateEvent = false;
     try {
       await this.prisma.notificationDeliveryEvent.create({
         data: {
@@ -262,12 +263,14 @@ export class NotificationOutboxService implements OnModuleInit, OnModuleDestroy 
       });
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-        return { recorded: false, reason: 'duplicate_event' };
+        duplicateEvent = true;
+      } else {
+        throw error;
       }
-      throw error;
     }
 
-    // Provider webhooks can arrive out of order; never let an older event overwrite a newer state.
+    // Also apply duplicate callbacks: the first request may have persisted the event
+    // but failed before updating the denormalized latest provider status.
     await this.prisma.notificationOutbox.updateMany({
       where: {
         id: notification.id,
@@ -275,7 +278,9 @@ export class NotificationOutboxService implements OnModuleInit, OnModuleDestroy 
       },
       data: { providerStatus: status, providerStatusAt: occurredAt },
     });
-    return { recorded: true };
+    return duplicateEvent
+      ? { recorded: false, reason: 'duplicate_event' }
+      : { recorded: true };
   }
 
   private async recoverExpiredLeases() {
