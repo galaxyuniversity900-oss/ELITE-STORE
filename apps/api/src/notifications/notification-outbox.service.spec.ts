@@ -137,6 +137,38 @@ describe('NotificationOutboxService', () => {
     }));
   });
 
+  it('requeues a dead notification with an audit event and eight additional attempts', async () => {
+    prisma.notificationOutbox.findUnique.mockResolvedValue({
+      id: 'outbox-dead',
+      status: NotificationStatus.DEAD,
+    });
+    const tx = {
+      notificationOutbox: { updateMany: jest.fn().mockResolvedValue({ count: 1 }) },
+      notificationDeliveryEvent: { create: jest.fn().mockResolvedValue({}) },
+    };
+    prisma.$transaction.mockImplementationOnce((work: (client: unknown) => unknown) => work(tx) as never);
+    const service = new NotificationOutboxService(prisma as never);
+
+    await expect(service.retryDeadNotification('outbox-dead', 'admin-1')).resolves.toEqual({
+      queued: true,
+      notificationId: 'outbox-dead',
+    });
+    expect(tx.notificationOutbox.updateMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: { id: 'outbox-dead', status: NotificationStatus.DEAD },
+      data: expect.objectContaining({
+        status: NotificationStatus.PENDING,
+        maxAttempts: { increment: 8 },
+      }),
+    }));
+    expect(tx.notificationDeliveryEvent.create).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({
+        provider: 'admin',
+        status: 'manual_retry_requested',
+        metadata: { actorId: 'admin-1' },
+      }),
+    }));
+  });
+
   it('records provider webhook events idempotently', async () => {
     prisma.notificationOutbox.findFirst.mockResolvedValue({ id: 'outbox-3' });
     prisma.notificationDeliveryEvent.create.mockResolvedValue({});
