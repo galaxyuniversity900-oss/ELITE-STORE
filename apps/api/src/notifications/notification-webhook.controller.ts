@@ -6,6 +6,7 @@ import {
   Get,
   Headers,
   Post,
+  ServiceUnavailableException,
   Query,
   Req,
   UnauthorizedException,
@@ -61,7 +62,7 @@ export class NotificationWebhookController {
       const metadata = item.errors?.length
         ? { errorCodes: item.errors.map((error) => error.code).filter(Boolean) }
         : undefined;
-      await this.outbox.recordProviderStatus(
+      const recorded = await this.outbox.recordProviderStatus(
         NotificationChannel.WHATSAPP,
         'whatsapp',
         item.id,
@@ -70,6 +71,9 @@ export class NotificationWebhookController {
         occurredAt,
         metadata as Prisma.InputJsonValue | undefined,
       );
+      if (!recorded.recorded && recorded.reason === 'message_not_found') {
+        throw new ServiceUnavailableException('Notification message is not indexed yet; provider may retry');
+      }
     }
     return { received: true };
   }
@@ -98,7 +102,7 @@ export class NotificationWebhookController {
       throw new BadRequestException('Unsupported or malformed Resend event');
     }
     const eventTime = body?.created_at ? new Date(body.created_at) : new Date();
-    await this.outbox.recordProviderStatus(
+    const recorded = await this.outbox.recordProviderStatus(
       NotificationChannel.EMAIL,
       'resend',
       emailId,
@@ -107,6 +111,9 @@ export class NotificationWebhookController {
       Number.isNaN(eventTime.getTime()) ? new Date() : eventTime,
       { eventType } as Prisma.InputJsonValue,
     );
+    if (!recorded.recorded && recorded.reason === 'message_not_found') {
+      throw new ServiceUnavailableException('Notification message is not indexed yet; provider may retry');
+    }
     return { received: true };
   }
 
