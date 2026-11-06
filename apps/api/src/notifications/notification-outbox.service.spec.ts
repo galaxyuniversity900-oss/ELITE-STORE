@@ -1,4 +1,4 @@
-import { NotificationChannel, NotificationStatus } from '@prisma/client';
+import { NotificationChannel, NotificationStatus, Prisma } from '@prisma/client';
 import { NotificationOutboxService } from './notification-outbox.service';
 
 describe('NotificationOutboxService', () => {
@@ -170,6 +170,30 @@ describe('NotificationOutboxService', () => {
     }));
     expect(prisma.notificationDeliveryAttempt.update).toHaveBeenCalledWith(expect.objectContaining({
       data: expect.objectContaining({ errorCode: 'provider_http_503' }),
+    }));
+  });
+
+  it('repairs latest provider status when a duplicate webhook event is replayed', async () => {
+    prisma.notificationOutbox.findFirst.mockResolvedValue({ id: 'outbox-duplicate-event' });
+    prisma.notificationDeliveryEvent.create.mockRejectedValue(
+      new Prisma.PrismaClientKnownRequestError('Unique constraint failed', {
+        code: 'P2002',
+        clientVersion: '6.19.0',
+      }),
+    );
+    prisma.notificationOutbox.updateMany.mockResolvedValue({ count: 1 });
+    const service = new NotificationOutboxService(prisma as never);
+
+    await expect(service.recordProviderStatus(
+      NotificationChannel.EMAIL,
+      'resend',
+      'resend-id',
+      'delivered',
+      'event-duplicate',
+      new Date('2026-11-06T00:00:00Z'),
+    )).resolves.toEqual({ recorded: false, reason: 'duplicate_event' });
+    expect(prisma.notificationOutbox.updateMany).toHaveBeenCalledWith(expect.objectContaining({
+      data: { providerStatus: 'delivered', providerStatusAt: new Date('2026-11-06T00:00:00Z') },
     }));
   });
 
