@@ -65,3 +65,9 @@ body>header .max-w-7xl{min-height:76px}
 footer{border-color:var(--mes-line)!important}
 @media(max-width:700px){#hero-showcase{padding:24px!important}#hero-showcase h1{font-size:clamp(42px,12vw,62px)!important}#products-grid{gap:10px!important}.product-card{padding:9px!important}.product-card [id^="prod-visual-"]{height:190px!important}.product-card h3{font-size:16px!important}.product-card .size-pill-btn{width:27px!important;height:27px!important}}
 @media(prefers-reduced-motion:reduce){#hero-showcase *,#products-grid-section *{scroll-behavior:auto!important;animation-duration:.01ms!important;transition-duration:.01ms!important}}
+
+
+/* Crawlable links to generated canonical product detail pages */
+.mes-product-seo-link{display:inline-flex;align-items:center;gap:6px;margin-top:7px;color:#d8c39a;font-size:10px;font-weight:700;text-decoration:none;transition:color .2s ease,transform .2s ease}
+.mes-product-seo-link:hover{color:#f0e2c5;transform:translateX(-2px);text-decoration:underline;text-underline-offset:3px}
+.mes-product-seo-link:focus-visible{outline:2px solid #d8c39a;outline-offset:3px}
