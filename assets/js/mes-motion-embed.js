@@ -118,13 +118,16 @@
     const source = safeAssetUrl(item.src);
     const poster = item.poster ? safeAssetUrl(item.poster) : null;
     const allowed = ['video', 'gif', 'webp', 'svg', 'lottie'];
-    const extension = source.split('?')[0].toLowerCase().split('.').pop();
+    if (!selector || !source || !allowed.includes(item.type)) {
+      console.warn('[MES Motion Embed] Invalid entry skipped:', item.id); return;
+    }
+    const extension = new URL(source).pathname.toLowerCase().split('.').pop();
     const validExtension = item.type === 'video' ? ['mp4', 'webm'].includes(extension)
       : item.type === 'gif' ? extension === 'gif'
       : item.type === 'webp' ? extension === 'webp'
       : item.type === 'svg' ? extension === 'svg'
       : item.type === 'lottie' ? extension === 'json' : false;
-    if (!selector || !source || !allowed.includes(item.type) || !validExtension) {
+    if (!validExtension) {
       console.warn('[MES Motion Embed] Invalid entry skipped:', item.id); return;
     }
     const target = document.querySelector(selector);
@@ -147,7 +150,13 @@
       if (!response.ok) throw new Error('Motion configuration HTTP ' + response.status);
       const config = await response.json();
       if (config.version !== 1 || !Array.isArray(config.items)) throw new Error('Unsupported motion configuration');
-      for (const item of config.items) await mount(item);
+      const results = await Promise.allSettled(config.items.map((item) => mount(item)));
+      results.forEach((result, index) => {
+        if (result.status === 'rejected') {
+          const item = config.items[index];
+          console.warn('[MES Motion Embed] Entry failed independently:', item?.id || index, result.reason);
+        }
+      });
     } catch (error) { console.warn('[MES Motion Embed] Motion configuration not applied:', error); }
   }
   reducedMotion.addEventListener?.('change', () => {
