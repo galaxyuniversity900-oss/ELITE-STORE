@@ -73,7 +73,8 @@
     video.setAttribute('playsinline', '');
     if (poster) video.poster = poster;
     const source = document.createElement('source');
-    source.src = src; source.type = src.toLowerCase().endsWith('.webm') ? 'video/webm' : 'video/mp4';
+    source.src = src;
+    source.type = new URL(src, document.baseURI).pathname.toLowerCase().endsWith('.webm') ? 'video/webm' : 'video/mp4';
     video.append(source); stage.append(video);
     if (item.autoplay !== false && !reducedMotion.matches) {
       video.autoplay = true; video.setAttribute('autoplay', '');
