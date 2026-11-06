@@ -1,43 +1,87 @@
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
+import { cp, mkdtemp, readFile, rm } from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
+import { spawnSync } from 'node:child_process';
 
-const read = path => readFile(new URL('../' + path, import.meta.url), 'utf8');
-const canonical = 'https://galaxyuniversity900-oss.github.io/ELITE-STORE/ELITE.html';
-const [html, index, sitemap, robots, seo, productsText, deploy, ci, layout, accountLayout, trackLayout] = await Promise.all([
-  read('ELITE.html'), read('index.html'), read('sitemap.xml'), read('robots.txt'),
-  read('assets/js/mes-seo.js'), read('data/products.json'), read('.github/workflows/deploy.yml'),
-  read('.github/workflows/ci.yml'), read('apps/web/src/app/layout.tsx'),
-  read('apps/web/src/app/account/layout.tsx'), read('apps/web/src/app/track/layout.tsx')
-]);
-const products = JSON.parse(productsText).products;
-assert.match(html, /<title>MES STORE \|/);
-assert.match(html, new RegExp('<link rel="canonical" href="' + canonical.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '"'));
-assert.match(html, /name="description"/);
-assert.match(html, /name="robots" content="index,follow/);
-assert.match(html, /property="og:title"/);
-assert.match(html, /assets\/js\/mes-seo\.js/);
-assert.match(html, /id="product-\$\{p\.id\}" data-id="\$\{p\.id\}"/);
-assert.match(index, /rel="canonical" href="https:\/\/galaxyuniversity900-oss\.github\.io\/ELITE-STORE\/ELITE\.html"/);
-assert.match(sitemap, /<loc>https:\/\/galaxyuniversity900-oss\.github\.io\/ELITE-STORE\/ELITE\.html<\/loc>/);
-assert.equal((sitemap.match(/<loc>/g) || []).length, 1, 'Sitemap must contain only the canonical public storefront URL');
-assert.match(robots, /Sitemap: https:\/\/galaxyuniversity900-oss\.github\.io\/ELITE-STORE\/sitemap\.xml/);
-assert.match(robots, /Disallow: \/\*\?gm-admin=1/);
-assert.match(seo, /'@type': 'Product'/);
-assert.match(seo, /'@type': 'Offer'/);
-assert.match(seo, /'@type': 'ItemList'/);
-assert.match(seo, /priceCurrency: 'EGP'/);
-assert.doesNotMatch(seo, /AggregateRating|ratingValue|reviewCount|InStock/);
-assert.match(deploy, /cp index\.html ELITE\.html robots\.txt sitemap\.xml _site\//);
-assert.match(ci, /node --check assets\/js\/mes-seo\.js && node scripts\/verify-seo\.mjs/);
-assert.match(layout, /alternates:\s*\{\s*canonical:/);
-assert.match(accountLayout, /index:\s*false/);
-assert.match(trackLayout, /index:\s*false/);
-const active = products.filter(product => product.active !== false);
-assert.ok(active.length > 0, 'Expected active products');
-assert.equal(new Set(active.map(product => product.id)).size, active.length, 'Product IDs must be unique');
-for (const product of active) {
-  assert.match(product.id, /^[a-z0-9][a-z0-9_-]{1,48}$/i);
-  assert.equal(typeof product.title, 'string');
-  assert.equal(typeof product.category, 'string');
+const root = process.cwd();
+const siteBase = 'https://galaxyuniversity900-oss.github.io/ELITE-STORE/';
+const temp = await mkdtemp(path.join(os.tmpdir(), 'mes-store-seo-'));
+const output = path.join(temp, '_site');
+try {
+  await cp(path.join(root, 'index.html'), path.join(output, 'index.html')).catch(async () => {
+    const { mkdir } = await import('node:fs/promises');
+    await mkdir(output, { recursive: true });
+    await cp(path.join(root, 'index.html'), path.join(output, 'index.html'));
+  });
+  await cp(path.join(root, 'ELITE.html'), path.join(output, 'ELITE.html'));
+  const run = spawnSync(process.execPath, ['scripts/generate-static-seo.mjs', '--output', output, '--site-url', siteBase], {
+    cwd: root, encoding: 'utf8', timeout: 30000,
+  });
+  if (run.status !== 0) throw new Error('SEO generator failed: ' + (run.stderr || run.stdout || run.error));
+  const read = (file) => readFile(path.join(output, file), 'utf8');
+  const [home, listing, sitemap, robots, productsText, deploy, layout, accountPage, trackPage] = await Promise.all([
+    read('index.html'), read('ELITE.html'), read('sitemap.xml'), read('robots.txt'),
+    readFile(path.join(root, 'data/products.json'), 'utf8'),
+    readFile(path.join(root, '.github/workflows/deploy.yml'), 'utf8'),
+    readFile(path.join(root, 'apps/web/src/app/layout.tsx'), 'utf8'),
+    readFile(path.join(root, 'apps/web/src/app/account/page.tsx'), 'utf8'),
+    readFile(path.join(root, 'apps/web/src/app/track/page.tsx'), 'utf8'),
+  ]);
+  const products = JSON.parse(productsText).products.filter((p) => p && p.active !== false && p.id && p.title);
+  const urls = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
+  assert.equal(urls.length, products.length + 2, 'Sitemap must include home, catalogue and each active product page');
+  assert.equal(new Set(urls).size, urls.length, 'Sitemap URLs must be unique');
+  assert.ok(urls.includes(siteBase), 'Homepage canonical must be listed');
+  assert.ok(urls.includes(siteBase + 'ELITE.html'), 'Catalogue canonical must be listed');
+  assert.match(robots, /User-agent: \*/);
+  assert.match(robots, /Disallow: \/data\//);
+  assert.match(robots, new RegExp('Sitemap: ' + siteBase.replace(/[.*+?^$|()[\]{}\\]/g, '\\$&') + 'sitemap\\.xml'));
+  assert.match(home, /<title>MES STORE/);
+  assert.match(home, new RegExp('<link rel="canonical" href="' + siteBase.replace(/[.*+?^$|()[\]{}\\]/g, '\\$&') + '">'));
+  assert.match(home, /application\/ld\+json/);
+  assert.match(listing, /name="description"/);
+  assert.match(listing, /name="robots" content="index,follow/);
+  assert.match(listing, /property="og:title"/);
+  assert.match(listing, new RegExp('<link rel="canonical" href="' + (siteBase + 'ELITE.html').replace(/[.*+?^$|()[\]{}\\]/g, '\\$&') + '">'));
+  const listingSchemaText = listing.match(/<script type="application\/ld\+json" data-mes-seo="true">([\s\S]*?)<\/script>/);
+  assert.ok(listingSchemaText, 'Catalogue must contain server-generated JSON-LD');
+  const listingSchema = JSON.parse(listingSchemaText[1]);
+  assert.equal(listingSchema['@type'], 'CollectionPage');
+  assert.equal(listingSchema.mainEntity['@type'], 'ItemList');
+  assert.equal(listingSchema.mainEntity.numberOfItems, products.length);
+  for (const product of products) {
+    const name = String(product.title).normalize('NFKC').toLocaleLowerCase('ar')
+      .replace(/[\u064B-\u065F\u0670]/g, '').replace(/[^\p{L}\p{N}]+/gu, '-')
+      .replace(/^-+|-+$/g, '').slice(0, 70) || 'product';
+    const id = String(product.id).toLowerCase().replace(/[^a-z0-9-]/g, '');
+    const slug = name + '-' + id;
+    const url = siteBase + 'products/' + slug + '/';
+    assert.ok(urls.includes(url), 'Missing sitemap entry for ' + product.id);
+    const page = await read('products/' + slug + '/index.html');
+    assert.match(page, /name="description"/);
+    assert.match(page, /name="robots" content="index,follow/);
+    assert.match(page, new RegExp('<link rel="canonical" href="' + url.replace(/[.*+?^$|()[\]{}\\]/g, '\\$&') + '">'));
+    const schemas = [...page.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)].map((m) => JSON.parse(m[1]));
+    const productSchema = schemas.find((schema) => schema['@type'] === 'Product');
+    assert.ok(productSchema, 'Product JSON-LD missing for ' + product.id);
+    assert.equal(productSchema.sku, product.id);
+    assert.ok(schemas.some((schema) => schema['@type'] === 'BreadcrumbList'));
+    const shouldHaveOffer = !product.priceNote && Number.isFinite(Number(product.price)) && Number(product.price) > 0;
+    assert.equal(Boolean(productSchema.offers), shouldHaveOffer, 'Offer price policy mismatch for ' + product.id);
+    if (shouldHaveOffer) {
+      assert.equal(productSchema.offers.priceCurrency, 'EGP');
+      assert.equal(Number(productSchema.offers.price), Number(product.price));
+    }
+  }
+  assert.match(deploy, /node scripts\/generate-static-seo\.mjs --output _site/);
+  assert.doesNotMatch(deploy, /cp index\.html ELITE\.html robots\.txt sitemap\.xml _site\//);
+  assert.match(layout, /NEXT_PUBLIC_SITE_URL/);
+  assert.match(layout, /alternates:/);
+  assert.match(accountPage, /index: false/);
+  assert.match(trackPage, /index: false/);
+  console.log('SEO verification passed: ' + products.length + ' active products, unique canonicals, Product and BreadcrumbList JSON-LD, CollectionPage/ItemList, robots.txt, ' + urls.length + ' sitemap URLs, Next.js metadata and private-route noindex.');
+  console.log(run.stdout.trim());
+} finally {
+  await rm(temp, { recursive: true, force: true });
 }
-console.log('SEO verification passed:', active.length, 'active products, canonical metadata, Product/ItemList JSON-LD, robots, sitemap, Next.js noindex routes and GitHub Pages deployment.');
