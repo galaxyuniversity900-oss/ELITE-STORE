@@ -13,7 +13,6 @@ const required = [
   'WHATSAPP_ACCESS_TOKEN',
   'WHATSAPP_API_VERSION',
   'WHATSAPP_ORDER_TEMPLATE_NAME',
-  'WHATSAPP_ORDER_TEMPLATE_LANGUAGE',
   'WHATSAPP_APP_SECRET',
   'WHATSAPP_WEBHOOK_VERIFY_TOKEN',
   'ORDER_NOTIFICATION_EMAIL',
@@ -53,14 +52,16 @@ const resendSecretBytes = resendSecret.startsWith('whsec_')
   : Buffer.alloc(0);
 
 check(phonePattern.test(env.WHATSAPP_ORDER_RECIPIENT), 'WhatsApp store recipient is international digits-only');
-check(phonePattern.test(env.NOTIFICATION_LIVE_TEST_PHONE ?? ''), 'Live WhatsApp test destination is valid');
 check(emailPattern.test(env.ORDER_NOTIFICATION_EMAIL), 'Store notification inbox is a valid email');
 check(emailPattern.test(senderEmail), 'Resend sender address is valid');
-check(emailPattern.test(env.NOTIFICATION_LIVE_TEST_EMAIL ?? ''), 'Live email test destination is valid');
 check(apiVersionPattern.test(env.WHATSAPP_API_VERSION), 'Meta Graph API version has vNN.N format');
 check(env.WHATSAPP_WEBHOOK_VERIFY_TOKEN.length >= 32, 'Meta webhook verification token has at least 32 characters');
 check(resendSecret.startsWith('whsec_') && resendSecretBytes.length >= 16, 'Resend webhook secret uses a valid whsec_ encoding');
 check(Boolean(senderDomain), 'Resend sender domain can be parsed');
+if (LIVE) {
+  check(phonePattern.test(env.NOTIFICATION_LIVE_TEST_PHONE ?? ''), 'Live WhatsApp test destination is valid');
+  check(emailPattern.test(env.NOTIFICATION_LIVE_TEST_EMAIL ?? ''), 'Live email test destination is valid');
+}
 
 if (failures.length) {
   console.error('\nConfiguration validation failed:');
@@ -96,7 +97,7 @@ try {
   const matches = Array.isArray(response.data) ? response.data : [];
   const template = matches.find((item) =>
     item.name === env.WHATSAPP_ORDER_TEMPLATE_NAME &&
-    item.language === env.WHATSAPP_ORDER_TEMPLATE_LANGUAGE
+    item.language === (env.WHATSAPP_ORDER_TEMPLATE_LANGUAGE || 'ar')
   );
   check(Boolean(template), 'Meta template exists for the configured name and language');
   if (template) {
@@ -173,7 +174,7 @@ const waResult = await requestJson(
       type: 'template',
       template: {
         name: env.WHATSAPP_ORDER_TEMPLATE_NAME,
-        language: { code: env.WHATSAPP_ORDER_TEMPLATE_LANGUAGE },
+        language: { code: env.WHATSAPP_ORDER_TEMPLATE_LANGUAGE || 'ar' },
         components: [{ type: 'body', parameters: templateParameters }],
       },
     }),
