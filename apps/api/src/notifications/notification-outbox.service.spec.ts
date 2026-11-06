@@ -140,7 +140,7 @@ describe('NotificationOutboxService', () => {
   it('records provider webhook events idempotently', async () => {
     prisma.notificationOutbox.findFirst.mockResolvedValue({ id: 'outbox-3' });
     prisma.notificationDeliveryEvent.create.mockResolvedValue({});
-    prisma.notificationOutbox.update.mockResolvedValue({});
+    prisma.notificationOutbox.updateMany.mockResolvedValue({ count: 1 });
     const service = new NotificationOutboxService(prisma as never);
 
     await expect(service.recordProviderStatus(
