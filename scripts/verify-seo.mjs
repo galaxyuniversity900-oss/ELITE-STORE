@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { cp, mkdtemp, readFile, rm } from 'node:fs/promises';
+import { cp, mkdir, mkdtemp, readFile, rm } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -9,11 +9,8 @@ const siteBase = 'https://galaxyuniversity900-oss.github.io/ELITE-STORE/';
 const temp = await mkdtemp(path.join(os.tmpdir(), 'mes-store-seo-'));
 const output = path.join(temp, '_site');
 try {
-  await cp(path.join(root, 'index.html'), path.join(output, 'index.html')).catch(async () => {
-    const { mkdir } = await import('node:fs/promises');
-    await mkdir(output, { recursive: true });
-    await cp(path.join(root, 'index.html'), path.join(output, 'index.html'));
-  });
+  await mkdir(output, { recursive: true });
+  await cp(path.join(root, 'index.html'), path.join(output, 'index.html'));
   await cp(path.join(root, 'ELITE.html'), path.join(output, 'ELITE.html'));
   const run = spawnSync(process.execPath, ['scripts/generate-static-seo.mjs', '--output', output, '--site-url', siteBase], {
     cwd: root, encoding: 'utf8', timeout: 30000,
