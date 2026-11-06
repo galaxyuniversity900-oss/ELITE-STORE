@@ -1,6 +1,6 @@
 # MES STORE — WhatsApp order alerts
 
-WhatsApp order alerts are delivered by the transactional notification outbox. The order and its WhatsApp/email notification records are committed atomically. See [Transactional notification outbox](../docs/notifications/TRANSACTIONAL_OUTBOX.md) for retry, deduplication, delivery history, webhook security and operational details.
+WhatsApp order alerts are delivered by the transactional notification outbox. The order and its WhatsApp/email notification records are committed atomically. See [Transactional notification outbox](notifications/TRANSACTIONAL_OUTBOX.md) for retry, deduplication, delivery history, webhook security and operational details.
 
 ## Required approved template
 
