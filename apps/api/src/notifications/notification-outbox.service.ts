@@ -367,7 +367,7 @@ export class NotificationOutboxService implements OnModuleInit, OnModuleDestroy 
             sentAt: finishedAt,
             providerMessageId: result.messageId,
             providerStatus: 'accepted',
-            providerStatusAt: finishedAt,
+            providerStatusAt: null,
             lastError: null,
             lockedAt: null,
             lockToken: null,
