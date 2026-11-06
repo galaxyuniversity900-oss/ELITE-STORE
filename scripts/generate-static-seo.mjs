@@ -1,4 +1,4 @@
-import { readFile, writeFile, mkdir } from 'node:fs/promises';
+import { readFile, writeFile, mkdir, copyFile } from 'node:fs/promises';
 import path from 'node:path';
 
 const root = process.cwd();
@@ -78,6 +78,10 @@ function metadata(html, title, description, href, image) {
   return canonical(html,href);
 }
 await mkdir(output,{recursive:true});
+for (const file of ['index.html','ELITE.html']) {
+  try { await readFile(path.join(output,file),'utf8'); }
+  catch { await copyFile(path.join(root,file),path.join(output,file)); }
+}
 const listingPath = path.join(output,'ELITE.html');
 let listing = await readFile(listingPath,'utf8');
 listing = metadata(listing,"MES STORE | ملابس رجالي — Men's Collection",'اكتشف مجموعة MES STORE من الجواكت والهوديز والبناطيل الرجالي. تصفّح المنتجات والأسعار واطلب بسهولة.',listingUrl,entries.find((e)=>e.image)?.image || '');
