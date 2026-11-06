@@ -12,7 +12,12 @@ import { NotificationOutboxService } from './notification-outbox.service';
 export class NotificationAdminController {
   constructor(private readonly outbox: NotificationOutboxService) {}
 
-  @Get('metrics')\n  metrics(@Query('windowMinutes') windowMinutes = '60') {\n    const parsed = Number.parseInt(windowMinutes, 10) || 60;\n    return this.outbox.getOperationalMetrics(parsed);\n  }\n\n  @Post(':id/retry')
+  @Get('metrics')
+  metrics(@Query('windowMinutes') windowMinutes = '60') {
+    const parsed = Number.parseInt(windowMinutes, 10) || 60;
+    return this.outbox.getOperationalMetrics(parsed);
+  }
+  @Post(':id/retry')
   retry(@Param('id') id: string, @Req() request: Request & { user?: { id: string } }) {
     return this.outbox.retryDeadNotification(id, request.user?.id ?? 'unknown-admin');
   }
