@@ -85,6 +85,17 @@ jobs:
           grep -qi "تسجيل دخول الإدارة" /tmp/admin.html
           curl --silent --show-error --fail -X POST http://localhost:4000/api/auth/login -H 'Content-Type: application/json' -d '{"email":"admin@example.test","password":"ci-only-bootstrap-password-12345"}' -o /tmp/admin-login.json
           node -e "const x=JSON.parse(require('fs').readFileSync('/tmp/admin-login.json','utf8')); if (!x.accessToken || x.user.role !== 'SUPER_ADMIN') process.exit(1); console.log('Admin authentication smoke test: OK')"
+          if [ -s scripts/verify-notification-outbox.mjs ]; then
+            order_id=$(node scripts/verify-notification-outbox.mjs)
+            test -n "$order_id"
+            notification_count=$(docker compose -f infra/docker/docker-compose.yml exec -T postgres psql -U mes_store -d mes_store -Atc "SELECT COUNT(*) FROM notification_outbox WHERE \"orderId\" = '$order_id'")
+            channel_count=$(docker compose -f infra/docker/docker-compose.yml exec -T postgres psql -U mes_store -d mes_store -Atc "SELECT COUNT(DISTINCT \"channel\") FROM notification_outbox WHERE \"orderId\" = '$order_id'")
+            dedupe_count=$(docker compose -f infra/docker/docker-compose.yml exec -T postgres psql -U mes_store -d mes_store -Atc "SELECT COUNT(DISTINCT \"dedupeKey\") FROM notification_outbox WHERE \"orderId\" = '$order_id'")
+            test "$notification_count" = "2"
+            test "$channel_count" = "2"
+            test "$dedupe_count" = "2"
+            echo "Transactional outbox checkout smoke test: OK (2 channels, 2 unique dedupe keys)"
+          fi
       - name: Show container logs on failure
         if: failure()
         run: docker compose -f infra/docker/docker-compose.yml logs --no-color
