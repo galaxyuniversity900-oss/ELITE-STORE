@@ -2,28 +2,23 @@ import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 import './globals.css';
 
-const siteBase = (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://galaxyuniversity900-oss.github.io/ELITE-STORE/').replace(/\/?$/, '/');
-const canonicalStoreUrl =
-  process.env.NEXT_PUBLIC_CANONICAL_URL ?? new URL('ELITE.html', siteBase).toString();
+const publicSiteUrl = process.env.NEXT_PUBLIC_SITE_URL;
 
 export const metadata: Metadata = {
-  metadataBase: new URL(siteBase),
+  ...(publicSiteUrl ? { metadataBase: new URL(publicSiteUrl) } : {}),
   title: {
     default: 'MES STORE | ملابس رجالي',
     template: '%s | MES STORE',
   },
-  description:
-    'اكتشف مجموعة MES STORE من الملابس الرجالي: جواكت، هوديز، جينز وبناطيل بتفاصيل مختارة.',
+  description: 'اكتشف مجموعة MES STORE من الملابس الرجالي. جواكت وهوديز وبناطيل بتفاصيل عصرية وتجربة تسوّق مباشرة.',
   applicationName: 'MES STORE',
-  alternates: {
-    canonical: canonicalStoreUrl,
-  },
+  alternates: publicSiteUrl ? { canonical: '/' } : undefined,
   robots: {
-    index: true,
-    follow: true,
+    index: Boolean(publicSiteUrl),
+    follow: Boolean(publicSiteUrl),
     googleBot: {
-      index: true,
-      follow: true,
+      index: Boolean(publicSiteUrl),
+      follow: Boolean(publicSiteUrl),
       'max-image-preview': 'large',
       'max-snippet': -1,
       'max-video-preview': -1,
@@ -33,14 +28,14 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'ar_EG',
     siteName: 'MES STORE',
-    title: 'MES STORE | Men\'s Collection',
-    description: 'ملابس رجالي بتفاصيل مختارة وإطلالة تحمل طابعك.',
-    url: canonicalStoreUrl,
+    title: 'MES STORE | ملابس رجالي',
+    description: 'اكتشف مجموعة MES STORE من الملابس الرجالي.',
+    ...(publicSiteUrl ? { url: publicSiteUrl } : {}),
   },
   twitter: {
     card: 'summary',
-    title: 'MES STORE | Men\'s Collection',
-    description: 'ملابس رجالي بتفاصيل مختارة وإطلالة تحمل طابعك.',
+    title: 'MES STORE | ملابس رجالي',
+    description: 'اكتشف مجموعة MES STORE من الملابس الرجالي.',
   },
 };
 
