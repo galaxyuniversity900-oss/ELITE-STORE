@@ -92,6 +92,7 @@ describe('OrdersService', () => {
     const result = await service.checkout('session-id', 'checkout-test-0001', input);
 
     expect(result.id).toBe('order-1');
+    expect(result.storeNotification).toEqual({ sent: false, queued: true, reason: 'queued' });
     expect(tx.product.updateMany).toHaveBeenCalledWith(expect.objectContaining({
       where: expect.objectContaining({ id: 'product-1', stockQuantity: { gte: 2 } }),
       data: { stockQuantity: { decrement: 2 } },
@@ -120,7 +121,10 @@ describe('OrdersService', () => {
     const prisma = { $transaction: jest.fn((work: (client: unknown) => unknown) => work(tx)) };
     const service = new OrdersService(prisma as never, notifications as never);
 
-    await expect(service.checkout('session-id', 'retry-test-0001', input)).resolves.toBe(previous);
+    await expect(service.checkout('session-id', 'retry-test-0001', input)).resolves.toEqual({
+      ...previous,
+      storeNotification: { sent: false, queued: false, reason: 'duplicate_checkout' },
+    });
     expect(tx.order.findUnique).toHaveBeenCalledTimes(1);
     expect(notifications.enqueueOrderCreated).not.toHaveBeenCalled();
   });
