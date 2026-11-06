@@ -12,7 +12,6 @@ export const metadata: Metadata = {
   },
   description: 'اكتشف مجموعة MES STORE من الملابس الرجالي. جواكت وهوديز وبناطيل بتفاصيل عصرية وتجربة تسوّق مباشرة.',
   applicationName: 'MES STORE',
-  alternates: publicSiteUrl ? { canonical: '/' } : undefined,
   robots: {
     index: Boolean(publicSiteUrl),
     follow: Boolean(publicSiteUrl),
