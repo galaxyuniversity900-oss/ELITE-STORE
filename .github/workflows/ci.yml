@@ -36,7 +36,11 @@ jobs:
           grep -q "Release gates" docs/commerce/COMMERCE_RULES.md
           test -s prisma/migrations/20261102080000_initial_commerce/migration.sql
           test -s prisma/migrations/20261102110000_commerce_integrity_checks/migration.sql
+          test -s prisma/migrations/20261106090000_transactional_notification_outbox/migration.sql
+          grep -q 'CREATE TABLE "notification_outbox"' prisma/migrations/20261106090000_transactional_notification_outbox/migration.sql
+          grep -q 'notification_outbox_dedupeKey_key' prisma/migrations/20261106090000_transactional_notification_outbox/migration.sql
           grep -q 'orders_total_reconciliation_check' prisma/migrations/20261102110000_commerce_integrity_checks/migration.sql
+          npm run db:validate
       - name: Type-check workspaces
         run: npm run lint
       - name: Run automated tests
