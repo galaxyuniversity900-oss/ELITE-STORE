@@ -18,6 +18,8 @@ assert.ok(runtime.includes("prefers-reduced-motion: reduce"), 'Runtime must resp
 assert.ok(runtime.includes("url.origin !== location.origin"), 'Runtime must reject cross-origin media');
 assert.ok(css.includes('.mes-motion-embed'), 'Motion embed styles must exist');
 assert.ok(docs.includes('Create a Video'), 'PowerPoint export instructions must exist');
+assert.ok(runtime.includes('Promise.allSettled(config.items.map((item) => mount(item)))'), 'Independent motion entries must mount concurrently with per-entry failure isolation');
+assert.ok(runtime.includes('if (!selector || !source || !allowed.includes(item.type))'), 'Invalid sources must be rejected before URL parsing');
 
 const extensions = {
   video: ['mp4', 'webm'], gif: ['gif'], webp: ['webp'], svg: ['svg'], lottie: ['json']
@@ -42,6 +44,9 @@ for (const item of config.items) {
   if (item.poster) {
     const posterUrl = new URL(item.poster, 'https://mes-store.invalid/');
     assert.equal(posterUrl.origin, 'https://mes-store.invalid', 'Poster must be same-origin');
+    const posterPath = path.resolve(root, decodeURIComponent(posterUrl.pathname.replace(/^\\//, '')));
+    assert.ok(posterPath.startsWith(root + path.sep), 'Poster must stay inside the repository');
+    if (item.enabled !== false) assert.ok(existsSync(posterPath), 'Enabled motion poster is missing: ' + item.poster);
   }
 }
 console.log('PowerPoint motion embed verification: OK (' + config.items.length + ' configured entries)');
