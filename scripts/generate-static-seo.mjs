@@ -17,7 +17,11 @@ const slug = (value, id) => {
   return (name || 'product') + '-' + String(id).toLowerCase().replace(/[^a-z0-9-]/g, '');
 };
 const data = JSON.parse(await readFile(path.join(root, 'data/products.json'), 'utf8'));
+const contact = JSON.parse(await readFile(path.join(root, 'data/contact.json'), 'utf8'));
 if (!Array.isArray(data.products)) throw new Error('products.json has no products array');
+const whatsappNumber = String(contact.whatsapp_number || '').replace(/\\D/g, '');
+const validWhatsApp = /^\\d{8,15}$/.test(whatsappNumber);
+const publicPhone = String(contact.phone || '').trim();
 const products = data.products.filter((p) => p && p.active !== false && p.id && p.title);
 const seen = new Set();
 const entries = products.map((p) => {
@@ -25,11 +29,12 @@ const entries = products.map((p) => {
   if (seen.has(key)) throw new Error('Duplicate product slug: ' + key);
   seen.add(key);
   const url = absolute('products/' + key + '/');
-  const rawImage = p.media && (p.media.cover || (p.media.images && p.media.images[0] && p.media.images[0].url));
+  const imageCandidates = p.media ? [p.media.cover, ...(Array.isArray(p.media.images) ? p.media.images : [])] : [];
+  const rawImage = imageCandidates.map((candidate) => typeof candidate === 'string' ? candidate : candidate && candidate.url).find((value) => typeof value === 'string' && value.trim());
   let image = '';
   if (rawImage) { try { const parsed = new URL(rawImage, base); if (parsed.protocol === 'https:' || parsed.protocol === 'http:') image = parsed.href; } catch {} }
   const price = Number(p.price);
-  return { product:p, key, url, image, price, hasPrice:!p.priceNote && Number.isFinite(price) && price > 0 };
+  return { product:p, key, url, image, price, hasPrice:!p.priceNote && Number.isFinite(price) && price >= 0 };
 });
 const listingUrl = absolute('ELITE.html');
 const homeUrl = base.href;
@@ -84,7 +89,7 @@ for (const entry of entries) {
   const title = p.title + ' | MES STORE';
   const description = String(p.desc || ('تعرّف على ' + p.title + ' من مجموعة MES STORE للملابس الرجالي.')).slice(0,300);
   const offer = entry.hasPrice ? {'@type':'Offer',url:entry.url,priceCurrency:data.currency || 'EGP',price:entry.price.toFixed(2),seller:{'@type':'Organization',name:'MES STORE'}} : undefined;
-  const productSchema = {'@context':'https://schema.org','@type':'Product',name:p.title,description:description,sku:String(p.id),mpn:String(p.id),category:p.category || undefined,brand:{'@type':'Brand',name:'MES STORE'},image:entry.image ? [entry.image] : undefined,url:entry.url,offers:offer};
+  const productSchema = {'@context':'https://schema.org','@type':'Product',name:p.title,description:description,sku:String(p.id),category:p.category || undefined,brand:{'@type':'Brand',name:'MES STORE'},image:entry.image ? [entry.image] : undefined,url:entry.url,inLanguage:'ar-EG',offers:offer};
   Object.keys(productSchema).forEach((key)=>productSchema[key] === undefined && delete productSchema[key]);
   const breadcrumb = {'@context':'https://schema.org','@type':'BreadcrumbList',itemListElement:[
     {'@type':'ListItem',position:1,name:'الرئيسية',item:homeUrl},
@@ -97,7 +102,7 @@ for (const entry of entries) {
   const price = entry.hasPrice
     ? new Intl.NumberFormat('ar-EG',{style:'currency',currency:data.currency || 'EGP',maximumFractionDigits:0}).format(entry.price)
     : 'السعر وتفاصيل الطلب عبر واتساب';
-  const whatsapp = 'https://wa.me/201558309605?text=' + encodeURIComponent('مرحباً MES STORE، أريد الاستفسار عن ' + p.title + ' (' + p.id + ').');
+  const whatsapp = validWhatsApp ? 'https://wa.me/' + whatsappNumber + '?text=' + encodeURIComponent('مرحباً MES STORE، أريد الاستفسار عن ' + p.title + ' (' + p.id + ').') : listingUrl;
   const page = [
     '<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">',
     '<title>' + esc(title) + '</title><meta name="description" content="' + esc(description) + '">',
@@ -122,7 +127,10 @@ for (const entry of entries) {
 const indexPath = path.join(output,'index.html');
 let index = await readFile(indexPath,'utf8');
 index = metadata(index,'MES STORE | المتجر الرسمي للملابس الرجالي','المتجر الرسمي لـ MES STORE. اكتشف مجموعة الملابس الرجالي وتصفح أحدث القطع.',homeUrl,'');
-index = structured(index,{'@context':'https://schema.org','@type':'Organization',name:'MES STORE',url:homeUrl,contactPoint:{'@type':'ContactPoint',telephone:'+201558309605',contactType:'customer service',availableLanguage:['Arabic']}});
+if (validWhatsApp) index = index.replace(/https:\\/\\/wa\\.me\\/\\d+/g, 'https://wa.me/' + whatsappNumber);
+const organizationSchema = {'@context':'https://schema.org','@type':'Organization',name:contact.store_name || 'MES STORE',url:homeUrl};
+if (publicPhone) organizationSchema.contactPoint = {'@type':'ContactPoint',telephone:publicPhone,contactType:'customer service',availableLanguage:['Arabic']};
+index = structured(index,organizationSchema);
 await writeFile(indexPath,index,'utf8');
 
 const sitemapUrls = [{url:homeUrl,priority:'1.0',freq:'weekly'},{url:listingUrl,priority:'0.9',freq:'daily'}].concat(entries.map((e)=>({url:e.url,priority:'0.8',freq:'weekly'})));
