@@ -9,7 +9,8 @@
 - A two-minute processing lease allows work to recover after an API process crashes. Each delivery attempt is retained.
 - Email is sent through Resend. The stable outbox dedupe key is also sent as Resend's `Idempotency-Key`.
 - WhatsApp is sent through the Meta WhatsApp Cloud API using an approved utility template.
-- Admins can inspect queue state and attempt history at `GET /api/admin/notifications`.
+- Admins can inspect queue state and attempt history at `GET /api/admin/notifications`, and manually requeue a terminal record with `POST /api/admin/notifications/:id/retry`. Manual requeues are recorded in the delivery-event history and grant up to eight additional attempts.
+- If a provider webhook arrives before the worker stores its provider message ID, the endpoint returns HTTP 503 so the provider can retry the event.
 - Signed provider webhooks update delivery status: `GET/POST /api/notifications/webhooks/whatsapp` and `POST /api/notifications/webhooks/resend`. Webhook events are deduplicated.
 
 ## Required API environment
