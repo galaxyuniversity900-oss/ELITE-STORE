@@ -2,7 +2,7 @@ name: MES STORE CI
 
 on:
   push:
-    branches: [main, completion/storefront-experience, admin/notification-center]
+    branches: [main, completion/storefront-experience, admin/notification-center, monitoring/outbox-observability]
   pull_request:
     branches: [main, completion/storefront-experience]
 
