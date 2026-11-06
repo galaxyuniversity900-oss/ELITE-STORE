@@ -46,3 +46,27 @@ Configure Resend webhooks for the email events `email.sent`, `email.delivered`, 
 - A missing provider configuration is recorded as a terminal failure instead of silently dropping the notification. Configure the secrets and use the admin log to inspect/requeue through an audited operational action (manual requeue endpoint is intentionally not exposed yet).
 - Webhook URLs must be publicly reachable over HTTPS. Never disable signature verification in production.
 - The webhook implementation stores event identifiers and minimal status metadata; it does not retain raw provider webhook bodies or secrets.
+
+
+## Outbox observability and admin alerts
+
+The admin Notification Center includes an authenticated operational overview backed by `GET /api/admin/notifications/metrics?windowMinutes=60`. Supported windows are 5–1440 minutes; the UI offers 15 minutes, 1 hour, 6 hours and 24 hours. Queue counts are current snapshots; attempt failure rate and send-duration percentiles use the selected rolling window.
+
+Metrics include pending/due/processing/sent/dead counts, stale processing leases, age of the oldest pending row, completed attempt count, failure rate, average send duration and P95 send duration. Latency is measured from each delivery attempt's `startedAt` to `finishedAt`; it is not end-to-end customer delivery time. A provider's acceptance is not treated as recipient delivery.
+
+The admin screen refreshes the queue and metrics every 30 seconds and displays active warning/critical alerts for:
+- Dead Letter Queue records.
+- Pending backlog above its configured threshold.
+- Oldest pending record beyond its age threshold.
+- Processing leases older than the worker's two-minute lease.
+- Failure rate above threshold (only evaluated after at least five attempts).
+- P95 send duration above threshold.
+
+Configure these optional API environment variables in the API deployment secret/config store:
+- `OUTBOX_ALERT_PENDING_BACKLOG` (default `50`)
+- `OUTBOX_ALERT_DEAD_COUNT` (default `1`)
+- `OUTBOX_ALERT_FAILURE_RATE_PERCENT` (default `10`)
+- `OUTBOX_ALERT_SEND_P95_MS` (default `30000`)
+- `OUTBOX_ALERT_OLDEST_PENDING_SECONDS` (default `900`)
+
+Alerts are currently generated from live database state and shown in the authenticated admin UI. They are not yet sent to an external email, SMS, or WhatsApp destination; configure a separate alert transport before relying on out-of-band paging.
