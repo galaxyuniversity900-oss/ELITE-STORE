@@ -43,6 +43,25 @@ enum CartStatus {
   ABANDONED
 }
 
+enum NotificationChannel {
+  WHATSAPP
+  EMAIL
+}
+
+enum NotificationStatus {
+  PENDING
+  PROCESSING
+  SENT
+  DEAD
+}
+
+enum NotificationAttemptStatus {
+  STARTED
+  SUCCEEDED
+  FAILED
+  ABANDONED
+}
+
 model User {
   id           String    @id @default(cuid())
   email        String    @unique
@@ -195,6 +214,7 @@ model Order {
   address           Address?    @relation(fields: [addressId], references: [id], onDelete: SetNull)
   items             OrderItem[]
   payments          Payment[]
+  notifications     NotificationOutbox[]
   createdAt         DateTime    @default(now())
   updatedAt         DateTime    @updatedAt
 
@@ -239,7 +259,6 @@ model Payment {
   @@map("payments")
 }
 
-
 model Shipment {
   id              String   @id @default(cuid())
   orderId         String   @unique
@@ -273,4 +292,70 @@ model TrackingEvent {
 
   @@index([orderId, occurredAt])
   @@map("tracking_events")
+}
+
+model NotificationOutbox {
+  id                String              @id @default(cuid())
+  orderId           String
+  channel           NotificationChannel
+  eventType         String
+  dedupeKey         String              @unique
+  recipient         String?
+  payload           Json
+  status            NotificationStatus  @default(PENDING)
+  attempts          Int                 @default(0)
+  maxAttempts       Int                 @default(8)
+  availableAt       DateTime            @default(now())
+  lockedAt          DateTime?
+  lockToken         String?
+  sentAt            DateTime?
+  providerMessageId String?
+  providerStatus    String?
+  providerStatusAt  DateTime?
+  lastError         String?
+  order             Order               @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  attemptsLog       NotificationDeliveryAttempt[]
+  deliveryEvents    NotificationDeliveryEvent[]
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+
+  @@index([status, availableAt, createdAt])
+  @@index([status, lockedAt])
+  @@index([orderId, createdAt])
+  @@index([providerMessageId])
+  @@map("notification_outbox")
+}
+
+model NotificationDeliveryAttempt {
+  id                String                    @id @default(cuid())
+  notificationId    String
+  attemptNumber     Int
+  status            NotificationAttemptStatus @default(STARTED)
+  startedAt         DateTime                  @default(now())
+  finishedAt        DateTime?
+  providerMessageId String?
+  httpStatus        Int?
+  errorCode         String?
+  errorMessage      String?
+  notification      NotificationOutbox        @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+
+  @@unique([notificationId, attemptNumber])
+  @@index([notificationId, startedAt])
+  @@map("notification_delivery_attempts")
+}
+
+model NotificationDeliveryEvent {
+  id             String             @id @default(cuid())
+  notificationId String
+  provider       String
+  providerEventId String
+  status         String
+  occurredAt     DateTime
+  metadata       Json?
+  notification   NotificationOutbox @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+  createdAt      DateTime           @default(now())
+
+  @@unique([provider, providerEventId])
+  @@index([notificationId, occurredAt])
+  @@map("notification_delivery_events")
 }
