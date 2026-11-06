@@ -16,12 +16,18 @@ describe('NotificationOutboxService', () => {
       updateMany: jest.fn(),
     },
     notificationDeliveryEvent: { create: jest.fn() },
+    $queryRaw: jest.fn(),
     $transaction: jest.fn(),
   };
 
   beforeEach(() => {
     jest.clearAllMocks();
-    prisma.$transaction.mockImplementation((operations: unknown[]) => Promise.all(operations as Promise<unknown>[]));
+    prisma.$transaction.mockImplementation((work: unknown) => typeof work === 'function'
+      ? (work as (tx: unknown) => unknown)({
+          $queryRaw: prisma.$queryRaw,
+          notificationOutbox: prisma.notificationOutbox,
+        })
+      : Promise.all(work as Promise<unknown>[]));
   });
 
   it('enqueues WhatsApp and email records in the order transaction with stable dedupe keys', async () => {
@@ -63,7 +69,8 @@ describe('NotificationOutboxService', () => {
       maxAttempts: 8,
       lockToken: 'lock-1',
     };
-    prisma.notificationOutbox.findMany.mockResolvedValueOnce([]).mockResolvedValueOnce([{ id: 'outbox-1' }]);
+    prisma.notificationOutbox.findMany.mockResolvedValueOnce([]);
+    prisma.$queryRaw.mockResolvedValueOnce([{ id: 'outbox-1', attempts: 0 }]);
     let activeLock = '';
     prisma.notificationOutbox.updateMany.mockImplementation(async (args: any) => {
       if (args.data.status === NotificationStatus.PROCESSING) activeLock = args.data.lockToken;
@@ -106,7 +113,8 @@ describe('NotificationOutboxService', () => {
       maxAttempts: 8,
       lockToken: 'lock-later',
     };
-    prisma.notificationOutbox.findMany.mockResolvedValueOnce([]).mockResolvedValueOnce([{ id: notification.id }]);
+    prisma.notificationOutbox.findMany.mockResolvedValueOnce([]);
+    prisma.$queryRaw.mockResolvedValueOnce([{ id: notification.id, attempts: 0 }]);
     let activeLock = '';
     prisma.notificationOutbox.updateMany.mockImplementation(async (args: any) => {
       if (args.data.status === NotificationStatus.PROCESSING) activeLock = args.data.lockToken;
@@ -142,7 +150,8 @@ describe('NotificationOutboxService', () => {
       maxAttempts: 8,
       lockToken: 'lock-2',
     };
-    prisma.notificationOutbox.findMany.mockResolvedValueOnce([]).mockResolvedValueOnce([{ id: 'outbox-2' }]);
+    prisma.notificationOutbox.findMany.mockResolvedValueOnce([]);
+    prisma.$queryRaw.mockResolvedValueOnce([{ id: 'outbox-2', attempts: 0 }]);
     let activeLock = '';
     prisma.notificationOutbox.updateMany.mockImplementation(async (args: any) => {
       if (args.data.status === NotificationStatus.PROCESSING) activeLock = args.data.lockToken;
