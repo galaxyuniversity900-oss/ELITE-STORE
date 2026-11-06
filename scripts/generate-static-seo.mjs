@@ -142,5 +142,5 @@ const sitemap = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://w
   sitemapUrls.map((entry)=>'  <url><loc>'+esc(entry.url)+'</loc><changefreq>'+entry.freq+'</changefreq><priority>'+entry.priority+'</priority></url>').join('\n') +
   '\n</urlset>\n';
 await writeFile(path.join(output,'sitemap.xml'),sitemap,'utf8');
-await writeFile(path.join(output,'robots.txt'),'User-agent: *\nAllow: /\nDisallow: /data/\nSitemap: '+absolute('sitemap.xml')+'\n','utf8');
+await writeFile(path.join(output,'robots.txt'),'User-agent: *\nAllow: /\nDisallow: /data/\nDisallow: /api/\nDisallow: /*?gm-admin=1\nSitemap: '+absolute('sitemap.xml')+'\n','utf8');
 console.log('Generated '+entries.length+' canonical Product pages and '+sitemapUrls.length+' sitemap URLs at '+base.href);
