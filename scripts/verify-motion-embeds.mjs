@@ -18,7 +18,9 @@ assert.ok(runtime.includes("prefers-reduced-motion: reduce"), 'Runtime must resp
 assert.ok(runtime.includes("url.origin !== location.origin"), 'Runtime must reject cross-origin media');
 assert.ok(css.includes('.mes-motion-embed'), 'Motion embed styles must exist');
 assert.ok(docs.includes('Create a Video'), 'PowerPoint export instructions must exist');
-assert.ok(runtime.includes('Promise.allSettled(config.items.map((item) => mount(item)))'), 'Independent motion entries must mount concurrently with per-entry failure isolation');
+assert.ok(runtime.includes('const workerCount = Math.min(3, config.items.length)'), 'Motion entries must mount with bounded concurrency for mobile performance');
+assert.ok(runtime.includes('await Promise.allSettled(Array.from({ length: workerCount }, () => worker()))'), 'Motion workers must settle independently');
+assert.ok(runtime.includes('Entry failed independently:'), 'A failed entry must not stop other motion entries');
 assert.ok(runtime.includes('if (!selector || !source || !allowed.includes(item.type))'), 'Invalid sources must be rejected before URL parsing');
 
 const extensions = {
