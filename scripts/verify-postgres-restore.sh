@@ -27,7 +27,7 @@ docker compose -f "$COMPOSE_FILE" exec -T postgres pg_restore -U "$DB_USER" -d "
 
 # Compare every public base table, not a hand-picked subset. Sorting the JSON
 # rows makes the checksum independent of physical row order and query plans.
-TABLES="$(psql_source -Atc "SELECT tablename FROM pg_tables WHERE schemaname='public' ORDER BY tablename")"
+TABLES="$(psql_source -Atc "SELECT format('%I', tablename) FROM pg_tables WHERE schemaname='public' ORDER BY tablename")"
 test -n "$TABLES"
 TABLE_COUNT=0
 while IFS= read -r table; do
@@ -45,7 +45,7 @@ while IFS= read -r table; do
 done <<< "$TABLES"
 
 # Verify every sequence's current value and is_called state as well.
-SEQUENCES="$(psql_source -Atc "SELECT sequencename FROM pg_sequences WHERE schemaname='public' ORDER BY sequencename")"
+SEQUENCES="$(psql_source -Atc "SELECT format('%I', sequencename) FROM pg_sequences WHERE schemaname='public' ORDER BY sequencename")"
 SEQUENCE_COUNT=0
 while IFS= read -r sequence; do
   [[ -n "$sequence" ]] || continue
