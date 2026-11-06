@@ -1,6 +1,7 @@
-import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
 import { IsIn, IsString, MaxLength, MinLength } from 'class-validator';
 import { DemoCommerceService } from './demo-commerce.service';
+import { DemoCommerceGuard } from './demo-commerce.guard';
 
 class DemoPaymentDto {
   @IsString() @MinLength(7) @MaxLength(30) phone!: string;
@@ -16,6 +17,7 @@ class DemoShipmentStatusDto extends DemoShippingDto {
 }
 
 @Controller('demo-commerce')
+@UseGuards(DemoCommerceGuard)
 export class DemoCommerceController {
   constructor(private readonly demo: DemoCommerceService) {}
 
