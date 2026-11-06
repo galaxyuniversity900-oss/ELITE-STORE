@@ -39,6 +39,7 @@
     const figure = document.createElement('figure');
     figure.className = 'mes-motion-embed';
     figure.dataset.motionId = String(item.id || '');
+    figure.dataset.motionType = String(item.type || '');
     if (item.aspectRatio && /^\d+(?:\.\d+)?\s*\/\s*\d+(?:\.\d+)?$/.test(item.aspectRatio)) {
       figure.style.aspectRatio = item.aspectRatio.replace(/\s/g, '');
     }
@@ -99,6 +100,7 @@
         autoplay: item.autoplay !== false, path: src,
         rendererSettings: { preserveAspectRatio: 'xMidYMid meet', progressiveLoad: true }
       });
+      stage._mesLottieAnimation = animation;
       animation.addEventListener('data_failed', () => {
         stage.classList.add('is-failed'); stage.setAttribute('aria-label', 'تعذر تحميل الحركة');
       });
@@ -115,19 +117,25 @@
     const source = safeAssetUrl(item.src);
     const poster = item.poster ? safeAssetUrl(item.poster) : null;
     const allowed = ['video', 'gif', 'webp', 'svg', 'lottie'];
-    if (!selector || !source || !allowed.includes(item.type)) {
+    const extension = source.split('?')[0].toLowerCase().split('.').pop();
+    const validExtension = item.type === 'video' ? ['mp4', 'webm'].includes(extension)
+      : item.type === 'gif' ? extension === 'gif'
+      : item.type === 'webp' ? extension === 'webp'
+      : item.type === 'svg' ? extension === 'svg'
+      : item.type === 'lottie' ? extension === 'json' : false;
+    if (!selector || !source || !allowed.includes(item.type) || !validExtension) {
       console.warn('[MES Motion Embed] Invalid entry skipped:', item.id); return;
     }
     const target = document.querySelector(selector);
     if (!target) return;
     const { figure, stage } = createFrame(item);
     const alt = item.decorative === true ? '' : String(item.alt || item.title || 'حركة مرئية').slice(0, 180);
+    const placement = ['beforebegin', 'afterbegin', 'beforeend', 'afterend'].includes(item.placement) ? item.placement : 'beforeend';
+    target.insertAdjacentElement(placement, figure);
     let cleanup = () => {};
     if (item.type === 'video') cleanup = renderVideo(stage, item, source, poster);
     else if (item.type === 'lottie') cleanup = await renderLottie(stage, item, source, poster);
     else cleanup = renderImage(stage, source, alt);
-    const placement = ['beforebegin', 'afterbegin', 'beforeend', 'afterend'].includes(item.placement) ? item.placement : 'beforeend';
-    target.insertAdjacentElement(placement, figure);
     loaded.add(String(item.id));
     figure._mesMotionCleanup = cleanup;
     document.dispatchEvent(new CustomEvent('mes:motion-embedded', { detail: { id: String(item.id), element: figure } }));
@@ -145,6 +153,12 @@
     document.querySelectorAll('.mes-motion-embed video').forEach(video => {
       if (reducedMotion.matches) { video.pause(); video.controls = true; }
       else if (video.hasAttribute('autoplay')) video.play().catch(() => { video.controls = true; });
+    });
+    document.querySelectorAll('.mes-motion-embed__stage').forEach(stage => {
+      const animation = stage._mesLottieAnimation;
+      if (!animation) return;
+      if (reducedMotion.matches) animation.pause();
+      else if (animation.play) animation.play();
     });
   });
   window.MESMotionEmbed = Object.freeze({ init, mount, safeAssetUrl });
