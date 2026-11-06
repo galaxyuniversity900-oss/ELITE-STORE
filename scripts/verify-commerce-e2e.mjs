@@ -51,7 +51,7 @@ const first = (await call(`/orders/checkout/${sessionId}`, {
   method: 'POST',
   headers: { ...jsonHeaders, 'Idempotency-Key': idempotencyKey },
   body: JSON.stringify(checkoutInput),
-})).body;
+}, 201)).body;
 if (!first.id || first.storeNotification?.queued !== true) {
   throw new Error('Checkout did not create an order and enqueue notifications transactionally');
 }
@@ -60,7 +60,7 @@ const replay = (await call(`/orders/checkout/${sessionId}`, {
   method: 'POST',
   headers: { ...jsonHeaders, 'Idempotency-Key': idempotencyKey },
   body: JSON.stringify(checkoutInput),
-})).body;
+}, 201)).body;
 if (replay.id !== first.id || replay.storeNotification?.reason !== 'duplicate_checkout') {
   throw new Error('Checkout idempotency replay created a duplicate or returned inconsistent state');
 }
