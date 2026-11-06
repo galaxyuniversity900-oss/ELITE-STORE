@@ -26,6 +26,7 @@ describe('NotificationOutboxService', () => {
       ? (work as (tx: unknown) => unknown)({
           $queryRaw: prisma.$queryRaw,
           notificationOutbox: prisma.notificationOutbox,
+          notificationDeliveryAttempt: prisma.notificationDeliveryAttempt,
         })
       : Promise.all(work as Promise<unknown>[]));
   });
