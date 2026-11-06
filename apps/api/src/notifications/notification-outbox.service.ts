@@ -413,7 +413,10 @@ export class NotificationOutboxService implements OnModuleInit, OnModuleDestroy 
     payload: OutboxPayload,
     dedupeKey: string,
   ): Promise<{ messageId: string; httpStatus: number }> {
-    if (!recipient) throw new DeliveryError('recipient_not_configured', false);
+    const targetRecipient = recipient || (channel === NotificationChannel.WHATSAPP
+      ? (process.env.WHATSAPP_ORDER_RECIPIENT ?? '201558309605').replace(/\D/g, '')
+      : process.env.ORDER_NOTIFICATION_EMAIL?.trim() || null);
+    if (!targetRecipient) throw new DeliveryError('recipient_not_configured', false);
 
     if (channel === NotificationChannel.WHATSAPP) {
       const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
@@ -444,7 +447,7 @@ export class NotificationOutboxService implements OnModuleInit, OnModuleDestroy 
         {
           messaging_product: 'whatsapp',
           recipient_type: 'individual',
-          to: recipient,
+          to: targetRecipient,
           type: 'template',
           template: {
             name: templateName,
@@ -481,7 +484,7 @@ export class NotificationOutboxService implements OnModuleInit, OnModuleDestroy 
       },
       {
         from,
-        to: [recipient],
+        to: [targetRecipient],
         subject: String(payload.subject ?? 'New MES STORE order'),
         html,
       },
