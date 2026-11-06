@@ -384,6 +384,10 @@ export class NotificationOutboxService implements OnModuleInit, OnModuleDestroy 
             providerStatus: 'accepted',
             providerStatusAt: null,
             lastError: null,
+            // Delivery is complete: erase the customer PII payload and destination.
+            // Provider callbacks are correlated by providerMessageId and do not need either.
+            payload: {},
+            recipient: null,
             lockedAt: null,
             lockToken: null,
           },
