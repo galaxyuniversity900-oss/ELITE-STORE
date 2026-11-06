@@ -18,7 +18,7 @@ export class OrdersService {
     }
 
     try {
-      return await this.prisma.$transaction(async (tx) => {
+      const outcome = await this.prisma.$transaction(async (tx) => {
         const previousOrder = await tx.order.findUnique({
           where: {
             checkoutSessionId_idempotencyKey: {
@@ -28,7 +28,7 @@ export class OrdersService {
           },
           include: { items: true, payments: true },
         });
-        if (previousOrder) return previousOrder;
+        if (previousOrder) return { order: previousOrder, created: false };
 
         const cart = await tx.cart.findUnique({
           where: { sessionId },
@@ -141,8 +141,16 @@ export class OrdersService {
           data: { status: CartStatus.CONVERTED, ...(userId ? { userId } : {}) },
         });
 
-        return order;
+        return { order, created: true };
       }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+      return {
+        ...outcome.order,
+        storeNotification: {
+          sent: false,
+          queued: outcome.created,
+          reason: outcome.created ? 'queued' : 'duplicate_checkout',
+        },
+      };
     } catch (error) {
       // A concurrent retry can win the unique-key race. Return its committed order.
       if (error instanceof Prisma.PrismaClientKnownRequestError && ['P2002', 'P2034'].includes(error.code)) {
@@ -155,7 +163,7 @@ export class OrdersService {
           },
           include: { items: true, payments: true },
         });
-        if (existing) return existing;
+        if (existing) return { ...existing, storeNotification: { sent: false, queued: false, reason: 'duplicate_checkout' } };
       }
       throw error;
     }
