@@ -24,8 +24,12 @@ The source review found security-hardening gaps and applied targeted fixes on th
    - Added negative tests for unsupported Meta statuses and oversized callback batches.
    - Existing HMAC/Svix signature verification remains required before event processing.
 
-3. **Dependency audit gate**
-   - Added `npm audit --audit-level=high` to the CI workflow after dependency installation. High and critical dependency advisories now fail the workflow instead of being silently skipped.
+3. **Dependency audit gate and remediation**
+   - Added `npm audit --audit-level=high` to the CI workflow after dependency installation. High and critical dependency advisories fail the workflow.
+   - The initial scan reported 31 advisories (11 high). After the first compatibility-preserving upgrades, a subsequent scan reported 27 advisories (5 high); the remaining high findings included `deepmerge-ts` and `multer`.
+   - Updated NestJS runtime packages to 11.2.8, Nest CLI to 11.0.24, Nest schematics to 11.1.0, Jest to 30.5.2, Turborepo to 2.11.10, and Prisma / Prisma Client to 6.19.3.
+   - Added npm overrides for `deepmerge-ts` 8.0.2 and `multer` 2.5.0, the patched versions for the remaining high advisories observed in the audit output.
+   - The scan after these final overrides is still pending; no zero-vulnerability claim is made.
 
 ## Verified controls observed in source
 
@@ -58,7 +62,7 @@ The source review found security-hardening gaps and applied targeted fixes on th
 
 The last completed run observed **before the audit commits** was run #531 and passed its then-current steps, including type-check, automated tests, application builds, Docker Compose validation/startup, API readiness, and the Notification Center route/metrics smoke tests.
 
-The audit commits add new guard and webhook tests plus the dependency audit step. Their result remains **pending until GitHub Actions runs against the new head SHA**. Do not treat the earlier run as proof that these new changes passed.
+The audit commits add new guard and webhook tests plus the dependency audit step. The dependency remediation commits have triggered newer CI runs; their latest result remains **pending until GitHub Actions completes against the final head SHA**. Do not treat earlier failed audit runs as proof of the final state.
 
 ## Secret handling
 
