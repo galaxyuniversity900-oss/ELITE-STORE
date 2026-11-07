@@ -48,14 +48,26 @@ export class NotificationWebhookController {
     @Body() body: any,
   ) {
     this.verifyMetaSignature(request.rawBody, signature);
+    if (!Array.isArray(body?.entry) || body.entry.length > 100) {
+      throw new BadRequestException('Malformed WhatsApp webhook payload');
+    }
     const statuses: WhatsAppStatus[] = [];
-    for (const entry of body?.entry ?? []) {
+    for (const entry of body.entry) {
       for (const change of entry?.changes ?? []) {
-        statuses.push(...(change?.value?.statuses ?? []));
+        const incoming = change?.value?.statuses;
+        if (incoming !== undefined && !Array.isArray(incoming)) {
+          throw new BadRequestException('Malformed WhatsApp status payload');
+        }
+        if (Array.isArray(incoming)) statuses.push(...incoming);
       }
     }
+    if (statuses.length > 100) throw new BadRequestException('Too many WhatsApp status events in one webhook');
+    const acceptedStatuses = new Set(['sent', 'delivered', 'read', 'failed']);
     for (const item of statuses) {
-      if (!item.id || !item.status) continue;
+      if (!item || typeof item.id !== 'string' || item.id.length > 512 ||
+          typeof item.status !== 'string' || !acceptedStatuses.has(item.status)) {
+        throw new BadRequestException('Malformed or unsupported WhatsApp status event');
+      }
       const timestamp = Number(item.timestamp);
       const occurredAt = Number.isFinite(timestamp) ? new Date(timestamp * 1000) : new Date();
       const eventId = `${item.id}:${item.status}:${item.timestamp ?? occurredAt.getTime()}`;
@@ -88,7 +100,7 @@ export class NotificationWebhookController {
   ) {
     this.verifyResendSignature(request.rawBody, eventId, timestamp, signature);
     const emailId = body?.data?.email_id ?? body?.data?.id;
-    const eventType = String(body?.type ?? '');
+    const eventType = typeof body?.type === 'string' ? body.type : '';
     const statusMap: Record<string, string> = {
       'email.sent': 'sent',
       'email.delivered': 'delivered',
@@ -98,7 +110,8 @@ export class NotificationWebhookController {
       'email.failed': 'failed',
     };
     const status = statusMap[eventType];
-    if (typeof emailId !== 'string' || !status || !eventId) {
+    if (typeof emailId !== 'string' || !emailId || emailId.length > 512 ||
+        typeof eventId !== 'string' || !eventId || eventId.length > 256 || !status) {
       throw new BadRequestException('Unsupported or malformed Resend event');
     }
     const eventTime = body?.created_at ? new Date(body.created_at) : new Date();
