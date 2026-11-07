@@ -309,7 +309,7 @@ export default function NotificationCenterPage() {
         <div className="notification-header-actions">
           <a className="secondary notification-link" href="/">لوحة الإدارة</a>
           <button className="secondary" onClick={() => { void loadNotifications(); void loadMetrics(); }}>تحديث البيانات</button>
-          <button className="secondary" onClick={() => setRefreshSeconds(value => value === 0 ? 30 : 0)} aria-pressed={refreshSeconds > 0}>{refreshSeconds > 0 ? 'التحديث: كل ' + refreshSeconds + ' ثانية' : 'التحديث التلقائي: متوقف'}</button>
+          <label className="notification-refresh-control">التحديث <select value={refreshSeconds} onChange={event => setRefreshSeconds(Number(event.target.value))}><option value={0}>متوقف</option><option value={15}>كل 15 ثانية</option><option value={30}>كل 30 ثانية</option><option value={60}>كل دقيقة</option><option value={120}>كل دقيقتين</option><option value={300}>كل 5 دقائق</option></select></label>
           <button className="secondary" onClick={() => void exportCsv()} disabled={!items.length || exporting}>{exporting ? 'جارٍ تجهيز CSV…' : 'تصدير كل النتائج CSV'}</button>
           <button className="secondary" onClick={logout}>تسجيل الخروج</button>
         </div>
