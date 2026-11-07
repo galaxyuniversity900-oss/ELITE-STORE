@@ -70,7 +70,7 @@ export class NotificationOutboxService implements OnModuleInit, OnModuleDestroy 
       .join('، ')
       .slice(0, 900);
     const total = String(order.grandTotal);
-    const whatsappRecipient = (process.env.WHATSAPP_ORDER_RECIPIENT ?? '201558309605').replace(/\D/g, '') || null;
+    const whatsappRecipient = process.env.WHATSAPP_ORDER_RECIPIENT?.replace(/\D/g, '') || null;
     const emailRecipient = process.env.ORDER_NOTIFICATION_EMAIL?.trim() || null;
 
     const whatsappPayload: OutboxPayload = {
