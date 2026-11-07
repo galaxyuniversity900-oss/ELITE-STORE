@@ -101,3 +101,5 @@ th{color:var(--muted);font-weight:500}
 @media(max-width:600px){.notification-header{gap:14px}.notification-header-actions{width:100%}.notification-header-actions>*{flex:1;justify-content:center}.filter-controls{grid-template-columns:1fr}.filter-reset{width:100%}.notification-pagination{align-items:flex-start;flex-direction:column}.notification-pagination>div{width:100%;justify-content:space-between}.notification-detail-grid{grid-template-columns:1fr}.notification-detail-footer{align-items:stretch;flex-direction:column}.notification-detail-footer button{width:100%}.notification-stats strong{font-size:24px}}
 
 .admin-notifications-link{display:inline-flex;margin-top:8px;color:var(--accent);font-size:13px;border-bottom:1px solid #6e613e;padding-bottom:3px}.admin-notifications-link:hover{color:var(--text)}
+
+.notification-metrics-panel{margin:18px 0}.notification-metrics-panel .notification-detail-grid{margin:16px 0}.notification-metrics-panel .notification-error-detail p{font-family:inherit;line-height:1.8}
