@@ -147,4 +147,33 @@ describe('NotificationWebhookController', () => {
     expect(outbox.recordProviderStatus).not.toHaveBeenCalled();
   });
 
+
+  it('rejects oversized raw provider payloads before parsing events', async () => {
+    const rawBody = Buffer.alloc(1024 * 1024 + 1, 0x61);
+    await expect(controller.receiveWhatsApp({ rawBody } as never, 'sha256=' + 'a'.repeat(64), {}))
+      .rejects.toThrow('WhatsApp webhook body exceeds 1 MiB');
+    expect(outbox.recordProviderStatus).not.toHaveBeenCalled();
+  });
+
+  it('rejects malformed provider error objects instead of throwing during persistence', async () => {
+    const body = { entry: [{ changes: [{ value: { statuses: [{
+      id: 'wamid.123', status: 'failed', timestamp: '1793923200', errors: [null],
+    }] } }] }] };
+    const rawBody = Buffer.from(JSON.stringify(body));
+    const signature = `sha256=${createHmac('sha256', process.env.WHATSAPP_APP_SECRET!)
+      .update(rawBody).digest('hex')}`;
+    await expect(controller.receiveWhatsApp({ rawBody } as never, signature, body))
+      .rejects.toThrow('Malformed or unsupported WhatsApp status event');
+    expect(outbox.recordProviderStatus).not.toHaveBeenCalled();
+  });
+
+  it('rejects malformed or stale Resend timestamp headers', async () => {
+    const body = { type: 'email.delivered', created_at: '2026-11-06T04:00:00.000Z', data: { email_id: 'resend-email-123' } };
+    const rawBody = Buffer.from(JSON.stringify(body));
+    await expect(controller.receiveResend(
+      { rawBody } as never, 'evt_resend_123', 'not-a-timestamp', 'v1,invalid', body,
+    )).rejects.toBeInstanceOf(UnauthorizedException);
+    expect(outbox.recordProviderStatus).not.toHaveBeenCalled();
+  });
+
 });
