@@ -136,4 +136,15 @@ describe('NotificationWebhookController', () => {
     expect(outbox.recordProviderStatus).not.toHaveBeenCalled();
   });
 
+
+  it('rejects malformed WhatsApp event timestamps', async () => {
+    const body = { entry: [{ changes: [{ value: { statuses: [{ id: 'wamid.123', status: 'delivered', timestamp: 'not-a-timestamp' }] } }] }] };
+    const rawBody = Buffer.from(JSON.stringify(body));
+    const signature = `sha256=${createHmac('sha256', process.env.WHATSAPP_APP_SECRET!)
+      .update(rawBody).digest('hex')}`;
+    await expect(controller.receiveWhatsApp({ rawBody } as never, signature, body))
+      .rejects.toThrow('Malformed or unsupported WhatsApp status event');
+    expect(outbox.recordProviderStatus).not.toHaveBeenCalled();
+  });
+
 });
