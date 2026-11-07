@@ -24,6 +24,11 @@ The source review found security-hardening gaps and applied targeted fixes on th
    - Added negative tests for unsupported Meta statuses and oversized callback batches.
    - Existing HMAC/Svix signature verification remains required before event processing.
 
+4. **Admin browser security headers**
+   - Added a Content Security Policy to the admin application with `default-src 'self'`, `object-src 'none'`, `frame-ancestors 'none'`, restricted form/base origins, and explicit image/font/connect sources.
+   - Added `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, and `Permissions-Policy` headers.
+   - The CSP retains `unsafe-inline` for Next.js hydration compatibility; a nonce-based CSP would provide stronger script protection and remains a hardening opportunity.
+
 3. **Dependency audit gate and remediation**
    - Added `npm audit --audit-level=high` to the CI workflow after dependency installation. High and critical dependency advisories fail the workflow.
    - The initial scan reported 31 advisories (11 high). After the first compatibility-preserving upgrades, a subsequent scan reported 27 advisories (5 high); the remaining high findings included `deepmerge-ts` and `multer`.
@@ -56,11 +61,13 @@ The source review found security-hardening gaps and applied targeted fixes on th
 | Medium | Admin notification views expose recipients, provider IDs, order references, and operational error details to both ADMIN and SUPER_ADMIN roles. | Confirm this data scope is appropriate for every ADMIN user; use narrower permissions and retention controls if operational roles should not see customer contact data. |
 | Medium | Rate limiting is not shared across replicas and webhook endpoints do not have a dedicated application-level rate limit. | Enforce request limits and body-size limits at the edge. Preserve provider retries and signature verification. |
 | Medium | No automated retention/deletion policy for notification payloads, attempts, and provider event metadata was verified in the reviewed files. | Define retention periods, deletion jobs, and backup expiry in line with applicable privacy requirements. |
+| Medium | The admin token is held in sessionStorage and is accessible to same-origin JavaScript; the CSP currently permits inline scripts for Next.js compatibility. | Consider an HttpOnly, Secure, SameSite cookie session with CSRF protection and a nonce-based CSP before higher-risk public deployment. |
+| Low / Moderate | The successful high-severity gate does not mean every advisory is gone. npm audit output also identified low-severity `deepmerge` and moderate `glob` / `minimatch` findings in the development/test toolchain. | Keep the tooling off production request paths, avoid merging attacker-controlled object graphs, and monitor for patched transitive releases. |
 | Low | Docker images use floating base tags and install dependencies during image build without a committed lockfile. | Pin image digests and use lockfile-based clean installs before production release. |
 
 ## CI verification status
 
-The last completed run observed **before the audit commits** was run #531 and passed its then-current steps, including type-check, automated tests, application builds, Docker Compose validation/startup, API readiness, and the Notification Center route/metrics smoke tests.
+An audit-remediation run (#568, commit `18692ad`) reported PASS for `npm audit --audit-level=high`, workspace validation, type-check, automated tests, all application builds, API runtime entrypoint, and Docker Compose validation. Its Docker stack startup and readiness steps were still running when this report was last updated. The subsequent admin CSP/header change has a newer CI run in progress; do not treat the older run as final verification of that change.
 
 The audit commits add new guard and webhook tests plus the dependency audit step. The dependency remediation commits have triggered newer CI runs; their latest result remains **pending until GitHub Actions completes against the final head SHA**. Do not treat earlier failed audit runs as proof of the final state.
 
