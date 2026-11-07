@@ -12,6 +12,7 @@ describe('NotificationOutboxService', () => {
       update: jest.fn(),
     },
     notificationDeliveryAttempt: {
+      groupBy: jest.fn(),
       create: jest.fn(),
       update: jest.fn(),
       updateMany: jest.fn(),
@@ -31,7 +32,7 @@ describe('NotificationOutboxService', () => {
       { status: NotificationStatus.SENT, _count: { _all: 7 } },
       { status: NotificationStatus.DEAD, _count: { _all: 2 } },
     ]);
-    prisma.notificationDeliveryAttempt.groupBy = jest.fn().mockResolvedValue([
+    prisma.notificationDeliveryAttempt.groupBy.mockResolvedValue([
       { status: 'SUCCEEDED', _count: { _all: 8 } },
       { status: 'FAILED', _count: { _all: 2 } },
     ]);
