@@ -93,7 +93,9 @@ export default function NotificationCenterPage() {
   const [page, setPage] = useState(1);
   const [result, setResult] = useState<PageResult | null>(null);
   const [metrics, setMetrics] = useState<MetricsResult | null>(null);
-  const [autoRefresh, setAutoRefresh] = useState(true);
+  const [refreshSeconds, setRefreshSeconds] = useState(30);
+  const [metricsWindow, setMetricsWindow] = useState(60);
+  const [exporting, setExporting] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
@@ -108,7 +110,7 @@ export default function NotificationCenterPage() {
   const loadMetrics = useCallback(async () => {
     if (!token) return;
     try {
-      const response = await fetch(`${API}/admin/notifications/metrics?windowMinutes=60`, {
+      const response = await fetch(`${API}/admin/notifications/metrics?windowMinutes=${metricsWindow}`, {
         headers: requestHeaders,
         cache: 'no-store',
       });
@@ -118,7 +120,7 @@ export default function NotificationCenterPage() {
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'تعذر تحميل مؤشرات الإشعارات');
     }
-  }, [token, requestHeaders]);
+  }, [token, requestHeaders, metricsWindow]);
 
   const loadNotifications = useCallback(async (silent = false) => {
     if (!token) return;
@@ -161,13 +163,13 @@ export default function NotificationCenterPage() {
   }, [token, loadNotifications, loadMetrics]);
 
   useEffect(() => {
-    if (!token || !autoRefresh) return;
+    if (!token || refreshSeconds <= 0) return;
     const timer = window.setInterval(() => {
       void loadNotifications(true);
       void loadMetrics();
-    }, 30000);
+    }, refreshSeconds * 1000);
     return () => window.clearInterval(timer);
-  }, [token, autoRefresh, loadNotifications, loadMetrics]);
+  }, [token, refreshSeconds, loadNotifications, loadMetrics]);
 
   async function login(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -220,27 +222,47 @@ export default function NotificationCenterPage() {
     }
   }
 
-  function exportCsv() {
-    const columns = ['order', 'event', 'channel', 'recipient', 'processing_status', 'provider_status', 'attempts', 'created_at', 'last_error'];
-    const rows = items.map(item => [
-      item.order?.orderNumber ?? item.orderId,
-      item.eventType,
-      item.channel,
-      item.recipient ?? '',
-      item.status,
-      item.providerStatus ?? '',
-      String(item.attempts) + '/' + String(item.maxAttempts),
-      item.createdAt,
-      item.lastError ?? '',
-    ]);
-    const csv = [columns, ...rows].map(row => row.map(value => '"' + String(value).replace(/"/g, '""') + '"').join(',')).join('\r\n');
-    const blob = new Blob(['\uFEFF', csv], { type: 'text/csv;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = 'mes-store-notifications-page-' + page + '.csv';
-    link.click();
-    URL.revokeObjectURL(url);
+  async function exportCsv() {
+    if (exporting || !token) return;
+    setExporting(true);
+    setError('');
+    try {
+      const allItems: Notification[] = [];
+      let exportPage = 1;
+      let totalPages = 1;
+      do {
+        const params = new URLSearchParams({ page: String(exportPage), limit: '100' });
+        if (status) params.set('status', status);
+        if (channel) params.set('channel', channel);
+        const response = await fetch(`${API}/admin/notifications?${params.toString()}`, { headers: requestHeaders, cache: 'no-store' });
+        const data = await response.json().catch(() => null);
+        if (!response.ok) throw new Error(data?.message ?? `تعذر تصدير السجلات (${response.status})`);
+        const batch = data as PageResult;
+        allItems.push(...batch.items);
+        totalPages = Math.max(1, batch.pages);
+        exportPage += 1;
+      } while (exportPage <= totalPages);
+
+      const columns = ['order', 'event', 'channel', 'recipient', 'processing_status', 'provider_status', 'attempts', 'created_at', 'last_error'];
+      const rows = allItems.map(item => [
+        item.order?.orderNumber ?? item.orderId, item.eventType, item.channel, item.recipient ?? '',
+        item.status, item.providerStatus ?? '', String(item.attempts) + '/' + String(item.maxAttempts),
+        item.createdAt, item.lastError ?? '',
+      ]);
+      const csv = [columns, ...rows].map(row => row.map(value => '"' + String(value).replace(/"/g, '""') + '"').join(',')).join('\\r\\n');
+      const blob = new Blob(['\\uFEFF', csv], { type: 'text/csv;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'mes-store-notifications-' + new Date().toISOString().slice(0, 10) + '.csv';
+      link.click();
+      URL.revokeObjectURL(url);
+      setNotice(`تم تجهيز ملف CSV بعدد ${allItems.length} سجل.`);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'تعذر تصدير السجلات');
+    } finally {
+      setExporting(false);
+    }
   }
 
   function logout() {
@@ -287,8 +309,8 @@ export default function NotificationCenterPage() {
         <div className="notification-header-actions">
           <a className="secondary notification-link" href="/">لوحة الإدارة</a>
           <button className="secondary" onClick={() => { void loadNotifications(); void loadMetrics(); }}>تحديث البيانات</button>
-          <button className="secondary" onClick={() => setAutoRefresh(value => !value)} aria-pressed={autoRefresh}>{autoRefresh ? 'التحديث التلقائي: يعمل' : 'التحديث التلقائي: متوقف'}</button>
-          <button className="secondary" onClick={exportCsv} disabled={!items.length}>تصدير CSV</button>
+          <button className="secondary" onClick={() => setRefreshSeconds(value => value === 0 ? 30 : 0)} aria-pressed={refreshSeconds > 0}>{refreshSeconds > 0 ? 'التحديث: كل ' + refreshSeconds + ' ثانية' : 'التحديث التلقائي: متوقف'}</button>
+          <button className="secondary" onClick={() => void exportCsv()} disabled={!items.length || exporting}>{exporting ? 'جارٍ تجهيز CSV…' : 'تصدير كل النتائج CSV'}</button>
           <button className="secondary" onClick={logout}>تسجيل الخروج</button>
         </div>
       </header>
@@ -303,7 +325,7 @@ export default function NotificationCenterPage() {
         <article><small>فشل نهائي</small><strong className={metrics?.queue.dead ? 'metric-danger' : ''}>{metrics?.queue.dead ?? '—'}</strong></article>
       </section>
       <section className="panel notification-metrics-panel">
-        <div className="panel-heading"><h2>مؤشرات التسليم والتنبيهات</h2><span>{metrics ? 'آخر تحديث: ' + date(metrics.generatedAt) : 'جارٍ تحميل المؤشرات…'}</span></div>
+        <div className="panel-heading"><h2>مؤشرات التسليم والتنبيهات</h2><label>الفترة <select value={metricsWindow} onChange={event => setMetricsWindow(Number(event.target.value))}><option value={15}>15 دقيقة</option><option value={60}>ساعة</option><option value={360}>6 ساعات</option><option value={1440}>24 ساعة</option><option value={10080}>7 أيام</option></select></label><span>{metrics ? 'آخر تحديث: ' + date(metrics.generatedAt) : 'جارٍ تحميل المؤشرات…'}</span></div>
         <div className="notification-detail-grid">
           <article><small>محاولات آخر {metrics?.delivery.windowMinutes ?? 60} دقيقة</small><strong>{metrics?.delivery.attempts ?? '—'}</strong></article>
           <article><small>محاولات ناجحة</small><strong>{metrics?.delivery.succeeded ?? '—'}</strong></article>
