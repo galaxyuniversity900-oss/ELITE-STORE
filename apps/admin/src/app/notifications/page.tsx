@@ -37,6 +37,7 @@ type Notification = {
   deliveryEvents: DeliveryEvent[];
 };
 type PageResult = { items: Notification[]; total: number; page: number; limit: number; pages: number };
+type MetricsResult = { generatedAt: string; queue: { total: number; pending: number; processing: number; sent: number; dead: number }; delivery: { windowMinutes: number; attempts: number; succeeded: number; failed: number; failureRatePercent: number }; alerts: Array<{ code: string; severity: 'warning' | 'critical'; count?: number; message: string }> };
 
 const statusLabels: Record<string, string> = {
   PENDING: 'في الانتظار',
@@ -91,6 +92,8 @@ export default function NotificationCenterPage() {
   const [channel, setChannel] = useState('');
   const [page, setPage] = useState(1);
   const [result, setResult] = useState<PageResult | null>(null);
+  const [metrics, setMetrics] = useState<MetricsResult | null>(null);
+  const [autoRefresh, setAutoRefresh] = useState(true);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
@@ -101,6 +104,21 @@ export default function NotificationCenterPage() {
     Accept: 'application/json',
     Authorization: token ? `Bearer ${token}` : '',
   }), [token]);
+
+  const loadMetrics = useCallback(async () => {
+    if (!token) return;
+    try {
+      const response = await fetch(`${API}/admin/notifications/metrics?windowMinutes=60`, {
+        headers: requestHeaders,
+        cache: 'no-store',
+      });
+      const data = await response.json().catch(() => null);
+      if (!response.ok) throw new Error(data?.message ?? `تعذر تحميل مؤشرات الإشعارات (${response.status})`);
+      setMetrics(data as MetricsResult);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'تعذر تحميل مؤشرات الإشعارات');
+    }
+  }, [token, requestHeaders]);
 
   const loadNotifications = useCallback(async (silent = false) => {
     if (!token) return;
@@ -136,8 +154,20 @@ export default function NotificationCenterPage() {
   }, []);
 
   useEffect(() => {
-    if (token) void loadNotifications();
-  }, [token, loadNotifications]);
+    if (token) {
+      void loadNotifications();
+      void loadMetrics();
+    }
+  }, [token, loadNotifications, loadMetrics]);
+
+  useEffect(() => {
+    if (!token || !autoRefresh) return;
+    const timer = window.setInterval(() => {
+      void loadNotifications(true);
+      void loadMetrics();
+    }, 30000);
+    return () => window.clearInterval(timer);
+  }, [token, autoRefresh, loadNotifications, loadMetrics]);
 
   async function login(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -190,10 +220,34 @@ export default function NotificationCenterPage() {
     }
   }
 
+  function exportCsv() {
+    const columns = ['order', 'event', 'channel', 'recipient', 'processing_status', 'provider_status', 'attempts', 'created_at', 'last_error'];
+    const rows = items.map(item => [
+      item.order?.orderNumber ?? item.orderId,
+      item.eventType,
+      item.channel,
+      item.recipient ?? '',
+      item.status,
+      item.providerStatus ?? '',
+      String(item.attempts) + '/' + String(item.maxAttempts),
+      item.createdAt,
+      item.lastError ?? '',
+    ]);
+    const csv = [columns, ...rows].map(row => row.map(value => '"' + String(value).replace(/"/g, '""') + '"').join(',')).join('\r\n');
+    const blob = new Blob(['\uFEFF', csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'mes-store-notifications-page-' + page + '.csv';
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
   function logout() {
     window.sessionStorage.removeItem('mes_admin_token');
     setToken('');
     setResult(null);
+    setMetrics(null);
     setSelectedId(null);
     setPassword('');
   }
@@ -232,7 +286,9 @@ export default function NotificationCenterPage() {
         </div>
         <div className="notification-header-actions">
           <a className="secondary notification-link" href="/">لوحة الإدارة</a>
-          <button className="secondary" onClick={() => void loadNotifications()}>تحديث السجل</button>
+          <button className="secondary" onClick={() => { void loadNotifications(); void loadMetrics(); }}>تحديث البيانات</button>
+          <button className="secondary" onClick={() => setAutoRefresh(value => !value)} aria-pressed={autoRefresh}>{autoRefresh ? 'التحديث التلقائي: يعمل' : 'التحديث التلقائي: متوقف'}</button>
+          <button className="secondary" onClick={exportCsv} disabled={!items.length}>تصدير CSV</button>
           <button className="secondary" onClick={logout}>تسجيل الخروج</button>
         </div>
       </header>
@@ -240,6 +296,22 @@ export default function NotificationCenterPage() {
       {notice && <p className="notification-notice" role="status">{notice}</p>}
       {error && <p className="error" role="alert">{error}</p>}
 
+      <section className="notification-stats" aria-label="مؤشرات تشغيل الإشعارات">
+        <article><small>إجمالي قائمة الانتظار</small><strong>{metrics?.queue.total ?? '—'}</strong></article>
+        <article><small>بانتظار الإرسال</small><strong>{metrics?.queue.pending ?? '—'}</strong></article>
+        <article><small>قيد الإرسال</small><strong>{metrics?.queue.processing ?? '—'}</strong></article>
+        <article><small>فشل نهائي</small><strong className={metrics?.queue.dead ? 'metric-danger' : ''}>{metrics?.queue.dead ?? '—'}</strong></article>
+      </section>
+      <section className="panel notification-metrics-panel">
+        <div className="panel-heading"><h2>مؤشرات التسليم والتنبيهات</h2><span>{metrics ? 'آخر تحديث: ' + date(metrics.generatedAt) : 'جارٍ تحميل المؤشرات…'}</span></div>
+        <div className="notification-detail-grid">
+          <article><small>محاولات آخر {metrics?.delivery.windowMinutes ?? 60} دقيقة</small><strong>{metrics?.delivery.attempts ?? '—'}</strong></article>
+          <article><small>محاولات ناجحة</small><strong>{metrics?.delivery.succeeded ?? '—'}</strong></article>
+          <article><small>محاولات فاشلة</small><strong>{metrics?.delivery.failed ?? '—'}</strong></article>
+          <article><small>معدل الفشل</small><strong className={metrics?.delivery.failureRatePercent && metrics.delivery.failureRatePercent >= 10 ? 'metric-danger' : ''}>{metrics ? metrics.delivery.failureRatePercent + '%' : '—'}</strong></article>
+        </div>
+        {metrics?.alerts.length ? <div className="notification-error-detail"><strong>تنبيهات تشغيلية</strong>{metrics.alerts.map(alert => <p key={alert.code}>{alert.severity === 'critical' ? 'حرج' : 'تحذير'} · {alert.message}{alert.count !== undefined ? ' (' + alert.count + ')' : ''}</p>)}</div> : <p className="notification-notice">لا توجد تنبيهات تشغيلية وفق حدود المراقبة الحالية.</p>}
+      </section>
       <section className="notification-stats" aria-label="ملخص النتائج الحالية">
         <article><small>إجمالي النتائج المطابقة</small><strong>{result?.total ?? '—'}</strong></article>
         <article><small>سجلات الصفحة الحالية</small><strong>{items.length}</strong></article>
