@@ -69,7 +69,7 @@ export class NotificationWebhookController {
     for (const item of statuses) {
       if (!item || typeof item.id !== 'string' || item.id.length < 1 || item.id.length > 512 ||
           typeof item.status !== 'string' || !acceptedStatuses.has(item.status) ||
-          typeof item.timestamp !== 'string' || !/^\\d{1,12}$/.test(item.timestamp) ||
+          typeof item.timestamp !== 'string' || !/^[0-9]{1,12}$/.test(item.timestamp) ||
           (item.errors !== undefined && (!Array.isArray(item.errors) || item.errors.length > 20))) {
         throw new BadRequestException('Malformed or unsupported WhatsApp status event');
       }
