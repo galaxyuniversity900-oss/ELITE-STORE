@@ -37,6 +37,8 @@ jobs:
           name: security-audit-package-lock
           path: package-lock.json
           if-no-files-found: error
+      - name: Verify reproducible clean install
+        run: npm ci --no-audit --no-fund
       - name: Audit dependency vulnerabilities
         run: npm audit --audit-level=high
       - name: Validate workspace and store configuration
