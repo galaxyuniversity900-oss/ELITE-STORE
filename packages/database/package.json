@@ -11,7 +11,7 @@
     "validate": "prisma validate --schema=../../prisma/schema.prisma"
   },
   "dependencies": {
-    "@prisma/client": "6.19.0"
+    "@prisma/client": "6.19.3"
   },
   "devDependencies": {
     "typescript": "5.9.3"
