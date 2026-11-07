@@ -493,7 +493,7 @@ export class NotificationOutboxService implements OnModuleInit, OnModuleDestroy 
     dedupeKey: string,
   ): Promise<{ messageId: string; httpStatus: number }> {
     const targetRecipient = recipient || (channel === NotificationChannel.WHATSAPP
-      ? (process.env.WHATSAPP_ORDER_RECIPIENT ?? '201558309605').replace(/\D/g, '')
+      ? process.env.WHATSAPP_ORDER_RECIPIENT?.replace(/\D/g, '') || null
       : process.env.ORDER_NOTIFICATION_EMAIL?.trim() || null);
     if (!targetRecipient) throw new DeliveryError('recipient_not_configured', false);
 
