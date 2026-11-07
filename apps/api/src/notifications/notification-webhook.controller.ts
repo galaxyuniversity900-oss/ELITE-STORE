@@ -53,7 +53,10 @@ export class NotificationWebhookController {
     }
     const statuses: WhatsAppStatus[] = [];
     for (const entry of body.entry) {
-      for (const change of entry?.changes ?? []) {
+      if (!Array.isArray(entry?.changes) || entry.changes.length > 100) {
+        throw new BadRequestException('Malformed WhatsApp change payload');
+      }
+      for (const change of entry.changes) {
         const incoming = change?.value?.statuses;
         if (incoming !== undefined && !Array.isArray(incoming)) {
           throw new BadRequestException('Malformed WhatsApp status payload');
@@ -64,13 +67,18 @@ export class NotificationWebhookController {
     if (statuses.length > 100) throw new BadRequestException('Too many WhatsApp status events in one webhook');
     const acceptedStatuses = new Set(['sent', 'delivered', 'read', 'failed']);
     for (const item of statuses) {
-      if (!item || typeof item.id !== 'string' || item.id.length > 512 ||
-          typeof item.status !== 'string' || !acceptedStatuses.has(item.status)) {
+      if (!item || typeof item.id !== 'string' || item.id.length < 1 || item.id.length > 512 ||
+          typeof item.status !== 'string' || !acceptedStatuses.has(item.status) ||
+          typeof item.timestamp !== 'string' || !/^\\d{1,12}$/.test(item.timestamp) ||
+          (item.errors !== undefined && (!Array.isArray(item.errors) || item.errors.length > 20))) {
         throw new BadRequestException('Malformed or unsupported WhatsApp status event');
       }
       const timestamp = Number(item.timestamp);
-      const occurredAt = Number.isFinite(timestamp) ? new Date(timestamp * 1000) : new Date();
-      const eventId = `${item.id}:${item.status}:${item.timestamp ?? occurredAt.getTime()}`;
+      if (!Number.isSafeInteger(timestamp) || timestamp <= 0 || !Number.isFinite(new Date(timestamp * 1000).getTime())) {
+        throw new BadRequestException('Invalid WhatsApp event timestamp');
+      }
+      const occurredAt = new Date(timestamp * 1000);
+      const eventId = `${item.id}:${item.status}:${item.timestamp}`;
       const metadata = item.errors?.length
         ? { errorCodes: item.errors.map((error) => error.code).filter(Boolean) }
         : undefined;
@@ -114,14 +122,17 @@ export class NotificationWebhookController {
         typeof eventId !== 'string' || !eventId || eventId.length > 256 || !status) {
       throw new BadRequestException('Unsupported or malformed Resend event');
     }
-    const eventTime = body?.created_at ? new Date(body.created_at) : new Date();
+    const eventTime = new Date(body?.created_at);
+    if (!body?.created_at || Number.isNaN(eventTime.getTime())) {
+      throw new BadRequestException('Invalid Resend event timestamp');
+    }
     const recorded = await this.outbox.recordProviderStatus(
       NotificationChannel.EMAIL,
       'resend',
       emailId,
       status,
       eventId,
-      Number.isNaN(eventTime.getTime()) ? new Date() : eventTime,
+      eventTime,
       { eventType } as Prisma.InputJsonValue,
     );
     if (!recorded.recorded && recorded.reason === 'message_not_found') {
