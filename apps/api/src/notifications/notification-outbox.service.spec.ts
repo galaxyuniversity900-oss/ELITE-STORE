@@ -8,6 +8,7 @@ describe('NotificationOutboxService', () => {
       updateMany: jest.fn(),
       findUnique: jest.fn(),
       findFirst: jest.fn(),
+      groupBy: jest.fn(),
       update: jest.fn(),
     },
     notificationDeliveryAttempt: {
@@ -22,6 +23,38 @@ describe('NotificationOutboxService', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     prisma.$transaction.mockImplementation((operations: unknown[]) => Promise.all(operations as Promise<unknown>[]));
+  });
+
+  it('returns queue, delivery and actionable alert metrics for administrators', async () => {
+    prisma.notificationOutbox.groupBy.mockResolvedValue([
+      { status: NotificationStatus.PENDING, _count: { _all: 3 } },
+      { status: NotificationStatus.SENT, _count: { _all: 7 } },
+      { status: NotificationStatus.DEAD, _count: { _all: 2 } },
+    ]);
+    prisma.notificationDeliveryAttempt.groupBy = jest.fn().mockResolvedValue([
+      { status: 'SUCCEEDED', _count: { _all: 8 } },
+      { status: 'FAILED', _count: { _all: 2 } },
+    ]);
+    prisma.notificationOutbox.findFirst.mockResolvedValue({
+      createdAt: new Date(Date.now() - 15 * 60 * 1000),
+    });
+
+    const service = new NotificationOutboxService(prisma as never);
+    const result = await service.getMetrics(60);
+
+    expect(result.queue).toEqual({ total: 12, pending: 3, processing: 0, sent: 7, dead: 2 });
+    expect(result.delivery).toMatchObject({
+      windowMinutes: 60,
+      attempts: 10,
+      succeeded: 8,
+      failed: 2,
+      failureRatePercent: 20,
+    });
+    expect(result.alerts.map((alert) => alert.code)).toEqual([
+      'dead_notifications',
+      'pending_backlog',
+      'elevated_failure_rate',
+    ]);
   });
 
   it('enqueues WhatsApp and email records in the order transaction with stable dedupe keys', async () => {
