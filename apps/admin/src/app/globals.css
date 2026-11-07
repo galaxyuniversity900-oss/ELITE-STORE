@@ -103,3 +103,5 @@ th{color:var(--muted);font-weight:500}
 .admin-notifications-link{display:inline-flex;margin-top:8px;color:var(--accent);font-size:13px;border-bottom:1px solid #6e613e;padding-bottom:3px}.admin-notifications-link:hover{color:var(--text)}
 
 .notification-metrics-panel{margin:18px 0}.notification-metrics-panel .notification-detail-grid{margin:16px 0}.notification-metrics-panel .notification-error-detail p{font-family:inherit;line-height:1.8}
+
+.notification-refresh-control{display:inline-flex;align-items:center;gap:8px;color:var(--muted);font-size:12px}.notification-refresh-control select,.notification-metrics-panel select{min-height:38px;padding:8px 10px;background:#10120f;color:var(--text);border:1px solid var(--line);border-radius:4px}.notification-header-actions .notification-refresh-control{padding:0 6px}
