@@ -15,7 +15,7 @@ describe('AuthRateLimitGuard', () => {
 
   it('keeps endpoint buckets separate', () => {
     const guard = new AuthRateLimitGuard();
-    const request = { path: '/api/auth/login', ip: '192.0.2.11', socket: {} };
+    const request: { path: string; ip: string; socket: object } = { path: '/api/auth/login', ip: '192.0.2.11', socket: {} };
     const context = { switchToHttp: () => ({ getRequest: () => request }) } as never;
     for (let index = 0; index < 10; index += 1) guard.canActivate(context);
     request.path = '/api/auth/register';
