@@ -115,4 +115,25 @@ describe('NotificationWebhookController', () => {
     )).rejects.toBeInstanceOf(UnauthorizedException);
     expect(outbox.recordProviderStatus).not.toHaveBeenCalled();
   });
+
+  it('rejects unsupported WhatsApp status values after signature verification', async () => {
+    const body = { entry: [{ changes: [{ value: { statuses: [{ id: 'wamid.123', status: 'forged-status', timestamp: '1793923200' }] } }] }] };
+    const rawBody = Buffer.from(JSON.stringify(body));
+    const signature = `sha256=${createHmac('sha256', process.env.WHATSAPP_APP_SECRET!)
+      .update(rawBody).digest('hex')}`;
+    await expect(controller.receiveWhatsApp({ rawBody } as never, signature, body))
+      .rejects.toThrow('Malformed or unsupported WhatsApp status event');
+    expect(outbox.recordProviderStatus).not.toHaveBeenCalled();
+  });
+
+  it('rejects oversized WhatsApp event batches', async () => {
+    const body = { entry: Array.from({ length: 101 }, () => ({})) };
+    const rawBody = Buffer.from(JSON.stringify(body));
+    const signature = `sha256=${createHmac('sha256', process.env.WHATSAPP_APP_SECRET!)
+      .update(rawBody).digest('hex')}`;
+    await expect(controller.receiveWhatsApp({ rawBody } as never, signature, body))
+      .rejects.toThrow('Malformed WhatsApp webhook payload');
+    expect(outbox.recordProviderStatus).not.toHaveBeenCalled();
+  });
+
 });
