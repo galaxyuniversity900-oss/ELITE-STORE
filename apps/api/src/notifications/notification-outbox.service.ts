@@ -144,6 +144,80 @@ export class NotificationOutboxService implements OnModuleInit, OnModuleDestroy 
     }
   }
 
+  async getMetrics(windowMinutes = 60) {
+    const since = new Date(Date.now() - windowMinutes * 60 * 1000);
+    const [queueGroups, attemptGroups, oldestPending] = await Promise.all([
+      this.prisma.notificationOutbox.groupBy({
+        by: ['status'],
+        _count: { _all: true },
+      }),
+      this.prisma.notificationDeliveryAttempt.groupBy({
+        by: ['status'],
+        where: { startedAt: { gte: since } },
+        _count: { _all: true },
+      }),
+      this.prisma.notificationOutbox.findFirst({
+        where: { status: NotificationStatus.PENDING },
+        orderBy: { createdAt: 'asc' },
+        select: { createdAt: true },
+      }),
+    ]);
+
+    const queueCounts = Object.fromEntries(
+      queueGroups.map((group) => [group.status, group._count._all]),
+    ) as Record<string, number>;
+    const attemptCounts = Object.fromEntries(
+      attemptGroups.map((group) => [group.status, group._count._all]),
+    ) as Record<string, number>;
+
+    const pending = queueCounts[NotificationStatus.PENDING] ?? 0;
+    const processing = queueCounts[NotificationStatus.PROCESSING] ?? 0;
+    const sent = queueCounts[NotificationStatus.SENT] ?? 0;
+    const dead = queueCounts[NotificationStatus.DEAD] ?? 0;
+    const succeeded = attemptCounts[NotificationAttemptStatus.SUCCEEDED] ?? 0;
+    const failed = attemptCounts[NotificationAttemptStatus.FAILED] ?? 0;
+    const completedAttempts = succeeded + failed;
+    const failureRatePercent = completedAttempts
+      ? Number(((failed / completedAttempts) * 100).toFixed(2))
+      : 0;
+    const alerts: Array<{ code: string; severity: 'warning' | 'critical'; count?: number; message: string }> = [];
+
+    if (dead > 0) {
+      alerts.push({
+        code: 'dead_notifications',
+        severity: 'critical',
+        count: dead,
+        message: 'There are notifications in terminal failure state.',
+      });
+    }
+    if (pending > 0 && oldestPending?.createdAt) {
+      const oldestAgeMinutes = (Date.now() - oldestPending.createdAt.getTime()) / 60000;
+      if (oldestAgeMinutes >= 10) {
+        alerts.push({
+          code: 'pending_backlog',
+          severity: 'warning',
+          count: pending,
+          message: 'The oldest pending notification has been queued for at least 10 minutes.',
+        });
+      }
+    }
+    if (completedAttempts >= 10 && failureRatePercent >= 10) {
+      alerts.push({
+        code: 'elevated_failure_rate',
+        severity: 'warning',
+        count: failed,
+        message: 'Provider delivery failures are elevated in the selected time window.',
+      });
+    }
+
+    return {
+      generatedAt: new Date().toISOString(),
+      queue: { total: pending + processing + sent + dead, pending, processing, sent, dead },
+      delivery: { windowMinutes, attempts: completedAttempts, succeeded, failed, failureRatePercent },
+      alerts,
+    };
+  }
+
   async retryDeadNotification(id: string, actorId: string) {
     const current = await this.prisma.notificationOutbox.findUnique({
       where: { id },
