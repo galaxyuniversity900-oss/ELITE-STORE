@@ -1,4 +1,4 @@
-import { TooManyRequestsException } from '@nestjs/common';
+import { HttpException, HttpStatus } from '@nestjs/common';
 import { AuthRateLimitGuard } from './auth-rate-limit.guard';
 
 describe('AuthRateLimitGuard', () => {
@@ -10,7 +10,7 @@ describe('AuthRateLimitGuard', () => {
     for (let index = 0; index < 10; index += 1) {
       expect(guard.canActivate(context)).toBe(true);
     }
-    expect(() => guard.canActivate(context)).toThrow(TooManyRequestsException);
+    expect(() => guard.canActivate(context)).toThrow(new HttpException('Too many authentication attempts. Try again later.', HttpStatus.TOO_MANY_REQUESTS));
   });
 
   it('keeps endpoint buckets separate', () => {
