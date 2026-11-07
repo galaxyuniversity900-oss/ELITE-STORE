@@ -8,7 +8,7 @@
 
 ## Executive result
 
-The source review found security-hardening gaps and applied targeted fixes on this branch. This is **not a production security certification**. The latest CI run observed before these changes passed, but the new commits require a fresh CI run. Real provider authentication and delivery were not attempted because production credentials were not supplied or fabricated.
+The source review found security-hardening gaps and applied targeted fixes on this branch. This is **not a production security certification**. CI run #574 on commit `93de099` completed successfully across dependency audit, type-check, tests, application builds, API runtime, Docker Compose validation, full Docker stack startup, API/web/admin readiness, Notification Center route and metrics smoke tests, and existing store security checks. Additional webhook hardening and CI assertions are now committed and require their own latest-head run. Real provider authentication and delivery were not attempted because production credentials were not supplied or fabricated.
 
 ## Changes applied in this audit
 
@@ -21,20 +21,21 @@ The source review found security-hardening gaps and applied targeted fixes on th
 2. **Webhook input validation**
    - Meta WhatsApp callbacks now require an entries array, cap entries and status events at 100, validate message IDs, and accept only documented delivery statuses handled by this service: `sent`, `delivered`, `read`, and `failed`.
    - Resend event IDs and provider message IDs are type-checked and length-bounded before persistence.
-   - Added negative tests for unsupported Meta statuses and oversized callback batches.
+   - Added negative tests for unsupported Meta statuses, oversized callback batches, malformed timestamps, oversized raw bodies, malformed error metadata, and invalid Resend timestamps.
+   - Both provider webhook bodies are capped at 1 MiB; Meta signatures require exactly 64 hexadecimal characters; Resend event IDs, timestamp headers, and signature header lengths are bounded.
    - Existing HMAC/Svix signature verification remains required before event processing.
 
-4. **Admin browser security headers**
+3. **Admin browser security headers**
    - Added a Content Security Policy to the admin application with `default-src 'self'`, `object-src 'none'`, `frame-ancestors 'none'`, restricted form/base origins, and explicit image/font/connect sources.
    - Added `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, and `Permissions-Policy` headers.
    - The CSP retains `unsafe-inline` for Next.js hydration compatibility; a nonce-based CSP would provide stronger script protection and remains a hardening opportunity.
 
-3. **Dependency audit gate and remediation**
+4. **Dependency audit gate and remediation**
    - Added `npm audit --audit-level=high` to the CI workflow after dependency installation. High and critical dependency advisories fail the workflow.
    - The initial scan reported 31 advisories (11 high). After the first compatibility-preserving upgrades, a subsequent scan reported 27 advisories (5 high); the remaining high findings included `deepmerge-ts` and `multer`.
    - Updated NestJS runtime packages to 11.2.8, Nest CLI to 11.0.24, Nest schematics to 11.1.0, Jest to 30.5.2, Turborepo to 2.11.10, and Prisma / Prisma Client to 6.19.3.
    - Added npm overrides for `deepmerge-ts` 8.0.2 and `multer` 2.5.0, the patched versions for the remaining high advisories observed in the audit output.
-   - The scan after these final overrides is still pending; no zero-vulnerability claim is made.
+   - CI run #574 completed `npm audit --audit-level=high` successfully after these overrides. This confirms no High/Critical advisories in the resolved tree for that run; it does not mean there are zero Low/Moderate advisories.
 
 ## Verified controls observed in source
 
@@ -55,7 +56,7 @@ The source review found security-hardening gaps and applied targeted fixes on th
 | Priority | Finding | Status / required action |
 |---|---|---|
 | High before multi-replica exposure | The new authentication rate limiter is process-local. | Keep it as defence-in-depth and configure a shared API gateway/WAF/Redis-backed limit before running multiple API replicas. |
-| High before public production launch | No dependency lockfile was present on the reviewed branch. | Commit a reviewed npm lockfile and use `npm ci` for reproducible dependency resolution. The new audit gate checks the dependency tree resolved by CI but does not replace lockfile integrity. |
+| High before public production launch | A committed npm lockfile is still being generated from the CI-resolved dependency tree. | The latest CI workflow now generates `package-lock.json` and exports it as a workflow artifact for review and commit. Switch the install step to `npm ci` once the artifact is validated and committed. |
 | High before live provider operation | No real Meta/Resend secrets or verified sender configuration were available for this audit. | Configure secrets in the deployment secret manager; verify provider webhook URLs and signatures using provider-issued test events. No live send was attempted. |
 | Medium | API listens on `0.0.0.0` inside its container. | Keep host bindings loopback-only unless a hardened reverse proxy, TLS, firewall rules, and trusted proxy configuration are in place. |
 | Medium | Admin notification views expose recipients, provider IDs, order references, and operational error details to both ADMIN and SUPER_ADMIN roles. | Confirm this data scope is appropriate for every ADMIN user; use narrower permissions and retention controls if operational roles should not see customer contact data. |
@@ -67,9 +68,9 @@ The source review found security-hardening gaps and applied targeted fixes on th
 
 ## CI verification status
 
-An audit-remediation run (#568, commit `18692ad`) reported PASS for `npm audit --audit-level=high`, workspace validation, type-check, automated tests, all application builds, API runtime entrypoint, and Docker Compose validation. Its Docker stack startup and readiness steps were still running when this report was last updated. The subsequent admin CSP/header change has a newer CI run in progress; do not treat the older run as final verification of that change.
+CI run #574 on commit `93de099` completed successfully, including `npm audit --audit-level=high`, type-check, automated tests, all application builds, API runtime, Docker Compose validation, full Docker stack startup, API/web/admin readiness, Notification Center metrics route smoke, and the existing photography workflow security check.
 
-The audit commits add new guard and webhook tests plus the dependency audit step. The dependency remediation commits have triggered newer CI runs; their latest result remains **pending until GitHub Actions completes against the final head SHA**. Do not treat earlier failed audit runs as proof of the final state.
+The subsequent webhook body/header validation, webhook negative tests, admin response-header assertions, and lockfile-artifact generation are newer commits. Their latest-head CI is **pending** until GitHub Actions completes against the final head SHA. The workflow artifact containing the generated lockfile must be reviewed before committing it and switching to `npm ci`.
 
 ## Secret handling
 
@@ -78,7 +79,8 @@ No production secrets were generated, inserted, echoed, or committed. Do not pas
 ## Audit conclusion
 
 **Source review:** targeted hardening applied.  
-**New tests:** added; awaiting CI execution.  
-**Dependency vulnerability scan:** added as a CI gate; awaiting execution.  
+**New tests:** added; earlier guard/webhook tests passed in #574; newest webhook validation tests await latest-head CI.  
+**Dependency vulnerability scan:** PASS in #574 for High/Critical threshold; lower severity advisories may remain.  
+**Docker/runtime readiness:** PASS in #574.  
 **Live provider verification:** not performed; requires genuine provider credentials and a controlled test recipient.  
 **Production approval:** withheld until the residual deployment requirements above are addressed and the new CI run passes.
