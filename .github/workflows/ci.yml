@@ -106,9 +106,10 @@ jobs:
             code=$(curl --silent --show-error -o /tmp/rate-limit-response.json -w '%{http_code}' -X POST http://localhost:4000/api/auth/login -H 'Content-Type: application/json' -d '{"email":"admin@example.test","password":"intentionally-wrong-password"}')
             test "$code" = "401"
           done
-          rate_limit_code=$(curl --silent --show-error -o /tmp/rate-limit-response.json -w '%{http_code}' -X POST http://localhost:4000/api/auth/login -H 'Content-Type: application/json' -d '{"email":"admin@example.test","password":"intentionally-wrong-password"}')
+          rate_limit_code=$(curl --silent --show-error -D /tmp/rate-limit-headers.txt -o /tmp/rate-limit-response.json -w '%{http_code}' -X POST http://localhost:4000/api/auth/login -H 'Content-Type: application/json' -d '{"email":"admin@example.test","password":"intentionally-wrong-password"}')
           test "$rate_limit_code" = "429"
-          echo "Distributed authentication rate-limit smoke test: OK (HTTP 429)"
+          grep -qi "^retry-after:" /tmp/rate-limit-headers.txt
+          echo "Distributed authentication rate-limit smoke test: OK (HTTP 429 + Retry-After)"
           if [ -s scripts/verify-notification-outbox.mjs ]; then
             order_id=$(node scripts/verify-notification-outbox.mjs)
             test -n "$order_id"
@@ -126,6 +127,10 @@ jobs:
           BOOTSTRAP_ADMIN_EMAIL: admin@example.test
           BOOTSTRAP_ADMIN_PASSWORD: ci-only-bootstrap-password-12345
         run: npm run qa:commerce:e2e
+      - name: Verify order PII retention dry-run against disposable database
+        env:
+          ORDER_PII_RETENTION_DAYS: '365'
+        run: npm run privacy:orders:retention
       - name: Run storefront load test (k6)
         run: npm run qa:storefront:load
       - name: Verify PostgreSQL backup and restore
