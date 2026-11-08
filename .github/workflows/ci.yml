@@ -2,9 +2,9 @@ name: MES STORE CI
 
 on:
   push:
-    branches: [main, completion/storefront-experience]
+    branches: [main, completion/storefront-experience, notifications/transactional-outbox]
   pull_request:
-    branches: [main, completion/storefront-experience]
+    branches: [main, completion/storefront-experience, notifications/transactional-outbox]
 
 permissions:
   contents: read
