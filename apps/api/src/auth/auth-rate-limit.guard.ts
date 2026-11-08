@@ -1,5 +1,6 @@
 import { CanActivate, ExecutionContext, HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { createHash } from 'node:crypto';
+import { PrismaService } from '../prisma/prisma.service';
 
 type AuthRequest = {
   ip?: string;
@@ -8,27 +9,19 @@ type AuthRequest = {
   body?: { email?: unknown };
   socket?: { remoteAddress?: string };
 };
-
 type AuthResponse = { setHeader(name: string, value: string): void };
-type Bucket = { count: number; resetAt: number };
+type BucketRow = { count: number; resetAt: Date };
 
-/**
- * Process-local emergency protection for public authentication endpoints.
- *
- * Production deployments with multiple API replicas MUST also enforce a
- * shared limit at the reverse proxy/API gateway (or a shared Redis store).
- * This guard deliberately does not trust X-Forwarded-For.
- */
 @Injectable()
 export class AuthRateLimitGuard implements CanActivate {
-  private readonly buckets = new Map<string, Bucket>();
   private checks = 0;
 
-  canActivate(context: ExecutionContext): boolean {
+  constructor(private readonly prisma: PrismaService) {}
+
+  async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<AuthRequest>();
     const response = context.switchToHttp().getResponse<AuthResponse>();
     const path = request.path ?? request.originalUrl ?? '';
-
     const ip = request.ip ?? request.socket?.remoteAddress ?? 'unknown';
     const client = this.digest(ip);
     const now = Date.now();
@@ -37,16 +30,12 @@ export class AuthRateLimitGuard implements CanActivate {
       const email = typeof request.body?.email === 'string'
         ? request.body.email.trim().toLowerCase().slice(0, 254)
         : 'invalid';
-      const identity = this.digest(`${ip}\u0000${email}`);
-      const ipResult = this.consume(`login:ip:${client}`, 30, 15 * 60 * 1000, now);
-      const identityResult = this.consume(`login:identity:${identity}`, 5, 15 * 60 * 1000, now);
+      const identity = this.digest(ip + '\u0000' + email);
+      const ipResult = await this.consume('login:ip:' + client, 30, 15 * 60 * 1000, now);
+      const identityResult = await this.consume('login:identity:' + identity, 5, 15 * 60 * 1000, now);
       this.sweepIfNeeded(now);
-
       if (!ipResult.allowed || !identityResult.allowed) {
-        const resetAt = Math.max(
-          ipResult.allowed ? 0 : ipResult.resetAt,
-          identityResult.allowed ? 0 : identityResult.resetAt,
-        );
+        const resetAt = Math.max(ipResult.allowed ? 0 : ipResult.resetAt, identityResult.allowed ? 0 : identityResult.resetAt);
         response.setHeader('Retry-After', String(Math.max(1, Math.ceil((resetAt - now) / 1000))));
         throw new HttpException('Too many authentication attempts. Try again later.', HttpStatus.TOO_MANY_REQUESTS);
       }
@@ -54,41 +43,40 @@ export class AuthRateLimitGuard implements CanActivate {
     }
 
     if (path.endsWith('/register')) {
-      const result = this.consume(`register:ip:${client}`, 3, 60 * 60 * 1000, now);
+      const result = await this.consume('register:ip:' + client, 3, 60 * 60 * 1000, now);
       this.sweepIfNeeded(now);
       if (!result.allowed) {
         response.setHeader('Retry-After', String(Math.max(1, Math.ceil((result.resetAt - now) / 1000))));
         throw new HttpException('Too many registration attempts. Try again later.', HttpStatus.TOO_MANY_REQUESTS);
       }
     }
-
     return true;
   }
 
-  private consume(key: string, limit: number, windowMs: number, now: number) {
-    const current = this.buckets.get(key);
-    if (!current || current.resetAt <= now) {
-      const next = { count: 1, resetAt: now + windowMs };
-      this.buckets.set(key, next);
-      return { allowed: true, resetAt: next.resetAt };
-    }
-    if (current.count >= limit) return { allowed: false, resetAt: current.resetAt };
-    current.count += 1;
-    return { allowed: true, resetAt: current.resetAt };
+  private async consume(key: string, limit: number, windowMs: number, now: number) {
+    const resetAt = new Date(now + windowMs);
+    const nowDate = new Date(now);
+    const query = [
+      'INSERT INTO "api_rate_limit_buckets" ("id", "count", "resetAt", "updatedAt")',
+      'VALUES ($1, 1, $2, NOW())',
+      'ON CONFLICT ("id") DO UPDATE SET',
+      '"count" = CASE WHEN "api_rate_limit_buckets"."resetAt" <= $3 THEN 1 ELSE "api_rate_limit_buckets"."count" + 1 END,',
+      '"resetAt" = CASE WHEN "api_rate_limit_buckets"."resetAt" <= $3 THEN $4 ELSE "api_rate_limit_buckets"."resetAt" END,',
+      '"updatedAt" = NOW()',
+      'RETURNING "count", "resetAt"',
+    ].join('\n');
+    const rows = await this.prisma.$queryRawUnsafe<BucketRow[]>(query, key, resetAt, nowDate, resetAt);
+    const row = rows[0];
+    if (!row) throw new Error('Rate-limit storage returned no bucket');
+    return { allowed: row.count <= limit, resetAt: row.resetAt.getTime() };
   }
 
   private sweepIfNeeded(now: number) {
     this.checks += 1;
-    if (this.checks % 128 !== 0 && this.buckets.size < 10_000) return;
-
-    for (const [key, bucket] of this.buckets) {
-      if (bucket.resetAt <= now) this.buckets.delete(key);
-    }
-    while (this.buckets.size > 10_000) {
-      const oldest = this.buckets.keys().next();
-      if (oldest.done) break;
-      this.buckets.delete(oldest.value);
-    }
+    if (this.checks % 256 !== 0) return;
+    void this.prisma.apiRateLimitBucket.deleteMany({
+      where: { resetAt: { lt: new Date(now - 24 * 60 * 60 * 1000) } },
+    }).catch(() => undefined);
   }
 
   private digest(value: string) {
