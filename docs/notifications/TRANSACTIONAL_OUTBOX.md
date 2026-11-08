@@ -19,11 +19,12 @@
 
 ## Required API environment
 
-Set these only in the API hosting secret store:
+Set these only in the API hosting secret store. Never put real credentials in `.env.example`, source control, issue comments, or logs:
 
 ### WhatsApp Cloud API
-- `WHATSAPP_ORDER_RECIPIENT` — store recipient in international digits-only format.
+- `WHATSAPP_ORDER_RECIPIENT` — explicitly configured store recipient in international digits-only format. There is no fallback recipient; blank configuration fails closed.
 - `WHATSAPP_PHONE_NUMBER_ID`
+- `WHATSAPP_BUSINESS_ACCOUNT_ID` — WhatsApp Business Account ID used to inspect the approved template before enabling live sends.
 - `WHATSAPP_ACCESS_TOKEN`
 - `WHATSAPP_API_VERSION`
 - `WHATSAPP_ORDER_TEMPLATE_NAME`
@@ -31,7 +32,7 @@ Set these only in the API hosting secret store:
 - `WHATSAPP_APP_SECRET` — Meta app secret used to verify webhook signatures.
 - `WHATSAPP_WEBHOOK_VERIFY_TOKEN` — private random verification string configured in Meta webhook setup.
 
-The approved template must contain six body text parameters, in order: order number, customer name, customer phone, total with currency, item summary, and address summary.
+The approved template must be `APPROVED`, match `WHATSAPP_ORDER_TEMPLATE_LANGUAGE`, and contain exactly six BODY text placeholders in order: order number, customer name, customer phone, total with currency, item summary, and address summary. Run `npm run notifications:providers` to query Meta template approval and Resend sender-domain verification without sending.
 
 ### Email via Resend
 - `ORDER_NOTIFICATION_EMAIL` — store inbox that receives new-order alerts.
@@ -40,6 +41,12 @@ The approved template must contain six body text parameters, in order: order num
 - `RESEND_WEBHOOK_SECRET` — signing secret for the Resend webhook endpoint.
 
 Configure Resend webhooks for the email events `email.sent`, `email.delivered`, `email.delivery_delayed`, `email.bounced`, `email.complained`, and `email.failed`.
+
+## Provider preflight and live smoke test
+
+- `npm run notifications:providers` performs read-only configuration checks against Meta and Resend. It checks required environment variables, Graph API version and phone/email formats, Meta template approval/language/six body placeholders, and the Resend sender domain verification state.
+- The command does not send messages. A real test send requires the explicit `--send-live` flag plus `NOTIFICATION_LIVE_TEST_PHONE` and `NOTIFICATION_LIVE_TEST_EMAIL`, both controlled test destinations. It sends one clearly labeled test message through each provider.
+- Never use a customer recipient for a live smoke test. Do not run the live flag until the provider preflight succeeds and the two test destinations are confirmed.
 
 ## Delivery semantics and limitations
 

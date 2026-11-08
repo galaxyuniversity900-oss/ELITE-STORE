@@ -70,7 +70,7 @@ export class NotificationOutboxService implements OnModuleInit, OnModuleDestroy 
       .join('، ')
       .slice(0, 900);
     const total = String(order.grandTotal);
-    const whatsappRecipient = (process.env.WHATSAPP_ORDER_RECIPIENT ?? '201558309605').replace(/\D/g, '') || null;
+    const whatsappRecipient = process.env.WHATSAPP_ORDER_RECIPIENT?.replace(/\D/g, '') || null;
     const emailRecipient = process.env.ORDER_NOTIFICATION_EMAIL?.trim() || null;
 
     const whatsappPayload: OutboxPayload = {
@@ -437,8 +437,8 @@ export class NotificationOutboxService implements OnModuleInit, OnModuleDestroy 
     payload: OutboxPayload,
     dedupeKey: string,
   ): Promise<{ messageId: string; httpStatus: number }> {
-    const targetRecipient = recipient || (channel === NotificationChannel.WHATSAPP
-      ? (process.env.WHATSAPP_ORDER_RECIPIENT ?? '201558309605').replace(/\D/g, '')
+    const targetRecipient = recipient?.trim() || (channel === NotificationChannel.WHATSAPP
+      ? process.env.WHATSAPP_ORDER_RECIPIENT?.replace(/[^0-9]/g, '') || null
       : process.env.ORDER_NOTIFICATION_EMAIL?.trim() || null);
     if (!targetRecipient) throw new DeliveryError('recipient_not_configured', false);
 
