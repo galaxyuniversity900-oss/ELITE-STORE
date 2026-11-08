@@ -66,7 +66,7 @@ describe('AuthRateLimitGuard shared PostgreSQL buckets', () => {
     const { prisma } = createPrisma();
     const firstReplica = new AuthRateLimitGuard(prisma as never);
     const secondReplica = new AuthRateLimitGuard(prisma as never);
-    for (let attempt = 0; attempt < 4; attempt += 1) {
+    for (let attempt = 0; attempt < 5; attempt += 1) {
       const guard = attempt % 2 === 0 ? firstReplica : secondReplica;
       expect(await guard.canActivate(context('/api/auth/login', '203.0.113.12', 'shared@example.test').execution)).toBe(true);
     }
