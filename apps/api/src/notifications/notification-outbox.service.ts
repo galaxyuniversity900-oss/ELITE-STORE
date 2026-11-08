@@ -294,8 +294,9 @@ export class NotificationOutboxService implements OnModuleInit, OnModuleDestroy 
     ]);
 
     const durations = latencySamples
-      .filter((sample) => sample.finishedAt)
-      .map((sample) => Math.max(0, sample.finishedAt.getTime() - sample.startedAt.getTime()))
+      .flatMap((sample) => sample.finishedAt
+        ? [Math.max(0, sample.finishedAt.getTime() - sample.startedAt.getTime())]
+        : [])
       .sort((a, b) => a - b);
     const percentile = (values: number[], p: number) =>
       values.length ? values[Math.min(values.length - 1, Math.ceil(values.length * p) - 1)] : null;
