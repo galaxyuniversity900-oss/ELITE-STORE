@@ -20,18 +20,18 @@ jobs:
         with:
           persist-credentials: false
       - name: Build API image
-        run: docker build --pull -f infra/docker/Dockerfile.api -t mes-store/api:\${{ github.sha }} .
+        run: docker build --pull -f infra/docker/Dockerfile.api -t mes-store/api:${{ github.sha }} .
       - name: Build storefront image
-        run: docker build --pull -f infra/docker/Dockerfile.web -t mes-store/web:\${{ github.sha }} .
+        run: docker build --pull -f infra/docker/Dockerfile.web -t mes-store/web:${{ github.sha }} .
       - name: Build admin image
-        run: docker build --pull -f infra/docker/Dockerfile.admin -t mes-store/admin:\${{ github.sha }} .
+        run: docker build --pull -f infra/docker/Dockerfile.admin -t mes-store/admin:${{ github.sha }} .
       - name: Scan API image
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25
         with:
           scan-type: image
           version: v0.76.2
           token-setup-trivy: ${{ github.token }}
-          image-ref: mes-store/api:\${{ github.sha }}
+          image-ref: mes-store/api:${{ github.sha }}
           severity: CRITICAL,HIGH
           ignore-unfixed: true
           exit-code: '1'
@@ -42,7 +42,7 @@ jobs:
           scan-type: image
           version: v0.76.2
           token-setup-trivy: ${{ github.token }}
-          image-ref: mes-store/web:\${{ github.sha }}
+          image-ref: mes-store/web:${{ github.sha }}
           severity: CRITICAL,HIGH
           ignore-unfixed: true
           exit-code: '1'
@@ -53,7 +53,7 @@ jobs:
           scan-type: image
           version: v0.76.2
           token-setup-trivy: ${{ github.token }}
-          image-ref: mes-store/admin:\${{ github.sha }}
+          image-ref: mes-store/admin:${{ github.sha }}
           severity: CRITICAL,HIGH
           ignore-unfixed: true
           exit-code: '1'
