@@ -101,8 +101,14 @@ describe('OrdersService', () => {
     const prisma = { $transaction: jest.fn((work: (client: unknown) => unknown) => work(tx)) };
     const service = new OrdersService(prisma as never);
 
-    await expect(service.checkout('session-id', 'retry-test-0001', input)).resolves.toBe(previous);
+    const whatsapp = { notifyStore: jest.fn() };
+    const retryService = new OrdersService(prisma as never, whatsapp as never);
+    await expect(retryService.checkout('session-id', 'retry-test-0001', input)).resolves.toEqual({
+      ...previous,
+      storeNotification: { sent: false, reason: 'duplicate_checkout' },
+    });
     expect(tx.order.findUnique).toHaveBeenCalledTimes(1);
+    expect(whatsapp.notifyStore).not.toHaveBeenCalled();
   });
 
 });

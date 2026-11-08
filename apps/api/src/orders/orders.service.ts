@@ -1,4 +1,5 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException, Optional } from '@nestjs/common';
+import { WhatsAppNotificationsService } from './whatsapp-notifications.service';
 import { CartStatus, Prisma, ProductStatus } from '@prisma/client';
 import { randomUUID } from 'node:crypto';
 import { PrismaService } from '../prisma/prisma.service';
@@ -6,7 +7,10 @@ import { CheckoutDto } from './orders.dto';
 
 @Injectable()
 export class OrdersService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Optional() private readonly whatsapp?: WhatsAppNotificationsService,
+  ) {}
 
   async checkout(sessionId: string, idempotencyKey: string, input: CheckoutDto, userId?: string) {
     if (!/^[A-Za-z0-9._:-]{8,128}$/.test(idempotencyKey)) {
@@ -14,7 +18,7 @@ export class OrdersService {
     }
 
     try {
-      return await this.prisma.$transaction(async (tx) => {
+      const outcome = await this.prisma.$transaction(async (tx) => {
         const previousOrder = await tx.order.findUnique({
           where: {
             checkoutSessionId_idempotencyKey: {
@@ -24,7 +28,7 @@ export class OrdersService {
           },
           include: { items: true, payments: true },
         });
-        if (previousOrder) return previousOrder;
+        if (previousOrder) return { order: previousOrder, created: false };
         const cart = await tx.cart.findUnique({
           where: { sessionId },
           include: { items: { include: { product: true }, orderBy: { createdAt: 'asc' } } },
@@ -134,8 +138,16 @@ export class OrdersService {
           data: { status: CartStatus.CONVERTED, ...(userId ? { userId } : {}) },
         });
   
-        return order;
+        return { order, created: true };
         }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+      if (outcome.created && this.whatsapp) {
+        const notification = await this.whatsapp.notifyStore(outcome.order).catch(() => ({
+          sent: false,
+          reason: 'notification_error',
+        }));
+        return { ...outcome.order, storeNotification: notification };
+      }
+      return { ...outcome.order, storeNotification: { sent: false, reason: outcome.created ? 'not_configured' : 'duplicate_checkout' } };
     } catch (error) {
       // A concurrent retry can win the unique-key race. Return its committed order.
       if (error instanceof Prisma.PrismaClientKnownRequestError && ['P2002', 'P2034'].includes(error.code)) {
@@ -148,7 +160,7 @@ export class OrdersService {
           },
           include: { items: true, payments: true },
         });
-        if (existing) return existing;
+        if (existing) return { ...existing, storeNotification: { sent: false, reason: 'duplicate_checkout' } };
       }
       throw error;
     }
