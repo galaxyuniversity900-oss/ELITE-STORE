@@ -29,7 +29,7 @@ docker compose -f "$COMPOSE_FILE" exec -T postgres pg_restore -U "$DB_USER" -d "
 REQUIRED_TABLES=(addresses orders order_items products notification_outbox notification_delivery_attempts notification_delivery_events)
 TABLES="$(psql_source -Atc "SELECT format('%I', tablename) FROM pg_tables WHERE schemaname='public' ORDER BY tablename")"
 for required in "${REQUIRED_TABLES[@]}"; do
-  if ! grep -Fxq "\"$required\"" <<< "$TABLES"; then
+  if ! grep -Fxq "$required" <<< "$TABLES"; then
     echo "REQUIRED TABLE MISSING from source backup: public.$required"
     exit 1
   fi
