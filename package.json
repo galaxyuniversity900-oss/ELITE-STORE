@@ -24,12 +24,15 @@
     "db:migrate": "prisma migrate dev --schema=prisma/schema.prisma",
     "db:migrate:deploy": "prisma migrate deploy --schema=prisma/schema.prisma",
     "notifications:providers": "node scripts/verify-notification-providers.mjs",
-    "notifications:providers:live": "node scripts/verify-notification-providers.mjs --send-live"
+    "notifications:providers:live": "node scripts/verify-notification-providers.mjs --send-live",
+    "media:build": "node scripts/product-media-pipeline.mjs --build",
+    "media:verify": "node scripts/verify-product-media-pipeline.mjs"
   },
   "devDependencies": {
     "prisma": "6.19.0",
     "turbo": "2.5.8",
-    "typescript": "5.9.3"
+    "typescript": "5.9.3",
+    "sharp": "0.35.5"
   },
   "dependencies": {
     "@prisma/client": "6.19.0"
