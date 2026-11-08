@@ -58,3 +58,11 @@
 - Configure encrypted off-site backups, PITR, immutable retention, RPO/RTO and production restore drills.
 - Perform live provider preflight and controlled test sends only after real secrets and owner-controlled test destinations are configured.
 - Complete independent external penetration testing. CI is not a penetration test or compliance certification.
+
+
+## Notification Center and operational observability follow-up
+
+- The ADMIN/SUPER_ADMIN-protected `/api/admin/notifications/metrics` endpoint now reports queue counts, stale worker leases, oldest pending age, attempt failure rate, average/P95 send latency, and threshold-based warning/critical alerts.
+- The admin `/notifications` page exposes filters, pagination, attempts, provider events, manual retry for terminal DEAD records, and live Outbox operational metrics. The admin dashboard links to this route.
+- Admin Next.js responses now include a restrictive Content-Security-Policy and security headers. CI verifies the route, CSP header, and authenticated metrics response.
+- Alerts are visible inside the authenticated admin UI only. External paging/delivery is still a deployment integration gate and is not claimed as configured.
