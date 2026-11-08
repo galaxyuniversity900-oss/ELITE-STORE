@@ -95,6 +95,13 @@ jobs:
           grep -qi "تسجيل دخول الإدارة" /tmp/admin.html
           curl --silent --show-error --fail -X POST http://localhost:4000/api/auth/login -H 'Content-Type: application/json' -d '{"email":"admin@example.test","password":"ci-only-bootstrap-password-12345"}' -o /tmp/admin-login.json
           node -e "const x=JSON.parse(require('fs').readFileSync('/tmp/admin-login.json','utf8')); if (!x.accessToken || x.user.role !== 'SUPER_ADMIN') process.exit(1); console.log('Admin authentication smoke test: OK')"
+          admin_token=$(node -e "process.stdout.write(JSON.parse(require('fs').readFileSync('/tmp/admin-login.json','utf8')).accessToken)")
+          curl --silent --show-error --fail -D /tmp/notifications-headers.txt http://localhost:3001/notifications -o /tmp/notifications.html
+          grep -q "مركز الإشعارات" /tmp/notifications.html
+          grep -qi "^content-security-policy:" /tmp/notifications-headers.txt
+          echo "Notification Center route and admin CSP smoke test: OK"
+          curl --silent --show-error --fail http://localhost:4000/api/admin/notifications/metrics -H "Authorization: Bearer $admin_token" -o /tmp/outbox-metrics.json
+          node -e "const x=JSON.parse(require('fs').readFileSync('/tmp/outbox-metrics.json','utf8')); if (!x.queue || !x.delivery || !Array.isArray(x.alerts)) process.exit(1); console.log('Authenticated Outbox metrics smoke test: OK')"
           for attempt in $(seq 1 9); do
             code=$(curl --silent --show-error -o /tmp/rate-limit-response.json -w '%{http_code}' -X POST http://localhost:4000/api/auth/login -H 'Content-Type: application/json' -d '{"email":"admin@example.test","password":"intentionally-wrong-password"}')
             test "$code" = "401"
