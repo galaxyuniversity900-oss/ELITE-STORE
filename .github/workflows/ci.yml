@@ -22,11 +22,12 @@ jobs:
       BOOTSTRAP_ADMIN_PASSWORD: ci-only-bootstrap-password-12345
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
         with:
           node-version: 22
+          package-manager-cache: false
       - name: Install dependencies
         run: npm install --no-audit --no-fund
       - name: Validate notification provider preflight script syntax
@@ -40,6 +41,8 @@ jobs:
           test -s prisma/migrations/20261102080000_initial_commerce/migration.sql
           test -s prisma/migrations/20261102110000_commerce_integrity_checks/migration.sql
           grep -q 'orders_total_reconciliation_check' prisma/migrations/20261102110000_commerce_integrity_checks/migration.sql
+      - name: Verify responsive product media pipeline
+        run: node scripts/verify-product-media-pipeline.mjs
       - name: Type-check workspaces
         run: npm run lint
       - name: Run automated tests
