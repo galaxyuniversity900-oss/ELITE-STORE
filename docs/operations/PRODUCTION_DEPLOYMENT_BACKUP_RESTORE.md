@@ -90,3 +90,16 @@ The CI verifier checks script syntax and required safety controls. It does not c
 ## Deployment boundary
 
 The current Pages workflow deploys automatically on pushes to `main`. Do not merge a PR or push to `main` until the release owner explicitly approves that static-site deployment. The API/container production deployment is not automated by this workflow and must be provisioned separately.
+
+## Encrypted off-site archive transfer
+
+The optional wrappers publish-encrypted-backup.sh and restore-encrypted-postgres.sh use age authenticated encryption and rclone to any configured remote. They do not provision a cloud account or credentials.
+
+1. Install approved age and rclone binaries on the backup host.
+2. Generate an age recipient/identity pair. Keep the private identity outside the repository in a secrets manager; only the public recipient may be supplied to the publisher.
+3. Configure and test an rclone remote with least-privilege write/read access and bucket-side encryption/versioning/retention as required by the owner.
+4. Run backup-postgres.sh, then publish the resulting archive with BACKUP_AGE_RECIPIENT and BACKUP_RCLONE_REMOTE.
+5. The publisher downloads the remote object again and compares SHA-256 before reporting success. Plaintext is retained unless DELETE_PLAINTEXT_AFTER_UPLOAD=YES is explicitly set.
+6. For recovery, download both the encrypted archive and its .sha256 sidecar, set AGE_IDENTITY_FILE, RESTORE_DATABASE_NAME, and the exact CONFIRM_DATABASE_RESTORE=YES, then run the encrypted restore wrapper. The existing restore script still creates a safety backup and enforces its own confirmation/checksum rules.
+
+A verified upload is not a disaster-recovery drill. The owner must test private-key custody, remote access, decryption, database restore and business-record reconciliation before declaring off-site recovery ready.
