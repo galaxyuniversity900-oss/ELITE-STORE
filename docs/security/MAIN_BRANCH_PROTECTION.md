@@ -23,3 +23,7 @@ Open **Settings → Rules → Rulesets → New branch ruleset** (or Settings →
 ## Verification boundary
 
 The GitHub integration used for this implementation could inspect repository files and CI but did not have permission to read or change branch-protection settings (GitHub returned 403). No protection rule is claimed as enabled. After the owner applies the rules, verify the ruleset is active and run a test PR to confirm required checks are enforced.
+
+## Admin authentication gate
+
+Admin MFA is not yet proven active on the current default branch. Do not expose the administration application to the public internet until the owner selects and provisions a supported second factor (TOTP or WebAuthn), encrypted secret storage, one-time recovery codes, step-up verification for sensitive operations, session revocation and audited enrollment/reset. Password-only admin access is not an acceptable production release state. Do not store MFA seeds in plaintext or in frontend-readable configuration.
