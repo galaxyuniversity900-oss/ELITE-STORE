@@ -44,21 +44,8 @@ docker compose -f "$COMPOSE_FILE" exec -T "$SERVICE" sh -ec '
 
 # Basic post-restore integrity checks: migrations table and required commerce tables.
 docker compose -f "$COMPOSE_FILE" exec -T "$SERVICE" sh -ec '
-  psql --set=ON_ERROR_STOP=1 --username="$POSTGRES_USER" --dbname="$POSTGRES_DB" <<'SQL'
-DO $restore_check$
-BEGIN
-  IF to_regclass('public._prisma_migrations') IS NULL THEN
-    RAISE EXCEPTION 'Prisma migrations table is missing after restore';
-  END IF;
-  IF (
-    SELECT COUNT(*) FROM pg_tables
-    WHERE schemaname = 'public'
-      AND tablename IN ('notification_outbox','notification_delivery_attempts','notification_delivery_events')
-  ) <> 3 THEN
-    RAISE EXCEPTION 'Notification outbox schema is incomplete after restore';
-  END IF;
-END
-$restore_check$;
-SQL
+  psql --set=ON_ERROR_STOP=1 --username="$POSTGRES_USER" --dbname="$POSTGRES_DB" -c "SELECT 1 / CASE WHEN to_regclass('\''public._prisma_migrations'\'') IS NOT NULL THEN 1 ELSE 0 END;"
+  psql --set=ON_ERROR_STOP=1 --username="$POSTGRES_USER" --dbname="$POSTGRES_DB" -c "SELECT 1 / CASE WHEN (SELECT COUNT(*) FROM pg_tables WHERE schemaname='\''public'\'' AND tablename IN ('\''notification_outbox'\'','\''notification_delivery_attempts'\'','\''notification_delivery_events'\'')) = 3 THEN 1 ELSE 0 END;"
 '
+
 echo "Restore command completed. Run application smoke tests and compare business record counts before reopening traffic."
