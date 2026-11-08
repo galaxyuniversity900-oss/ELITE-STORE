@@ -1,15 +1,15 @@
-import { BadRequestException, Injectable, NotFoundException, Optional } from '@nestjs/common';
-import { WhatsAppNotificationsService } from './whatsapp-notifications.service';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { CartStatus, Prisma, ProductStatus } from '@prisma/client';
 import { randomUUID } from 'node:crypto';
 import { PrismaService } from '../prisma/prisma.service';
+import { NotificationOutboxService } from '../notifications/notification-outbox.service';
 import { CheckoutDto } from './orders.dto';
 
 @Injectable()
 export class OrdersService {
   constructor(
     private readonly prisma: PrismaService,
-    @Optional() private readonly whatsapp?: WhatsAppNotificationsService,
+    private readonly notifications: NotificationOutboxService,
   ) {}
 
   async checkout(sessionId: string, idempotencyKey: string, input: CheckoutDto, userId?: string) {
@@ -29,18 +29,18 @@ export class OrdersService {
           include: { items: true, payments: true },
         });
         if (previousOrder) return { order: previousOrder, created: false };
+
         const cart = await tx.cart.findUnique({
           where: { sessionId },
           include: { items: { include: { product: true }, orderBy: { createdAt: 'asc' } } },
         });
-  
         if (!cart || cart.status !== CartStatus.ACTIVE) {
           throw new NotFoundException('Active cart not found');
         }
         if (cart.items.length === 0) {
           throw new BadRequestException('Cannot checkout an empty cart');
         }
-  
+
         let subtotal = new Prisma.Decimal(0);
         const orderItems: Array<{
           productId: string;
@@ -50,13 +50,13 @@ export class OrdersService {
           unitPrice: Prisma.Decimal;
           lineTotal: Prisma.Decimal;
         }> = [];
-  
+
         for (const item of cart.items) {
           const product = item.product;
           if (product.status !== ProductStatus.ACTIVE) {
             throw new BadRequestException(`Product "${product.name}" is no longer available`);
           }
-  
+
           if (product.stockQuantity !== null) {
             const reserved = await tx.product.updateMany({
               where: {
@@ -70,7 +70,7 @@ export class OrdersService {
               throw new BadRequestException(`Insufficient stock for "${product.name}"`);
             }
           }
-  
+
           const unitPrice = new Prisma.Decimal(product.price);
           const lineTotal = unitPrice.mul(item.quantity);
           subtotal = subtotal.add(lineTotal);
@@ -83,7 +83,7 @@ export class OrdersService {
             lineTotal,
           });
         }
-  
+
         // Fixed demo rates are server-calculated and clearly labelled as simulations.
         const shippingMethod = input.shippingMethod ?? 'DEMO_STANDARD';
         const shippingFees: Record<string, number> = { DEMO_STANDARD: 45, DEMO_EXPRESS: 75, DEMO_PICKUP: 0 };
@@ -91,7 +91,7 @@ export class OrdersService {
         const discountTotal = new Prisma.Decimal(0);
         const grandTotal = subtotal.add(shippingTotal).sub(discountTotal);
         const orderNumber = `MES-${Date.now()}-${randomUUID().slice(0, 8).toUpperCase()}`;
-  
+
         const order = await tx.order.create({
           data: {
             orderNumber,
@@ -132,22 +132,25 @@ export class OrdersService {
           },
           include: { items: true, payments: true },
         });
-  
+
+        // Order + WhatsApp + email outbox rows commit or roll back together.
+        await this.notifications.enqueueOrderCreated(tx, order);
+
         await tx.cart.update({
           where: { id: cart.id },
           data: { status: CartStatus.CONVERTED, ...(userId ? { userId } : {}) },
         });
-  
+
         return { order, created: true };
-        }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
-      if (outcome.created && this.whatsapp) {
-        const notification = await this.whatsapp.notifyStore(outcome.order).catch(() => ({
+      }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+      return {
+        ...outcome.order,
+        storeNotification: {
           sent: false,
-          reason: 'notification_error',
-        }));
-        return { ...outcome.order, storeNotification: notification };
-      }
-      return { ...outcome.order, storeNotification: { sent: false, reason: outcome.created ? 'not_configured' : 'duplicate_checkout' } };
+          queued: outcome.created,
+          reason: outcome.created ? 'queued' : 'duplicate_checkout',
+        },
+      };
     } catch (error) {
       // A concurrent retry can win the unique-key race. Return its committed order.
       if (error instanceof Prisma.PrismaClientKnownRequestError && ['P2002', 'P2034'].includes(error.code)) {
@@ -160,7 +163,7 @@ export class OrdersService {
           },
           include: { items: true, payments: true },
         });
-        if (existing) return { ...existing, storeNotification: { sent: false, reason: 'duplicate_checkout' } };
+        if (existing) return { ...existing, storeNotification: { sent: false, queued: false, reason: 'duplicate_checkout' } };
       }
       throw error;
     }
