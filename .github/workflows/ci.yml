@@ -2,7 +2,7 @@ name: MES STORE CI
 
 on:
   push:
-    branches: [main, completion/storefront-experience, notifications/distributed-worker]
+    branches: [main, completion/storefront-experience, notifications/distributed-worker, notifications/provider-production-readiness]
   pull_request:
     branches: [main, completion/storefront-experience]
 
