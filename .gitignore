@@ -16,3 +16,9 @@ coverage/
 # Logs and OS files
 *.log
 .DS_Store
+
+# Database backup artifacts (never commit customer/order data)
+/backups/
+*.dump
+*.dump.sha256
+*.dump.manifest
