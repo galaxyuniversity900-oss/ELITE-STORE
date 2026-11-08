@@ -1,8 +1,10 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Post, UseGuards } from '@nestjs/common';
+import { DistributedRateLimitGuard } from './distributed-rate-limit.guard';
 import { LoginDto, RegisterDto } from './auth.dto';
 import { AuthService } from './auth.service';
 
 @Controller('auth')
+@UseGuards(DistributedRateLimitGuard)
 export class AuthController {
   constructor(private readonly auth: AuthService) {}
 
