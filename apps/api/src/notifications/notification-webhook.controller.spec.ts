@@ -22,7 +22,7 @@ describe('NotificationWebhookController', () => {
     await expect(controller.receiveWhatsApp({ rawBody } as never, signature, body)).resolves.toEqual({ received: true });
     expect(outbox.recordProviderStatus).toHaveBeenCalledWith(
       NotificationChannel.WHATSAPP, 'whatsapp', 'wamid.123', 'delivered',
-      expect.stringMatching(/^wamid\\.123:delivered:/), expect.any(Date), undefined,
+      expect.stringMatching(/^wamid\.123:delivered:/), expect.any(Date), undefined,
     );
   });
 
