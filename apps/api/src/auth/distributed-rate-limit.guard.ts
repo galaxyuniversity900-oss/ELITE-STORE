@@ -1,6 +1,6 @@
 import { CanActivate, ExecutionContext, HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { Request } from 'express';
-import { createHash } from 'node:crypto';
+import { createHmac } from 'node:crypto';
 import { PrismaService } from '../prisma/prisma.service';
 
 type LimitRule = { limit: number; windowMs: number; label: string };
@@ -24,7 +24,9 @@ export class DistributedRateLimitGuard implements CanActivate {
     // Hash the source identifier so raw IP addresses are never persisted in the limiter table.
     // Express does not trust forwarded headers unless the deployment explicitly configures trust proxy.
     const source = request.ip || request.socket.remoteAddress || 'unknown';
-    const key = createHash('sha256').update(rule.label + '\0' + route + '\0' + source).digest('hex');
+    const hashSecret = process.env.JWT_SECRET;
+    if (!hashSecret || Buffer.byteLength(hashSecret) < 32) throw new Error('JWT_SECRET must be configured before rate limiting');
+    const key = createHmac('sha256', hashSecret).update(rule.label + '\0' + route + '\0' + source).digest('hex');
     const rows = await this.prisma.$queryRawUnsafe<RateLimitRow[]>(
       'INSERT INTO "api_rate_limit_buckets" ("key", "count", "windowStartedAt", "expiresAt") ' +
       'VALUES ($1, 1, NOW(), NOW() + ($2 * INTERVAL \'1 millisecond\')) ' +
