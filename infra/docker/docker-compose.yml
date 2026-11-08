@@ -33,6 +33,14 @@ services:
       retries: 5
 
   api:
+    init: true
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop: [ALL]
+    pids_limit: 200
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
     build:
       context: ../..
       dockerfile: infra/docker/Dockerfile.api
@@ -69,6 +77,15 @@ services:
         condition: service_healthy
 
   web:
+    init: true
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop: [ALL]
+    pids_limit: 200
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+      - /app/apps/web/.next/cache:rw,noexec,nosuid,size=128m
     build:
       context: ../..
       dockerfile: infra/docker/Dockerfile.web
@@ -84,6 +101,15 @@ services:
       - api
 
   admin:
+    init: true
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop: [ALL]
+    pids_limit: 200
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+      - /app/apps/admin/.next/cache:rw,noexec,nosuid,size=128m
     build:
       context: ../..
       dockerfile: infra/docker/Dockerfile.admin
