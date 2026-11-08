@@ -20,6 +20,7 @@ jobs:
       JWT_SECRET: ci-only-jwt-secret-at-least-32-characters-long
       BOOTSTRAP_ADMIN_EMAIL: admin@example.test
       BOOTSTRAP_ADMIN_PASSWORD: ci-only-bootstrap-password-12345
+      CORS_ORIGINS: https://ci.mes-store.test,https://admin.ci.mes-store.test
     steps:
       - name: Checkout
         uses: actions/checkout@v4
