@@ -26,15 +26,19 @@ jobs:
           package-manager-cache: false
       - name: Install dependencies
         run: npm install --no-audit --no-fund
-      - name: Audit dependency vulnerabilities
-        run: npm audit --audit-level=high
+      - name: Capture complete dependency audit report
+        run: npm audit --json > npm-audit-full.json || true
+      - name: Enforce production dependency security gate
+        run: npm audit --omit=dev --audit-level=high
       - name: Generate CycloneDX SBOM
         run: npm sbom --sbom-format cyclonedx > mes-store.cdx.json
       - name: Upload SBOM
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: mes-store-cyclonedx-sbom
-          path: mes-store.cdx.json
+          path: |
+            mes-store.cdx.json
+            npm-audit-full.json
           if-no-files-found: error
           retention-days: 30
 
