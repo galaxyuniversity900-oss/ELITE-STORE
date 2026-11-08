@@ -125,18 +125,13 @@ export class NotificationOutboxService implements OnModuleInit, OnModuleDestroy 
     this.running = true;
     try {
       await this.recoverExpiredLeases();
-      const due = await this.prisma.notificationOutbox.findMany({
-        where: {
-          status: NotificationStatus.PENDING,
-          availableAt: { lte: new Date() },
-        },
-        orderBy: [{ availableAt: 'asc' }, { createdAt: 'asc' }],
-        take: 10,
-        select: { id: true },
-      });
-      for (const item of due) {
-        await this.processOne(item.id);
-      }
+      // PostgreSQL is the distributed coordinator. Each replica claims a
+      // disjoint batch with row-level locks and SKIP LOCKED; no Redis lock
+      // can become a second, divergent source of truth.
+      const claimed = await this.claimDueBatch(10);
+      await Promise.allSettled(
+        claimed.map((item) => this.processOne(item.id, item.lockToken)),
+      );
     } catch (error) {
       this.logger.error('Notification outbox batch failed', this.safeError(error));
     } finally {
@@ -318,24 +313,48 @@ export class NotificationOutboxService implements OnModuleInit, OnModuleDestroy 
     }
   }
 
-  private async processOne(id: string) {
-    const now = new Date();
-    const lockToken = randomUUID();
-    const claimed = await this.prisma.notificationOutbox.updateMany({
-      where: {
-        id,
-        status: NotificationStatus.PENDING,
-        availableAt: { lte: now },
-      },
-      data: {
-        status: NotificationStatus.PROCESSING,
-        lockedAt: now,
-        lockToken,
-        attempts: { increment: 1 },
-      },
-    });
-    if (claimed.count !== 1) return;
+  /**
+   * Claim a disjoint batch atomically across every API/worker replica.
+   * SKIP LOCKED lets concurrent transactions skip rows already claimed by
+   * another worker instead of reading and racing over the same candidates.
+   */
+  private async claimDueBatch(limit: number) {
+    return this.prisma.$transaction(async (tx) => {
+      const candidates = await tx.$queryRaw<Array<{ id: string; attempts: number }>>(
+        Prisma.sql`
+          SELECT "id", "attempts"
+          FROM "notification_outbox"
+          WHERE "status" = 'PENDING'::"NotificationStatus"
+            AND "availableAt" <= NOW()
+          ORDER BY "availableAt" ASC, "createdAt" ASC
+          LIMIT ${limit}
+          FOR UPDATE SKIP LOCKED
+        `,
+      );
 
+      const claimed: Array<{ id: string; lockToken: string }> = [];
+      for (const candidate of candidates) {
+        const lockToken = randomUUID();
+        const result = await tx.notificationOutbox.updateMany({
+          where: {
+            id: candidate.id,
+            status: NotificationStatus.PENDING,
+            availableAt: { lte: new Date() },
+          },
+          data: {
+            status: NotificationStatus.PROCESSING,
+            lockedAt: new Date(),
+            lockToken,
+            attempts: { increment: 1 },
+          },
+        });
+        if (result.count === 1) claimed.push({ id: candidate.id, lockToken });
+      }
+      return claimed;
+    });
+  }
+
+  private async processOne(id: string, lockToken: string) {
     const notification = await this.prisma.notificationOutbox.findUnique({ where: { id } });
     if (!notification || notification.lockToken !== lockToken) return;
 
