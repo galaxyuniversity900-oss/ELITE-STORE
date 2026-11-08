@@ -22,11 +22,12 @@ jobs:
       BOOTSTRAP_ADMIN_PASSWORD: ci-only-bootstrap-password-12345
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
         with:
           node-version: 22
+          package-manager-cache: false
       - name: Install dependencies
         run: npm install --no-audit --no-fund
       - name: Validate notification provider preflight script syntax
@@ -46,6 +47,10 @@ jobs:
         run: npm test
       - name: Build all applications
         run: npm run build
+      - name: Install Chromium for accessibility checks
+        run: npx playwright install --with-deps chromium
+      - name: Run mobile RTL and WCAG accessibility audit
+        run: npm run qa:a11y
       - name: Verify API runtime entrypoint
         run: test -s apps/api/dist/main.js
       - name: Validate Docker Compose configuration
