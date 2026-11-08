@@ -6,8 +6,11 @@ COPY package.json turbo.json tsconfig.base.json ./
 COPY apps ./apps
 COPY packages ./packages
 COPY prisma ./prisma
+RUN chown -R node:node /app
+USER node
 RUN npm install --no-audit --no-fund
 RUN npm run build --workspace=@mes-store/admin
 ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
 EXPOSE 3001
 CMD ["npm", "run", "start", "--workspace=@mes-store/admin", "--", "-p", "3001"]
