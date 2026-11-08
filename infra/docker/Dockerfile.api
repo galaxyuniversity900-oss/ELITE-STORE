@@ -6,8 +6,6 @@ COPY packages ./packages
 COPY prisma ./prisma
 COPY data ./data
 COPY scripts ./scripts
-COPY data ./data
-COPY scripts ./scripts
 RUN chown -R node:node /app
 USER node
 RUN npm install --no-audit --no-fund
