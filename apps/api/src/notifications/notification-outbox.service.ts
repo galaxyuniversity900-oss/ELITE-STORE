@@ -237,6 +237,121 @@ export class NotificationOutboxService implements OnModuleInit, OnModuleDestroy 
     return { items, total, page, limit, pages: Math.ceil(total / limit) };
   }
 
+  async getOperationalMetrics(windowMinutes = 60) {
+    const safeWindow = Math.min(1440, Math.max(5, windowMinutes));
+    const now = new Date();
+    const windowStart = new Date(now.getTime() - safeWindow * 60_000);
+    const staleBefore = new Date(now.getTime() - 2 * 60_000);
+    const pendingThreshold = Math.max(1, Number(process.env.OUTBOX_ALERT_PENDING_BACKLOG ?? 50));
+    const deadThreshold = Math.max(1, Number(process.env.OUTBOX_ALERT_DEAD_COUNT ?? 1));
+    const failureRateThreshold = Math.min(100, Math.max(0, Number(process.env.OUTBOX_ALERT_FAILURE_RATE_PERCENT ?? 10)));
+    const p95ThresholdMs = Math.max(1_000, Number(process.env.OUTBOX_ALERT_SEND_P95_MS ?? 30_000));
+    const oldestPendingThresholdSeconds = Math.max(60, Number(process.env.OUTBOX_ALERT_OLDEST_PENDING_SECONDS ?? 900));
+
+    const [
+      pendingCount,
+      processingCount,
+      sentCount,
+      deadCount,
+      pendingDueCount,
+      staleProcessingCount,
+      oldestPending,
+      successfulAttempts,
+      failedAttempts,
+      abandonedAttempts,
+      latencySamples,
+    ] = await Promise.all([
+      this.prisma.notificationOutbox.count({ where: { status: NotificationStatus.PENDING } }),
+      this.prisma.notificationOutbox.count({ where: { status: NotificationStatus.PROCESSING } }),
+      this.prisma.notificationOutbox.count({ where: { status: NotificationStatus.SENT } }),
+      this.prisma.notificationOutbox.count({ where: { status: NotificationStatus.DEAD } }),
+      this.prisma.notificationOutbox.count({ where: { status: NotificationStatus.PENDING, availableAt: { lte: now } } }),
+      this.prisma.notificationOutbox.count({ where: { status: NotificationStatus.PROCESSING, lockedAt: { lte: staleBefore } } }),
+      this.prisma.notificationOutbox.findFirst({
+        where: { status: NotificationStatus.PENDING },
+        orderBy: { createdAt: 'asc' },
+        select: { createdAt: true },
+      }),
+      this.prisma.notificationDeliveryAttempt.count({
+        where: { startedAt: { gte: windowStart }, status: NotificationAttemptStatus.SUCCEEDED },
+      }),
+      this.prisma.notificationDeliveryAttempt.count({
+        where: { startedAt: { gte: windowStart }, status: NotificationAttemptStatus.FAILED },
+      }),
+      this.prisma.notificationDeliveryAttempt.count({
+        where: { startedAt: { gte: windowStart }, status: NotificationAttemptStatus.ABANDONED },
+      }),
+      this.prisma.notificationDeliveryAttempt.findMany({
+        where: {
+          startedAt: { gte: windowStart },
+          finishedAt: { not: null },
+          status: { in: [NotificationAttemptStatus.SUCCEEDED, NotificationAttemptStatus.FAILED] },
+        },
+        orderBy: { startedAt: 'desc' },
+        take: 2000,
+        select: { startedAt: true, finishedAt: true, status: true },
+      }),
+    ]);
+
+    const durations = latencySamples
+      .filter((sample) => sample.finishedAt)
+      .map((sample) => Math.max(0, sample.finishedAt.getTime() - sample.startedAt.getTime()))
+      .sort((a, b) => a - b);
+    const percentile = (values: number[], p: number) =>
+      values.length ? values[Math.min(values.length - 1, Math.ceil(values.length * p) - 1)] : null;
+    const totalAttempts = successfulAttempts + failedAttempts + abandonedAttempts;
+    const failureRate = totalAttempts
+      ? Number((((failedAttempts + abandonedAttempts) / totalAttempts) * 100).toFixed(2))
+      : 0;
+    const oldestPendingAgeSeconds = oldestPending
+      ? Math.max(0, Math.floor((now.getTime() - oldestPending.createdAt.getTime()) / 1000))
+      : 0;
+    const alerts: Array<{ code: string; severity: 'warning' | 'critical'; title: string; message: string; value: number; threshold: number }> = [];
+    if (deadCount >= deadThreshold) alerts.push({
+      code: 'dead_letters_present', severity: 'critical', title: 'رسائل في Dead Letter Queue',
+      message: 'توجد إشعارات فشل نهائي تحتاج إلى مراجعة أو إعادة محاولة.', value: deadCount, threshold: deadThreshold,
+    });
+    if (pendingCount >= pendingThreshold) alerts.push({
+      code: 'pending_backlog_high', severity: 'warning', title: 'تراكم Outbox',
+      message: 'عدد الإشعارات المنتظرة تجاوز حد التنبيه التشغيلي.', value: pendingCount, threshold: pendingThreshold,
+    });
+    if (oldestPendingAgeSeconds >= oldestPendingThresholdSeconds) alerts.push({
+      code: 'oldest_pending_too_old', severity: 'critical', title: 'تأخر معالجة الإشعارات',
+      message: 'أقدم إشعار منتظر تجاوز الزمن المسموح به في قائمة الانتظار.', value: oldestPendingAgeSeconds, threshold: oldestPendingThresholdSeconds,
+    });
+    if (staleProcessingCount > 0) alerts.push({
+      code: 'stale_processing_lease', severity: 'critical', title: 'عمليات إرسال عالقة',
+      message: 'توجد سجلات PROCESSING تجاوزت مهلة العامل وتحتاج إلى استعادة lease.', value: staleProcessingCount, threshold: 0,
+    });
+    if (totalAttempts >= 5 && failureRate >= failureRateThreshold) alerts.push({
+      code: 'failure_rate_high', severity: 'critical', title: 'ارتفاع معدل فشل الإرسال',
+      message: `معدل الفشل خلال آخر ${safeWindow} دقيقة تجاوز الحد المحدد.`, value: failureRate, threshold: failureRateThreshold,
+    });
+    const p95Ms = percentile(durations, 0.95);
+    if (p95Ms !== null && p95Ms >= p95ThresholdMs) alerts.push({
+      code: 'send_latency_p95_high', severity: 'warning', title: 'ارتفاع زمن الإرسال',
+      message: 'زمن الإرسال عند P95 تجاوز الحد التشغيلي.', value: p95Ms, threshold: p95ThresholdMs,
+    });
+
+    return {
+      sampledAt: now.toISOString(),
+      windowMinutes: safeWindow,
+      queue: { pending: pendingCount, due: pendingDueCount, processing: processingCount, sent: sentCount, dead: deadCount, staleProcessing: staleProcessingCount, oldestPendingAgeSeconds },
+      delivery: {
+        attempts: totalAttempts, successful: successfulAttempts, failed: failedAttempts + abandonedAttempts,
+        failureRatePercent: failureRate, averageSendDurationMs: durations.length
+          ? Math.round(durations.reduce((sum, value) => sum + value, 0) / durations.length) : null,
+        p95SendDurationMs: p95Ms,
+        measuredAttempts: durations.length,
+      },
+      thresholds: {
+        pendingBacklog: pendingThreshold, deadCount: deadThreshold, failureRatePercent: failureRateThreshold,
+        p95SendDurationMs: p95ThresholdMs, oldestPendingAgeSeconds: oldestPendingThresholdSeconds,
+      },
+      alerts,
+    };
+  }
+
   async recordProviderStatus(
     channel: NotificationChannel,
     provider: string,
