@@ -15,7 +15,7 @@ for (const file of files) {
     const action = match[1];
     if (action.startsWith('./') || action.startsWith('docker://')) continue;
     const ref = action.slice(action.lastIndexOf('@') + 1);
-    if (!/^[a-f0-9]{40}$/i.test(ref)) violations.push(\`${file}:${index + 1}: ${action}\`);
+    if (!/^[a-f0-9]{40}$/i.test(ref)) violations.push(file + ':' + (index + 1) + ': ' + action);
   }
 }
 if (violations.length) {
@@ -23,4 +23,4 @@ if (violations.length) {
   console.error(violations.join('\n'));
   process.exit(1);
 }
-console.log(\`Workflow action pinning: OK (${files.length} workflow files)\`);
+console.log('Workflow action pinning: OK (' + files.length + ' workflow files)');
