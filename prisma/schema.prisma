@@ -359,3 +359,22 @@ model NotificationDeliveryEvent {
   @@index([notificationId, occurredAt])
   @@map("notification_delivery_events")
 }
+
+model AdminAuditLog {
+  id           String   @id @default(cuid())
+  actorId      String
+  action       String   @db.VarChar(255)
+  resourceType String   @db.VarChar(80)
+  resourceId   String?  @db.VarChar(128)
+  method       String   @db.VarChar(12)
+  route        String   @db.VarChar(500)
+  statusCode   Int
+  requestId    String?  @db.VarChar(128)
+  metadata     Json?
+  createdAt    DateTime @default(now())
+
+  @@index([actorId, createdAt])
+  @@index([resourceType, resourceId, createdAt])
+  @@index([action, createdAt])
+  @@map("admin_audit_logs")
+}
