@@ -113,7 +113,7 @@ jobs:
           test -n "$archive"
           docker compose -f infra/docker/docker-compose.yml exec -T postgres psql -U mes_store -d mes_store -v ON_ERROR_STOP=1 -c "CREATE TABLE ci_restore_marker (id integer PRIMARY KEY); INSERT INTO ci_restore_marker VALUES (1);"
           RESTORE_DATABASE_NAME=mes_store CONFIRM_DATABASE_RESTORE=YES BACKUP_DIR="$BACKUP_DIR" bash scripts/restore-postgres.sh "$archive"
-          marker="$(docker compose -f infra/docker/docker-compose.yml exec -T postgres psql -U mes_store -d mes_store -Atc "SELECT to_regclass('public.ci_restore_marker') IS NULL")"
+          marker="$(docker compose -f infra/docker/docker-compose.yml exec -T postgres psql -U mes_store -d mes_store -Atc "SELECT to_regclass('public.ci_restore_marker') IS NULL" | tr -d '[:space:]')"
           test "$marker" = "t"
           tables="$(docker compose -f infra/docker/docker-compose.yml exec -T postgres psql -U mes_store -d mes_store -Atc "SELECT COUNT(*) FROM pg_tables WHERE schemaname='public' AND tablename IN ('notification_outbox','notification_delivery_attempts','notification_delivery_events')")"
           test "$tables" = "3"
