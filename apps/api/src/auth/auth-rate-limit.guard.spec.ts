@@ -1,4 +1,14 @@
-import { ExecutionContext, TooManyRequestsException } from '@nestjs/common';
+import { ExecutionContext, HttpException, HttpStatus } from '@nestjs/common';
+
+function expectRateLimited(action: () => unknown) {
+  try {
+    action();
+    throw new Error('Expected rate limiting to reject the request');
+  } catch (error) {
+    expect(error).toBeInstanceOf(HttpException);
+    expect((error as HttpException).getStatus()).toBe(HttpStatus.TOO_MANY_REQUESTS);
+  }
+}
 import { AuthRateLimitGuard } from './auth-rate-limit.guard';
 
 function context(path: string, ip = '203.0.113.10', email = 'buyer@example.test') {
@@ -29,7 +39,7 @@ describe('AuthRateLimitGuard', () => {
     for (let attempt = 0; attempt < 5; attempt += 1) {
       expect(guard.canActivate(request.execution)).toBe(true);
     }
-    expect(() => guard.canActivate(request.execution)).toThrow(TooManyRequestsException);
+    expectRateLimited(() => guard.canActivate(request.execution));
     expect(request.response.setHeader).toHaveBeenCalledWith('Retry-After', expect.any(String));
   });
 
@@ -39,20 +49,20 @@ describe('AuthRateLimitGuard', () => {
       expect(guard.canActivate(request.execution)).toBe(true);
     }
     const blocked = context('/api/auth/login', '203.0.113.11', 'another@example.test');
-    expect(() => guard.canActivate(blocked.execution)).toThrow(TooManyRequestsException);
+    expectRateLimited(() => guard.canActivate(blocked.execution));
   });
 
   it('limits registrations to three per IP per hour', () => {
     for (let attempt = 0; attempt < 3; attempt += 1) {
       expect(guard.canActivate(context('/api/auth/register').execution)).toBe(true);
     }
-    expect(() => guard.canActivate(context('/api/auth/register').execution)).toThrow(TooManyRequestsException);
+    expectRateLimited(() => guard.canActivate(context('/api/auth/register').execution));
   });
 
   it('resets expired login windows', () => {
     const request = context('/api/auth/login');
     for (let attempt = 0; attempt < 5; attempt += 1) guard.canActivate(request.execution);
-    expect(() => guard.canActivate(request.execution)).toThrow(TooManyRequestsException);
+    expectRateLimited(() => guard.canActivate(request.execution));
     clock.mockReturnValue(1_800_000_000_000 + 15 * 60 * 1000 + 1);
     expect(guard.canActivate(request.execution)).toBe(true);
   });
