@@ -33,6 +33,14 @@ services:
       retries: 5
 
   api:
+    init: true
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop: [ALL]
+    pids_limit: 200
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
     build:
       context: ../..
       dockerfile: infra/docker/Dockerfile.api
@@ -59,7 +67,7 @@ services:
       RESEND_API_KEY: ${RESEND_API_KEY:-}
       RESEND_FROM_EMAIL: ${RESEND_FROM_EMAIL:-}
       RESEND_WEBHOOK_SECRET: ${RESEND_WEBHOOK_SECRET:-}
-    command: ["sh", "-c", "npm run db:migrate:deploy && npm run db:seed && npm run build --workspace=@mes-store/api && test -f apps/api/dist/main.js && exec npm run start --workspace=@mes-store/api"]
+    command: ["sh", "-c", "npm run db:migrate:deploy && npm run db:seed && test -f apps/api/dist/main.js && exec node apps/api/dist/main.js"]
     ports:
       - "${HOST_BIND_ADDRESS:-127.0.0.1}:${API_PORT:-4000}:4000"
     depends_on:
@@ -69,6 +77,15 @@ services:
         condition: service_healthy
 
   web:
+    init: true
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop: [ALL]
+    pids_limit: 200
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+      - /app/apps/web/.next/cache:rw,noexec,nosuid,size=128m
     build:
       context: ../..
       dockerfile: infra/docker/Dockerfile.web
@@ -84,6 +101,15 @@ services:
       - api
 
   admin:
+    init: true
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop: [ALL]
+    pids_limit: 200
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+      - /app/apps/admin/.next/cache:rw,noexec,nosuid,size=128m
     build:
       context: ../..
       dockerfile: infra/docker/Dockerfile.admin
