@@ -129,9 +129,17 @@ export class NotificationOutboxService implements OnModuleInit, OnModuleDestroy 
       // disjoint batch with row-level locks and SKIP LOCKED; no Redis lock
       // can become a second, divergent source of truth.
       const claimed = await this.claimDueBatch(10);
-      await Promise.allSettled(
+      const outcomes = await Promise.allSettled(
         claimed.map((item) => this.processOne(item.id, item.lockToken)),
       );
+      outcomes.forEach((outcome, index) => {
+        if (outcome.status === 'rejected') {
+          this.logger.error(
+            'Notification outbox item failed unexpectedly',
+            claimed[index].id + ':' + this.safeError(outcome.reason),
+          );
+        }
+      });
     } catch (error) {
       this.logger.error('Notification outbox batch failed', this.safeError(error));
     } finally {
