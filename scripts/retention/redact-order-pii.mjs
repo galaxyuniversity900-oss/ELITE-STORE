@@ -16,6 +16,7 @@ async function main() {
   const cutoff = new Date(Date.now() - retentionDays * 24 * 60 * 60 * 1000);
   const where = {
     createdAt: { lt: cutoff },
+    customerPhone: { not: '[REDACTED]' },
     status: { in: [OrderStatus.DELIVERED, OrderStatus.CANCELLED, OrderStatus.REFUNDED] },
     notifications: {
       none: { status: { in: [NotificationStatus.PENDING, NotificationStatus.PROCESSING] } },
