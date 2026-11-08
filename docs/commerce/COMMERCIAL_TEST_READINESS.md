@@ -58,6 +58,8 @@ Do not actually send a test WhatsApp message unless the destination number is co
 
 ## API demo checkout
 
+The simulated payment and courier module is registered in development and test environments. It is excluded from production by default. The only production override is `ENABLE_COMMERCE_SIMULATION=true`; do not enable that override on a public deployment. These routes do not represent a payment processor or carrier integration.
+
 Use the local Docker stack with disposable database data. Follow `docs/commerce/DEMO_COMMERCE_GUIDE.md` for the exact API routes and request contracts. Verify:
 1. Checkout uses server-side catalogue prices, not browser-supplied prices.
 2. Repeating the same checkout with the same `Idempotency-Key` returns the same order.
