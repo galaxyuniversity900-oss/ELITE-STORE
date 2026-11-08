@@ -6,10 +6,15 @@ COPY packages ./packages
 COPY prisma ./prisma
 COPY data ./data
 COPY scripts ./scripts
+COPY data ./data
+COPY scripts ./scripts
+RUN chown -R node:node /app
+USER node
 RUN npm install --no-audit --no-fund
 RUN npm run db:generate
 RUN npm run build --workspace=@mes-store/api \
     && test -f apps/api/dist/main.js
 ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
 EXPOSE 4000
 CMD ["npm", "run", "start", "--workspace=@mes-store/api"]
