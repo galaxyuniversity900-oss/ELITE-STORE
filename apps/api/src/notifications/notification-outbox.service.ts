@@ -374,17 +374,8 @@ export class NotificationOutboxService implements OnModuleInit, OnModuleDestroy 
         notification.dedupeKey,
       );
       const finishedAt = new Date();
-      await this.prisma.$transaction([
-        this.prisma.notificationDeliveryAttempt.update({
-          where: { id: attempt.id },
-          data: {
-            status: NotificationAttemptStatus.SUCCEEDED,
-            finishedAt,
-            providerMessageId: result.messageId,
-            httpStatus: result.httpStatus,
-          },
-        }),
-        this.prisma.notificationOutbox.updateMany({
+      await this.prisma.$transaction(async (tx) => {
+        const owned = await tx.notificationOutbox.updateMany({
           where: { id, status: NotificationStatus.PROCESSING, lockToken },
           data: {
             status: NotificationStatus.SENT,
@@ -393,11 +384,31 @@ export class NotificationOutboxService implements OnModuleInit, OnModuleDestroy 
             providerStatus: 'accepted',
             providerStatusAt: null,
             lastError: null,
+            // Delivery is complete: erase the customer PII payload and destination.
+            // Provider callbacks are correlated by providerMessageId and do not need either.
+            payload: {},
+            recipient: null,
             lockedAt: null,
             lockToken: null,
           },
-        }),
-      ]);
+        });
+        await tx.notificationDeliveryAttempt.update({
+          where: { id: attempt.id },
+          data: owned.count === 1
+            ? {
+                status: NotificationAttemptStatus.SUCCEEDED,
+                finishedAt,
+                providerMessageId: result.messageId,
+                httpStatus: result.httpStatus,
+              }
+            : {
+                status: NotificationAttemptStatus.ABANDONED,
+                finishedAt,
+                errorCode: 'worker_lease_lost_after_delivery',
+                errorMessage: 'Provider accepted the message after this worker lost its lease',
+              },
+        });
+      });
     } catch (error) {
       const failure = error instanceof DeliveryError
         ? error
@@ -406,18 +417,8 @@ export class NotificationOutboxService implements OnModuleInit, OnModuleDestroy 
       const exhausted = notification.attempts >= notification.maxAttempts;
       const dead = !failure.retryable || exhausted;
       const delayMs = Math.min(6 * 60 * 60 * 1000, 30_000 * (2 ** Math.max(0, notification.attempts - 1)));
-      await this.prisma.$transaction([
-        this.prisma.notificationDeliveryAttempt.update({
-          where: { id: attempt.id },
-          data: {
-            status: NotificationAttemptStatus.FAILED,
-            finishedAt,
-            httpStatus: failure.httpStatus,
-            errorCode: failure.code,
-            errorMessage: failure.code,
-          },
-        }),
-        this.prisma.notificationOutbox.updateMany({
+      await this.prisma.$transaction(async (tx) => {
+        const owned = await tx.notificationOutbox.updateMany({
           where: { id, status: NotificationStatus.PROCESSING, lockToken },
           data: {
             status: dead ? NotificationStatus.DEAD : NotificationStatus.PENDING,
@@ -426,8 +427,25 @@ export class NotificationOutboxService implements OnModuleInit, OnModuleDestroy 
             lockedAt: null,
             lockToken: null,
           },
-        }),
-      ]);
+        });
+        await tx.notificationDeliveryAttempt.update({
+          where: { id: attempt.id },
+          data: owned.count === 1
+            ? {
+                status: NotificationAttemptStatus.FAILED,
+                finishedAt,
+                httpStatus: failure.httpStatus,
+                errorCode: failure.code,
+                errorMessage: failure.code,
+              }
+            : {
+                status: NotificationAttemptStatus.ABANDONED,
+                finishedAt,
+                errorCode: 'worker_lease_lost',
+                errorMessage: 'Worker lost its lease before recording the provider failure',
+              },
+        });
+      });
     }
   }
 
