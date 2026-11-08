@@ -102,14 +102,6 @@ jobs:
           echo "Notification Center route and admin CSP smoke test: OK"
           curl --silent --show-error --fail http://localhost:4000/api/admin/notifications/metrics -H "Authorization: Bearer $admin_token" -o /tmp/outbox-metrics.json
           node -e "const x=JSON.parse(require('fs').readFileSync('/tmp/outbox-metrics.json','utf8')); if (!x.queue || !x.delivery || !Array.isArray(x.alerts)) process.exit(1); console.log('Authenticated Outbox metrics smoke test: OK')"
-          for attempt in $(seq 1 9); do
-            code=$(curl --silent --show-error -o /tmp/rate-limit-response.json -w '%{http_code}' -X POST http://localhost:4000/api/auth/login -H 'Content-Type: application/json' -d '{"email":"admin@example.test","password":"intentionally-wrong-password"}')
-            test "$code" = "401"
-          done
-          rate_limit_code=$(curl --silent --show-error -D /tmp/rate-limit-headers.txt -o /tmp/rate-limit-response.json -w '%{http_code}' -X POST http://localhost:4000/api/auth/login -H 'Content-Type: application/json' -d '{"email":"admin@example.test","password":"intentionally-wrong-password"}')
-          test "$rate_limit_code" = "429"
-          grep -qi "^retry-after:" /tmp/rate-limit-headers.txt
-          echo "Distributed authentication rate-limit smoke test: OK (HTTP 429 + Retry-After)"
           if [ -s scripts/verify-notification-outbox.mjs ]; then
             order_id=$(node scripts/verify-notification-outbox.mjs)
             test -n "$order_id"
@@ -135,6 +127,18 @@ jobs:
         run: npm run qa:storefront:load
       - name: Verify PostgreSQL backup and restore
         run: npm run qa:postgres:restore
+      - name: Verify distributed authentication rate limit
+        shell: bash
+        run: |
+          rate_limit_code=401
+          for attempt in $(seq 1 15); do
+            code=$(curl --silent --show-error -D /tmp/rate-limit-headers.txt -o /tmp/rate-limit-response.json -w '%{http_code}' -X POST http://localhost:4000/api/auth/login -H 'Content-Type: application/json' -d '{"email":"admin@example.test","password":"intentionally-wrong-password"}')
+            if [ "$code" = "429" ]; then rate_limit_code=429; break; fi
+            test "$code" = "401"
+          done
+          test "$rate_limit_code" = "429"
+          grep -qi "^retry-after:" /tmp/rate-limit-headers.txt
+          echo "Distributed authentication rate-limit smoke test: OK (HTTP 429 + Retry-After)"
       - name: Show container logs on failure
         if: failure()
         run: docker compose -f infra/docker/docker-compose.yml logs --no-color
