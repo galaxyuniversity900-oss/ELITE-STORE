@@ -4,7 +4,7 @@ on:
   push:
     branches: [main, completion/storefront-experience, notifications/distributed-worker, notifications/provider-production-readiness, security/commerce-webhook-admin-hardening, qa/commerce-e2e-load-restore, hardening/production-readiness-followups]
   pull_request:
-    branches: [main, completion/storefront-experience, notifications/provider-production-readiness, security/commerce-webhook-admin-hardening]
+    branches: [main, completion/storefront-experience, notifications/provider-production-readiness, security/commerce-webhook-admin-hardening, qa/commerce-e2e-load-restore, hardening/production-readiness-followups]
 
 permissions:
   contents: read
@@ -95,6 +95,13 @@ jobs:
           grep -qi "تسجيل دخول الإدارة" /tmp/admin.html
           curl --silent --show-error --fail -X POST http://localhost:4000/api/auth/login -H 'Content-Type: application/json' -d '{"email":"admin@example.test","password":"ci-only-bootstrap-password-12345"}' -o /tmp/admin-login.json
           node -e "const x=JSON.parse(require('fs').readFileSync('/tmp/admin-login.json','utf8')); if (!x.accessToken || x.user.role !== 'SUPER_ADMIN') process.exit(1); console.log('Admin authentication smoke test: OK')"
+          for attempt in $(seq 1 9); do
+            code=$(curl --silent --show-error -o /tmp/rate-limit-response.json -w '%{http_code}' -X POST http://localhost:4000/api/auth/login -H 'Content-Type: application/json' -d '{"email":"admin@example.test","password":"intentionally-wrong-password"}')
+            test "$code" = "401"
+          done
+          rate_limit_code=$(curl --silent --show-error -o /tmp/rate-limit-response.json -w '%{http_code}' -X POST http://localhost:4000/api/auth/login -H 'Content-Type: application/json' -d '{"email":"admin@example.test","password":"intentionally-wrong-password"}')
+          test "$rate_limit_code" = "429"
+          echo "Distributed authentication rate-limit smoke test: OK (HTTP 429)"
           if [ -s scripts/verify-notification-outbox.mjs ]; then
             order_id=$(node scripts/verify-notification-outbox.mjs)
             test -n "$order_id"
