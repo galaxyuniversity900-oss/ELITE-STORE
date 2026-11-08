@@ -2,7 +2,7 @@ name: MES STORE CI
 
 on:
   push:
-    branches: [main, completion/storefront-experience, notifications/distributed-worker, notifications/provider-production-readiness, security/commerce-webhook-admin-hardening, qa/commerce-e2e-load-restore]
+    branches: [main, completion/storefront-experience, notifications/transactional-outbox, notifications/distributed-worker, notifications/provider-production-readiness, security/commerce-webhook-admin-hardening, qa/commerce-e2e-load-restore]
   pull_request:
     branches: [main, completion/storefront-experience, notifications/distributed-worker, notifications/provider-production-readiness, security/commerce-webhook-admin-hardening]
 
