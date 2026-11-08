@@ -4,7 +4,7 @@ on:
   push:
     branches: [main, completion/storefront-experience, notifications/transactional-outbox, notifications/distributed-worker, notifications/provider-production-readiness]
   pull_request:
-    branches: [main, completion/storefront-experience, notifications/transactional-outbox, notifications/distributed-worker]
+    branches: [main, completion/storefront-experience, notifications/transactional-outbox, notifications/distributed-worker , ops/production-backup-restore]
 
 permissions:
   contents: read
