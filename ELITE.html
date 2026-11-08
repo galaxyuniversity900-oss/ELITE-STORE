@@ -3,14 +3,29 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>MES STORE · MEN'S COLLECTION | ستايلك مش شبه حد (النسخة التفاعلية الكاملة 32 فئة حركية)</title>
+
+  <title>MES STORE | ملابس رجالي فاخرة · Men's Collection</title>
+  <meta name="description" content="اكتشف مجموعة MES STORE من الملابس الرجالي: جواكت، هوديز، جينز وبناطيل بتفاصيل مختارة. تصفّح المجموعة واطلب بسهولة." />
+  <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1" />
+  <link rel="canonical" href="https://galaxyuniversity900-oss.github.io/ELITE-STORE/ELITE.html" />
+  <meta property="og:type" content="website" />
+  <meta property="og:locale" content="ar_EG" />
+  <meta property="og:site_name" content="MES STORE" />
+  <meta property="og:title" content="MES STORE | Men's Collection" />
+  <meta property="og:description" content="ملابس رجالي بتفاصيل مختارة وإطلالة تحمل طابعك." />
+  <meta property="og:url" content="https://galaxyuniversity900-oss.github.io/ELITE-STORE/ELITE.html" />
+  <meta name="twitter:card" content="summary" />
+
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <script defer src="./assets/js/fabric-ripple.js"></script>
   <script defer src="./assets/js/mes-product-image-lab.js"></script>
+  <script defer src="./assets/js/mes-product-seo-links.js"></script>
   <script defer src="./assets/js/premium-store-ux.js"></script>
   <script defer src="./assets/js/mes-store-orchestrator.js"></script>
+  <script defer src="./assets/js/mes-motion-embed.js"></script>
   <link rel="stylesheet" href="./assets/css/mes-store-orchestrator.css">
+  <link rel="stylesheet" href="./assets/css/mes-motion-embed.css">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
@@ -1846,7 +1861,7 @@
           const curSize = selectedSizes[p.id] || 'L';
           const sizes = ['S', 'M', 'L', 'XL', 'XXL'];
           return `
-            <article data-id="${p.id}" class="product-card perspective-1000 group rounded-3xl bg-[#111116] border border-zinc-800/90 hover:border-[#d4af37]/60 p-4 flex flex-col justify-between shadow-xl overflow-hidden">
+            <article id="product-${p.id}" data-id="${p.id}" class="product-card perspective-1000 group rounded-3xl bg-[#111116] border border-zinc-800/90 hover:border-[#d4af37]/60 p-4 flex flex-col justify-between shadow-xl overflow-hidden">
               <!-- Direction-Aware Hover Banner -->
               <div class="dir-overlay absolute top-2.5 left-2.5 right-2.5 z-20 px-3 py-1 rounded-xl bg-[#d4af37] text-black font-black text-[10px] flex items-center justify-between shadow-lg">
                 <span>🧭 ${p.category} · MES STORE</span>
