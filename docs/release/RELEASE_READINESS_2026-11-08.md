@@ -20,7 +20,7 @@ This audit does not authorize or perform a production release. No live payment, 
 | PR #9 | [PR #9](https://github.com/galaxyuniversity900-oss/ELITE-STORE/pull/9) | Merged into main; provider readiness code is present in main history |
 | PR #5 | Head `45d46aca7e295342c2e09e3bed0bf675048e9c68`; run [42463176674](https://github.com/galaxyuniversity900-oss/ELITE-STORE/actions/runs/42463176674) | Branch CI passed; PR is not mergeable (dirty), base `notifications/transactional-outbox` |
 | PR #8 | Head `06f0d959db3fa41bc8bcf3aa203dacdc5eb811b3`; run [42463624409](https://github.com/galaxyuniversity900-oss/ELITE-STORE/actions/runs/42463624409) | Branch CI passed; PR is not mergeable (dirty), base `admin/notification-center` |
-| PR #10 | Head `eec6c1ec844cb042f7d96411c966f69ed29ca002`; run [42465582599](https://github.com/galaxyuniversity900-oss/ELITE-STORE/actions/runs/42465582599) | Branch CI passed; mergeable at audit time, but PR remains Draft |
+| PR #10 | Head `eec6c1ec844cb042f7d96411c966f69ed29ca002`; run [42465582599](https://github.com/galaxyuniversity900-oss/ELITE-STORE/actions/runs/42465582599) | Branch/PR CI passed; retargeted safely to `main`, clean/mergeable, but PR remains Draft |
 | PR #11 | Head `ed7690172c3ed67cbb9df087e6f1faf29b9ec017`; run [42463608773](https://github.com/galaxyuniversity900-oss/ELITE-STORE/actions/runs/42463608773) | Branch CI passed; PR is Draft and not mergeable (dirty) |
 | PR #12 | Head `dc66416b6a4f4c885518df5948158ed291c0549e`; run [42463616707](https://github.com/galaxyuniversity900-oss/ELITE-STORE/actions/runs/42463616707) | Branch CI passed; PR is Draft and not mergeable (dirty) |
 
@@ -43,11 +43,11 @@ The feature PR chain is not safely mergeable as currently targeted:
 |---|---|---:|---|
 | #5 | `notifications/transactional-outbox` | 52 ahead / 4 behind | Dirty |
 | #8 | `admin/notification-center` | 11 ahead / 45 behind | Dirty |
-| #10 | `notifications/provider-production-readiness` | 18 ahead / 0 behind | Clean, but Draft |
+| #10 | `main` | 17 ahead / 0 behind | Clean, but Draft |
 | #11 | `security/commerce-webhook-admin-hardening` | 97 ahead / 19 behind | Dirty, Draft |
 | #12 | `qa/commerce-e2e-load-restore` | 39 ahead / 9 behind | Dirty, Draft |
 
-Do not force-push or blindly retarget these PRs. Resolve/rebase the branch stack in dependency order, inspect every conflict, then rerun CI on the resulting exact head SHAs. Keep the admin/notification/outbox and security/QA work intact.
+PR #10 was safely retargeted to `main` because its provider-readiness base is already contained in main; it is now clean/mergeable but remains Draft. Do not force-push or blindly retarget the remaining PRs. Resolve/rebase the branch stack in dependency order, inspect every conflict, then rerun CI on the resulting exact head SHAs. Keep the admin/notification/outbox and security/QA work intact.
 
 ## Twenty workstream status
 
