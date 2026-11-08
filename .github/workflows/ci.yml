@@ -2,9 +2,9 @@ name: MES STORE CI
 
 on:
   push:
-    branches: [main, completion/storefront-experience, notifications/distributed-worker]
+    branches: [main, completion/storefront-experience, notifications/transactional-outbox, notifications/distributed-worker]
   pull_request:
-    branches: [main, completion/storefront-experience, notifications/distributed-worker]
+    branches: [main, completion/storefront-experience, notifications/transactional-outbox, notifications/distributed-worker]
 
 permissions:
   contents: read
