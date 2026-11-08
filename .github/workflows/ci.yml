@@ -2,7 +2,7 @@ name: MES STORE CI
 
 on:
   push:
-    branches: [main, completion/storefront-experience, notifications/transactional-outbox, notifications/distributed-worker, notifications/provider-production-readiness]
+    branches: [main, completion/storefront-experience, notifications/transactional-outbox, notifications/distributed-worker, notifications/provider-production-readiness, ops/encrypted-offsite-backups]
   pull_request:
     branches: [main, completion/storefront-experience, notifications/transactional-outbox, notifications/distributed-worker, ops/production-backup-restore]
 
