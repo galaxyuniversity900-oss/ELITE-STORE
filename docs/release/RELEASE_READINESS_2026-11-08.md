@@ -43,7 +43,7 @@ The feature PR chain is not safely mergeable as currently targeted:
 |---|---|---:|---|
 | #5 | `notifications/transactional-outbox` | 52 ahead / 4 behind | Dirty |
 | #8 | `admin/notification-center` | 11 ahead / 45 behind | Dirty |
-| #10 | `notifications/provider-production-readiness` | 17 ahead / 0 behind main-equivalent history | Clean, but Draft |
+| #10 | `notifications/provider-production-readiness` | 18 ahead / 0 behind | Clean, but Draft |
 | #11 | `security/commerce-webhook-admin-hardening` | 97 ahead / 19 behind | Dirty, Draft |
 | #12 | `qa/commerce-e2e-load-restore` | 39 ahead / 9 behind | Dirty, Draft |
 
