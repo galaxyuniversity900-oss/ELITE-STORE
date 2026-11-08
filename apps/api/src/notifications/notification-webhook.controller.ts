@@ -10,11 +10,13 @@ import {
   Query,
   Req,
   UnauthorizedException,
+  UseGuards,
 } from '@nestjs/common';
 import { NotificationChannel, Prisma } from '@prisma/client';
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import { RawBodyRequest } from '@nestjs/common';
 import { Request } from 'express';
+import { DistributedRateLimitGuard } from '../auth/distributed-rate-limit.guard';
 import { NotificationOutboxService } from './notification-outbox.service';
 
 type WhatsAppStatus = {
@@ -25,6 +27,7 @@ type WhatsAppStatus = {
 };
 
 @Controller('notifications/webhooks')
+@UseGuards(DistributedRateLimitGuard)
 export class NotificationWebhookController {
   constructor(private readonly outbox: NotificationOutboxService) {}
 
@@ -58,7 +61,7 @@ export class NotificationWebhookController {
       if (!item.id || !item.status) continue;
       const timestamp = Number(item.timestamp);
       const occurredAt = Number.isFinite(timestamp) ? new Date(timestamp * 1000) : new Date();
-      const eventId = `${item.id}:${item.status}:${item.timestamp ?? occurredAt.getTime()}`;
+      const eventId = item.id + ':' + item.status + ':' + (item.timestamp ?? occurredAt.getTime());
       const metadata = item.errors?.length
         ? { errorCodes: item.errors.map((error) => error.code).filter(Boolean) }
         : undefined;
@@ -147,7 +150,7 @@ export class NotificationWebhookController {
       ? Buffer.from(configured.slice(6), 'base64')
       : Buffer.from(configured, 'utf8');
     const expected = createHmac('sha256', secret)
-      .update(`${eventId}.${timestamp}.${rawBody.toString('utf8')}`)
+      .update(eventId + '.' + timestamp + '.' + rawBody.toString('utf8'))
       .digest('base64');
     const valid = signature.split(' ').some((part) => {
       const [version, value] = part.split(',');
