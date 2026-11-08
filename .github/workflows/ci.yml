@@ -2,7 +2,7 @@ name: MES STORE CI
 
 on:
   push:
-    branches: [main, completion/storefront-experience, notifications/distributed-worker, notifications/provider-production-readiness, security/commerce-webhook-admin-hardening, qa/commerce-e2e-load-restore]
+    branches: [main, completion/storefront-experience, notifications/distributed-worker, notifications/provider-production-readiness, security/commerce-webhook-admin-hardening, qa/commerce-e2e-load-restore, hardening/production-readiness-followups]
   pull_request:
     branches: [main, completion/storefront-experience, notifications/provider-production-readiness, security/commerce-webhook-admin-hardening]
 
@@ -31,6 +31,8 @@ jobs:
         run: npm install --no-audit --no-fund
       - name: Validate notification provider preflight script syntax
         run: node --check scripts/verify-notification-providers.mjs
+      - name: Verify order PII retention tool syntax
+        run: node --check scripts/retention/redact-order-pii.mjs
       - name: Verify SEO metadata, sitemap and product structured data
         run: node --check scripts/generate-static-seo.mjs && node scripts/verify-seo.mjs
       - name: Validate workspace and store configuration
@@ -68,6 +70,9 @@ jobs:
           constraint_count=$(docker compose -f infra/docker/docker-compose.yml exec -T postgres psql -U mes_store -d mes_store -Atc "SELECT COUNT(*) FROM pg_constraint WHERE conname IN ('products_price_positive_check','products_compare_at_price_nonnegative_check','products_stock_nonnegative_check','cart_items_quantity_range_check','cart_items_unit_price_nonnegative_check','orders_totals_nonnegative_check','orders_total_reconciliation_check','orders_discount_within_total_check','order_items_quantity_positive_check','order_items_amounts_nonnegative_check','order_items_line_total_check','payments_amount_nonnegative_check')")
           test "$constraint_count" = "12"
           echo "Database integrity constraints: $constraint_count/12"
+          rate_limit_table=$(docker compose -f infra/docker/docker-compose.yml exec -T postgres psql -U mes_store -d mes_store -Atc "SELECT to_regclass('public.api_rate_limit_buckets') IS NOT NULL")
+          test "$rate_limit_table" = "t"
+          echo "Distributed rate-limit table: OK"
           notification_tables=$(docker compose -f infra/docker/docker-compose.yml exec -T postgres psql -U mes_store -d mes_store -Atc "SELECT COUNT(*) FROM pg_tables WHERE schemaname='public' AND tablename IN ('notification_outbox','notification_delivery_attempts','notification_delivery_events')")
           test "$notification_tables" = "3"
           echo "Notification outbox tables: $notification_tables/3"
