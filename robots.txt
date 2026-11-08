@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://galaxyuniversity900-oss.github.io/ELITE-STORE/sitemap.xml
