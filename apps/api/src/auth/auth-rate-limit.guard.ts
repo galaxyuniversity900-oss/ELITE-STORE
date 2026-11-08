@@ -1,4 +1,4 @@
-import { CanActivate, ExecutionContext, Injectable, TooManyRequestsException } from '@nestjs/common';
+import { CanActivate, ExecutionContext, HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { createHash } from 'node:crypto';
 
 type AuthRequest = {
@@ -48,7 +48,7 @@ export class AuthRateLimitGuard implements CanActivate {
           identityResult.allowed ? 0 : identityResult.resetAt,
         );
         response.setHeader('Retry-After', String(Math.max(1, Math.ceil((resetAt - now) / 1000))));
-        throw new TooManyRequestsException('Too many authentication attempts. Try again later.');
+        throw new HttpException('Too many authentication attempts. Try again later.', HttpStatus.TOO_MANY_REQUESTS);
       }
       return true;
     }
@@ -58,7 +58,7 @@ export class AuthRateLimitGuard implements CanActivate {
       this.sweepIfNeeded(now);
       if (!result.allowed) {
         response.setHeader('Retry-After', String(Math.max(1, Math.ceil((result.resetAt - now) / 1000))));
-        throw new TooManyRequestsException('Too many registration attempts. Try again later.');
+        throw new HttpException('Too many registration attempts. Try again later.', HttpStatus.TOO_MANY_REQUESTS);
       }
     }
 
