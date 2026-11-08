@@ -46,7 +46,7 @@ for (const item of config.items) {
   if (item.poster) {
     const posterUrl = new URL(item.poster, 'https://mes-store.invalid/');
     assert.equal(posterUrl.origin, 'https://mes-store.invalid', 'Poster must be same-origin');
-    const posterPath = path.resolve(root, decodeURIComponent(posterUrl.pathname.replace(/^\\//, '')));
+    const posterPath = path.resolve(root, decodeURIComponent(posterUrl.pathname.replace(/^\//, '')));
     assert.ok(posterPath.startsWith(root + path.sep), 'Poster must stay inside the repository');
     if (item.enabled !== false) assert.ok(existsSync(posterPath), 'Enabled motion poster is missing: ' + item.poster);
   }
