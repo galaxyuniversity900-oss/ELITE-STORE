@@ -35,7 +35,7 @@ ACTUAL_DB="$(docker compose -f "$COMPOSE_FILE" exec -T "$SERVICE" sh -ec 'printf
 docker compose -f "$COMPOSE_FILE" exec -T "$SERVICE" pg_restore --list < "$ARCHIVE" >/dev/null
 
 # Take a fresh safety backup before the destructive restore.
-BACKUP_DIR="$BACKUP_DIR" COMPOSE_FILE="$COMPOSE_FILE" POSTGRES_SERVICE="$SERVICE" "$ROOT_DIR/scripts/backup-postgres.sh"
+BACKUP_DIR="$BACKUP_DIR" COMPOSE_FILE="$COMPOSE_FILE" POSTGRES_SERVICE="$SERVICE" bash "$ROOT_DIR/scripts/backup-postgres.sh"
 
 echo "Restoring PostgreSQL database '$ACTUAL_DB'. Existing objects may be dropped."
 docker compose -f "$COMPOSE_FILE" exec -T "$SERVICE" sh -ec '
