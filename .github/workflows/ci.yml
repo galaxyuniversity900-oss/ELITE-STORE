@@ -109,12 +109,15 @@ jobs:
           export BACKUP_DIR="$RUNNER_TEMP/mes-store-backups"
           mkdir -p "$BACKUP_DIR"
           baseline_events="$(docker compose -f infra/docker/docker-compose.yml exec -T postgres psql -U mes_store -d mes_store -Atc "SELECT COUNT(*) FROM notification_delivery_events" | tr -d '[:space:]')"
-          notification_id="$(docker compose -f infra/docker/docker-compose.yml exec -T postgres psql -U mes_store -d mes_store -Atc "SELECT id FROM notification_outbox ORDER BY "createdAt" LIMIT 1" | tr -d '[:space:]')"
+          notification_id="$(docker compose -f infra/docker/docker-compose.yml exec -T postgres psql -U mes_store -d mes_store -Atc "SELECT id FROM notification_outbox ORDER BY id LIMIT 1" | tr -d '[:space:]')"
           test -n "$notification_id"
           bash scripts/backup-postgres.sh
           archive="$(find "$BACKUP_DIR" -maxdepth 1 -type f -name 'mes-store-*.dump' | sort | head -n 1)"
           test -n "$archive"
-          docker compose -f infra/docker/docker-compose.yml exec -T postgres psql -U mes_store -d mes_store -v ON_ERROR_STOP=1 -c "INSERT INTO notification_delivery_events (id, "notificationId", provider, "providerEventId", status, "occurredAt") VALUES ('ci-restore-marker', '$notification_id', 'ci_restore_test', 'ci-restore-marker', 'test_marker', NOW());"
+          docker compose -f infra/docker/docker-compose.yml exec -T postgres psql -U mes_store -d mes_store -v ON_ERROR_STOP=1 <<SQL
+          INSERT INTO notification_delivery_events (id, "notificationId", provider, "providerEventId", status, "occurredAt")
+          VALUES ('ci-restore-marker', '$notification_id', 'ci_restore_test', 'ci-restore-marker', 'test_marker', NOW());
+          SQL
           RESTORE_DATABASE_NAME=mes_store CONFIRM_DATABASE_RESTORE=YES BACKUP_DIR="$BACKUP_DIR" bash scripts/restore-postgres.sh "$archive"
           marker_rows="$(docker compose -f infra/docker/docker-compose.yml exec -T postgres psql -U mes_store -d mes_store -Atc "SELECT COUNT(*) FROM notification_delivery_events WHERE id = 'ci-restore-marker'" | tr -d '[:space:]')"
           test "$marker_rows" = "0"
