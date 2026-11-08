@@ -13,4 +13,4 @@ RUN npm run build --workspace=@mes-store/admin
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 EXPOSE 3001
-CMD ["npm", "run", "start", "--workspace=@mes-store/admin", "--", "-p", "3001"]
+CMD ["node", "node_modules/next/dist/bin/next", "start", "-p", "3001"]
