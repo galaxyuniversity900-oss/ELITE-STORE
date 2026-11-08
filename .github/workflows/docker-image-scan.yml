@@ -30,6 +30,7 @@ jobs:
         with:
           scan-type: image
           version: v0.76.2
+          token-setup-trivy: ${{ github.token }}
           image-ref: mes-store/api:\${{ github.sha }}
           severity: CRITICAL,HIGH
           ignore-unfixed: true
@@ -40,6 +41,7 @@ jobs:
         with:
           scan-type: image
           version: v0.76.2
+          token-setup-trivy: ${{ github.token }}
           image-ref: mes-store/web:\${{ github.sha }}
           severity: CRITICAL,HIGH
           ignore-unfixed: true
@@ -50,6 +52,7 @@ jobs:
         with:
           scan-type: image
           version: v0.76.2
+          token-setup-trivy: ${{ github.token }}
           image-ref: mes-store/admin:\${{ github.sha }}
           severity: CRITICAL,HIGH
           ignore-unfixed: true
@@ -60,6 +63,7 @@ jobs:
         with:
           scan-type: config
           version: v0.76.2
+          token-setup-trivy: ${{ github.token }}
           scan-ref: infra/docker
           severity: CRITICAL,HIGH
           exit-code: '1'
