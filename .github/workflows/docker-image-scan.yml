@@ -1,0 +1,62 @@
+name: Docker Image Security Scan
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  image-scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Build API image
+        run: docker build --pull -f infra/docker/Dockerfile.api -t mes-store/api:\${{ github.sha }} .
+      - name: Build storefront image
+        run: docker build --pull -f infra/docker/Dockerfile.web -t mes-store/web:\${{ github.sha }} .
+      - name: Build admin image
+        run: docker build --pull -f infra/docker/Dockerfile.admin -t mes-store/admin:\${{ github.sha }} .
+      - name: Scan API image
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25
+        with:
+          scan-type: image
+          image-ref: mes-store/api:\${{ github.sha }}
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: '1'
+          cache: 'false'
+      - name: Scan storefront image
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25
+        with:
+          scan-type: image
+          image-ref: mes-store/web:\${{ github.sha }}
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: '1'
+          cache: 'false'
+      - name: Scan admin image
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25
+        with:
+          scan-type: image
+          image-ref: mes-store/admin:\${{ github.sha }}
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: '1'
+          cache: 'false'
+      - name: Scan Docker and deployment configuration
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25
+        with:
+          scan-type: config
+          scan-ref: infra/docker
+          severity: CRITICAL,HIGH
+          exit-code: '1'
+          cache: 'false'
