@@ -4,10 +4,12 @@ import { AuthGuard } from '../auth/auth.guard';
 import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
 import { AdminService } from './admin.service';
+import { AdminAuditInterceptor } from './admin-audit.interceptor';
 import { CreateProductDto, UpdateOrderStatusDto, UpdateProductDto } from './admin.dto';
 
 @Controller('admin')
 @UseGuards(AuthGuard, RolesGuard)
+@UseInterceptors(AdminAuditInterceptor)
 @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
 export class AdminController {
   constructor(private readonly admin: AdminService) {}
