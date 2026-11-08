@@ -12,7 +12,7 @@ async function bootstrap() {
   app.use(helmet());
   const allowedOrigins = parseCorsOrigins();
   app.enableCors({
-    origin: (origin, callback) => callback(null, !origin || allowedOrigins.includes(origin)),
+    origin: (origin: string | undefined, callback: (error: Error | null, allow?: boolean) => void) => callback(null, !origin || allowedOrigins.includes(origin)),
     credentials: true,
     methods: ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     maxAge: 600,
