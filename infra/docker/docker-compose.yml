@@ -73,6 +73,7 @@ services:
       context: ../..
       dockerfile: infra/docker/Dockerfile.web
       args:
+        PRODUCT_MEDIA_CDN_ORIGIN: ${PRODUCT_MEDIA_CDN_ORIGIN:-}
         NEXT_PUBLIC_STOREFRONT_URL: ${NEXT_PUBLIC_STOREFRONT_URL:-https://galaxyuniversity900-oss.github.io/ELITE-STORE/ELITE.html}
     restart: unless-stopped
     environment:
