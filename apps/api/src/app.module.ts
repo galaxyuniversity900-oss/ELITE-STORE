@@ -9,15 +9,17 @@ import { OrdersModule } from './orders/orders.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { ProductsModule } from './products/products.module';
 
+/**
+ * Simulated payment/courier routes are never exposed in production.
+ * A production environment variable must not be able to re-enable fake
+ * payment confirmations or non-existent shipments.
+ */
 export function isCommerceSimulationEnabled(
   env: NodeJS.ProcessEnv = process.env,
 ): boolean {
-  return env.NODE_ENV !== 'production' || env.ENABLE_COMMERCE_SIMULATION === 'true';
+  return env.NODE_ENV !== 'production';
 }
 
-// Simulated payment and courier adapters are for local development only.
-// Production must never expose routes that can mark a simulated payment as paid
-// or create a shipment that does not exist with a carrier.
 const commerceSimulationEnabled = isCommerceSimulationEnabled();
 
 @Module({
