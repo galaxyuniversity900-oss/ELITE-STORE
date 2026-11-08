@@ -58,6 +58,31 @@ describe('NotificationOutboxService', () => {
     expect(call.data[1].channel).toBe(NotificationChannel.EMAIL);
   });
 
+  it('does not assign a fallback WhatsApp recipient when configuration is missing', async () => {
+    const previous = process.env.WHATSAPP_ORDER_RECIPIENT;
+    delete process.env.WHATSAPP_ORDER_RECIPIENT;
+    const tx = { notificationOutbox: { createMany: jest.fn().mockResolvedValue({ count: 2 }) } };
+    const service = new NotificationOutboxService(prisma as never);
+
+    try {
+      await service.enqueueOrderCreated(tx as never, {
+        id: 'order-no-default-recipient',
+        orderNumber: 'MES-NO-RECIPIENT',
+        customerName: 'Test',
+        customerPhone: '+201000000000',
+        grandTotal: '10.00',
+        currency: 'EGP',
+        shippingAddress: {},
+        items: [],
+      });
+      const rows = tx.notificationOutbox.createMany.mock.calls[0][0].data;
+      expect(rows.find((row: any) => row.channel === NotificationChannel.WHATSAPP).recipient).toBeNull();
+    } finally {
+      if (previous === undefined) delete process.env.WHATSAPP_ORDER_RECIPIENT;
+      else process.env.WHATSAPP_ORDER_RECIPIENT = previous;
+    }
+  });
+
   it('marks an accepted WhatsApp message SENT and records the provider message ID', async () => {
     const notification = {
       id: 'outbox-1',
