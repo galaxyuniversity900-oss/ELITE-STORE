@@ -111,7 +111,7 @@ export default async function HomePage() {
 
               return (
                 <article className="product" key={product.id}>
-                  <a className="product-image-link" href={storefrontUrl} aria-label={`عرض ${product.name} في المتجر`}>
+                  <a className="product-image-link" href={`/products/${encodeURIComponent(product.slug)}`} aria-label={`عرض تفاصيل ${product.name}`}>
                     {image ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={image.url} alt={image.alt || product.name} loading="lazy" />
