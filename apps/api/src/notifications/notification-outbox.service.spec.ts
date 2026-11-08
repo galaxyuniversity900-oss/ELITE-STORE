@@ -1,4 +1,4 @@
-import { NotificationChannel, NotificationStatus, Prisma } from '@prisma/client';
+import { NotificationAttemptStatus, NotificationChannel, NotificationStatus, Prisma } from '@prisma/client';
 import { NotificationOutboxService } from './notification-outbox.service';
 
 describe('NotificationOutboxService', () => {
@@ -26,6 +26,7 @@ describe('NotificationOutboxService', () => {
       ? (work as (tx: unknown) => unknown)({
           $queryRaw: prisma.$queryRaw,
           notificationOutbox: prisma.notificationOutbox,
+          notificationDeliveryAttempt: prisma.notificationDeliveryAttempt,
         })
       : Promise.all(work as Promise<unknown>[]));
   });
@@ -282,4 +283,88 @@ describe('NotificationOutboxService', () => {
       data: expect.objectContaining({ providerEventId: 'svix-event-1', status: 'delivered' }),
     }));
   });
+
+
+  it('marks a provider-accepted delivery ABANDONED when the worker has lost its lease', async () => {
+    const notification = {
+      id: 'outbox-lost-lease',
+      channel: NotificationChannel.WHATSAPP,
+      recipient: '201000000000',
+      payload: { orderNumber: 'MES-LEASE', customerName: 'Test', customerPhone: '0100', total: '245', currency: 'EGP', items: 'Shirt', address: 'Cairo' },
+      dedupeKey: 'order-lease:ORDER_CREATED:WHATSAPP',
+      attempts: 1,
+      maxAttempts: 8,
+      lockToken: 'lease-current',
+    };
+    prisma.notificationOutbox.findUnique.mockResolvedValue(notification);
+    prisma.notificationDeliveryAttempt.create.mockResolvedValue({ id: 'attempt-lost-lease' });
+    prisma.notificationOutbox.updateMany.mockResolvedValue({ count: 0 });
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ messages: [{ id: 'wamid.lease-accepted' }] }),
+    }) as never;
+    process.env.WHATSAPP_PHONE_NUMBER_ID = 'phone-id';
+    process.env.WHATSAPP_ACCESS_TOKEN = 'test-token';
+    process.env.WHATSAPP_ORDER_TEMPLATE_NAME = 'order_alert';
+    process.env.WHATSAPP_API_VERSION = 'v99.0';
+
+    const service = new NotificationOutboxService(prisma as never);
+    await (service as any).processOne(notification.id, 'lease-current');
+
+    expect(prisma.notificationOutbox.updateMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: { id: notification.id, status: NotificationStatus.PROCESSING, lockToken: 'lease-current' },
+      data: expect.objectContaining({ status: NotificationStatus.SENT, payload: {}, recipient: null }),
+    }));
+    expect(prisma.notificationDeliveryAttempt.update).toHaveBeenCalledWith(expect.objectContaining({
+      where: { id: 'attempt-lost-lease' },
+      data: expect.objectContaining({
+        status: NotificationAttemptStatus.ABANDONED,
+        errorCode: 'worker_lease_lost_after_delivery',
+      }),
+    }));
+  });
+
+  it('scrubs recipient and customer payload after successful delivery', async () => {
+    const notification = {
+      id: 'outbox-pii-scrub',
+      channel: NotificationChannel.WHATSAPP,
+      recipient: '201000000000',
+      payload: { orderNumber: 'MES-PII', customerName: 'Test', customerPhone: '0100', total: '245', currency: 'EGP', items: 'Shirt', address: 'Cairo' },
+      dedupeKey: 'order-pii:ORDER_CREATED:WHATSAPP',
+      attempts: 1,
+      maxAttempts: 8,
+      lockToken: 'lease-pii',
+    };
+    prisma.notificationOutbox.findUnique.mockResolvedValue(notification);
+    prisma.notificationDeliveryAttempt.create.mockResolvedValue({ id: 'attempt-pii-scrub' });
+    prisma.notificationOutbox.updateMany.mockResolvedValue({ count: 1 });
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ messages: [{ id: 'wamid.pii-scrubbed' }] }),
+    }) as never;
+    process.env.WHATSAPP_PHONE_NUMBER_ID = 'phone-id';
+    process.env.WHATSAPP_ACCESS_TOKEN = 'test-token';
+    process.env.WHATSAPP_ORDER_TEMPLATE_NAME = 'order_alert';
+    process.env.WHATSAPP_API_VERSION = 'v99.0';
+
+    const service = new NotificationOutboxService(prisma as never);
+    await (service as any).processOne(notification.id, 'lease-pii');
+
+    expect(prisma.notificationOutbox.updateMany).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({
+        status: NotificationStatus.SENT,
+        payload: {},
+        recipient: null,
+        lockedAt: null,
+        lockToken: null,
+      }),
+    }));
+    expect(prisma.notificationDeliveryAttempt.update).toHaveBeenCalledWith(expect.objectContaining({
+      where: { id: 'attempt-pii-scrub' },
+      data: expect.objectContaining({ status: NotificationAttemptStatus.SUCCEEDED }),
+    }));
+  });
+
 });
