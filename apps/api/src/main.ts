@@ -5,16 +5,17 @@ import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
+import { parseCorsOrigins } from './cors-policy';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { bufferLogs: true, rawBody: true });
   app.use(helmet());
+  const allowedOrigins = parseCorsOrigins();
   app.enableCors({
-    origin: (process.env.CORS_ORIGINS ?? 'http://localhost:3000,http://localhost:3001')
-      .split(',')
-      .map((value) => value.trim())
-      .filter(Boolean),
+    origin: (origin, callback) => callback(null, !origin || allowedOrigins.includes(origin)),
     credentials: true,
+    methods: ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    maxAge: 600,
   });
   app.setGlobalPrefix('api');
   app.useGlobalPipes(new ValidationPipe({
