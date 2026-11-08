@@ -2,8 +2,15 @@ import { HttpException } from '@nestjs/common';
 import { DistributedRateLimitGuard } from './distributed-rate-limit.guard';
 
 describe('DistributedRateLimitGuard', () => {
-  beforeEach(() => {
+  const originalJwtSecret = process.env.JWT_SECRET;
+
+  beforeAll(() => {
     process.env.JWT_SECRET = 'unit-test-secret-with-at-least-32-characters';
+  });
+
+  afterAll(() => {
+    if (originalJwtSecret === undefined) delete process.env.JWT_SECRET;
+    else process.env.JWT_SECRET = originalJwtSecret;
   });
   const makeContext = (request: any, response = { setHeader: jest.fn() }) => ({
     switchToHttp: () => ({
