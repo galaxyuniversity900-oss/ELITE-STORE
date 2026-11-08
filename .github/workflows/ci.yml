@@ -46,6 +46,10 @@ jobs:
         run: npm test
       - name: Build all applications
         run: npm run build
+      - name: Install Chromium for accessibility checks
+        run: npx playwright install --with-deps chromium
+      - name: Run mobile RTL and WCAG accessibility audit
+        run: npm run qa:a11y
       - name: Verify API runtime entrypoint
         run: test -s apps/api/dist/main.js
       - name: Validate Docker Compose configuration
