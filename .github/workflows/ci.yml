@@ -31,6 +31,8 @@ jobs:
           node-version: 22
       - name: Install dependencies
         run: npm install --no-audit --no-fund
+      - name: Enforce immutable workflow action references
+        run: node scripts/verify-workflow-pins.mjs
       - name: Validate notification provider preflight script syntax
         run: node --check scripts/verify-notification-providers.mjs
       - name: Validate workspace and store configuration
