@@ -2,6 +2,9 @@ import { HttpException } from '@nestjs/common';
 import { DistributedRateLimitGuard } from './distributed-rate-limit.guard';
 
 describe('DistributedRateLimitGuard', () => {
+  beforeEach(() => {
+    process.env.JWT_SECRET = 'unit-test-secret-with-at-least-32-characters';
+  });
   const makeContext = (request: any, response = { setHeader: jest.fn() }) => ({
     switchToHttp: () => ({
       getRequest: () => request,
