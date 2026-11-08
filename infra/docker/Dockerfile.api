@@ -15,4 +15,4 @@ RUN npm run build --workspace=@mes-store/api \
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 EXPOSE 4000
-CMD ["npm", "run", "start", "--workspace=@mes-store/api"]
+CMD ["node", "apps/api/dist/main.js"]
