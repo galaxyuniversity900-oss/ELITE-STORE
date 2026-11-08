@@ -13,7 +13,7 @@ permissions:
 jobs:
   image-scan:
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 45
     steps:
       - name: Checkout
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
@@ -25,46 +25,16 @@ jobs:
         run: docker build --pull -f infra/docker/Dockerfile.web -t mes-store/web:${{ github.sha }} .
       - name: Build admin image
         run: docker build --pull -f infra/docker/Dockerfile.admin -t mes-store/admin:${{ github.sha }} .
+      - name: Install pinned Trivy CLI from Go module
+        run: |
+          go install github.com/aquasecurity/trivy/cmd/trivy@v0.76.2
+          echo "$HOME/go/bin" >> "$GITHUB_PATH"
+          trivy version
       - name: Scan API image
-        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25
-        with:
-          scan-type: image
-          version: v0.76.2
-          token-setup-trivy: ${{ github.token }}
-          image-ref: mes-store/api:${{ github.sha }}
-          severity: CRITICAL,HIGH
-          ignore-unfixed: true
-          exit-code: '1'
-          cache: 'false'
+        run: trivy image --exit-code 1 --severity CRITICAL,HIGH --ignore-unfixed mes-store/api:${{ github.sha }}
       - name: Scan storefront image
-        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25
-        with:
-          scan-type: image
-          version: v0.76.2
-          token-setup-trivy: ${{ github.token }}
-          image-ref: mes-store/web:${{ github.sha }}
-          severity: CRITICAL,HIGH
-          ignore-unfixed: true
-          exit-code: '1'
-          cache: 'false'
+        run: trivy image --exit-code 1 --severity CRITICAL,HIGH --ignore-unfixed mes-store/web:${{ github.sha }}
       - name: Scan admin image
-        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25
-        with:
-          scan-type: image
-          version: v0.76.2
-          token-setup-trivy: ${{ github.token }}
-          image-ref: mes-store/admin:${{ github.sha }}
-          severity: CRITICAL,HIGH
-          ignore-unfixed: true
-          exit-code: '1'
-          cache: 'false'
+        run: trivy image --exit-code 1 --severity CRITICAL,HIGH --ignore-unfixed mes-store/admin:${{ github.sha }}
       - name: Scan Docker and deployment configuration
-        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25
-        with:
-          scan-type: config
-          version: v0.76.2
-          token-setup-trivy: ${{ github.token }}
-          scan-ref: infra/docker
-          severity: CRITICAL,HIGH
-          exit-code: '1'
-          cache: 'false'
+        run: trivy config --exit-code 1 --severity CRITICAL,HIGH infra/docker
