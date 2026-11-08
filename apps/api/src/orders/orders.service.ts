@@ -147,7 +147,7 @@ export class OrdersService {
         }));
         return { ...outcome.order, storeNotification: notification };
       }
-      return { ...outcome.order, storeNotification: { sent: false, reason: 'not_configured' } };
+      return { ...outcome.order, storeNotification: { sent: false, reason: outcome.created ? 'not_configured' : 'duplicate_checkout' } };
     } catch (error) {
       // A concurrent retry can win the unique-key race. Return its committed order.
       if (error instanceof Prisma.PrismaClientKnownRequestError && ['P2002', 'P2034'].includes(error.code)) {
