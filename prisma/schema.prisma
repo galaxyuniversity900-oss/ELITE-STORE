@@ -359,3 +359,13 @@ model NotificationDeliveryEvent {
   @@index([notificationId, occurredAt])
   @@map("notification_delivery_events")
 }
+
+model ApiRateLimitBucket {
+  id        String   @id @db.VarChar(128)
+  count     Int
+  resetAt   DateTime
+  updatedAt DateTime @updatedAt
+
+  @@index([resetAt])
+  @@map("api_rate_limit_buckets")
+}
