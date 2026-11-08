@@ -128,4 +128,91 @@ describe('OrdersService', () => {
     expect(tx.order.findUnique).toHaveBeenCalledTimes(1);
     expect(notifications.enqueueOrderCreated).not.toHaveBeenCalled();
   });
+
+  it('rejects checkout when an atomic stock reservation loses a race', async () => {
+    const tx = {
+      order: {
+        findUnique: jest.fn().mockResolvedValue(null),
+        create: jest.fn(),
+      },
+      cart: {
+        findUnique: jest.fn().mockResolvedValue({
+          id: 'cart-race',
+          status: CartStatus.ACTIVE,
+          items: [{
+            productId: 'last-unit',
+            quantity: 1,
+            product: {
+              id: 'last-unit',
+              name: 'Last Unit',
+              sku: 'LAST-001',
+              status: ProductStatus.ACTIVE,
+              stockQuantity: 1,
+              price: new Prisma.Decimal('250.00'),
+            },
+          }],
+        }),
+      },
+      product: { updateMany: jest.fn().mockResolvedValue({ count: 0 }) },
+    };
+    const prisma = { $transaction: jest.fn((work: (client: unknown) => unknown) => work(tx)) };
+    const service = new OrdersService(prisma as never, notifications as never);
+
+    await expect(service.checkout('race-session', 'checkout-race-0001', input))
+      .rejects.toBeInstanceOf(BadRequestException);
+    expect(tx.product.updateMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({ id: 'last-unit', stockQuantity: { gte: 1 } }),
+      data: { stockQuantity: { decrement: 1 } },
+    }));
+    expect(tx.order.create).not.toHaveBeenCalled();
+    expect(notifications.enqueueOrderCreated).not.toHaveBeenCalled();
+  });
+
+  it('calculates checkout totals from the current database product price, not a stale cart price', async () => {
+    const tx = {
+      cart: {
+        findUnique: jest.fn().mockResolvedValue({
+          id: 'cart-price',
+          status: CartStatus.ACTIVE,
+          items: [{
+            productId: 'product-current-price',
+            quantity: 2,
+            unitPrice: new Prisma.Decimal('1.00'),
+            product: {
+              id: 'product-current-price',
+              name: 'Current Price Shirt',
+              sku: 'PRICE-001',
+              status: ProductStatus.ACTIVE,
+              stockQuantity: null,
+              price: new Prisma.Decimal('175.25'),
+            },
+          }],
+        }),
+        update: jest.fn().mockResolvedValue({}),
+      },
+      order: {
+        findUnique: jest.fn().mockResolvedValue(null),
+        create: jest.fn().mockImplementation(({ data }) => Promise.resolve({
+          id: 'order-current-price',
+          orderNumber: data.orderNumber,
+          customerName: data.customerName,
+          customerPhone: data.customerPhone,
+          grandTotal: data.grandTotal,
+          currency: data.currency,
+          shippingAddress: data.shippingAddress,
+          items: data.items.create,
+          payments: data.payments.create,
+        })),
+      },
+    };
+    const prisma = { $transaction: jest.fn((work: (client: unknown) => unknown) => work(tx)) };
+    const service = new OrdersService(prisma as never, notifications as never);
+    const result = await service.checkout('price-session', 'checkout-price-0001', input);
+    expect(result.id).toBe('order-current-price');
+    const orderData = tx.order.create.mock.calls[0][0].data;
+    expect(orderData.subtotal.toString()).toBe('350.5');
+    expect(orderData.grandTotal.toString()).toBe('395.5');
+    expect(orderData.items.create[0].unitPrice.toString()).toBe('175.25');
+  });
+
 });
