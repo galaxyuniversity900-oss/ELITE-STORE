@@ -17,7 +17,7 @@ try {
   assert.equal((await readdir(output)).length, 6);
   for (const variant of variants) {
     const metadata = await sharp(path.join(output, variant.filename)).metadata();
-    assert.equal(metadata.format, variant.format);
+    assert.equal(metadata.format, variant.format === 'avif' ? 'heif' : variant.format);
     assert.equal(metadata.width, variant.width);
   }
   console.log('Product media pipeline verification: PASS (responsive WebP/AVIF variants, content hashes)');
