@@ -31,6 +31,11 @@ jobs:
         run: npm install --no-audit --no-fund
       - name: Validate notification provider preflight script syntax
         run: node --check scripts/verify-notification-providers.mjs
+      - name: Verify PostgreSQL backup and restore safeguards
+        run: |
+          bash -n scripts/backup-postgres.sh
+          bash -n scripts/restore-postgres.sh
+          node scripts/verify-backup-restore.mjs
       - name: Validate workspace and store configuration
         run: |
           node -e "for (const f of ['package.json','apps/api/package.json','apps/web/package.json','apps/admin/package.json']) JSON.parse(require('fs').readFileSync(f,'utf8')); console.log('Workspace JSON: OK')"
@@ -98,6 +103,34 @@ jobs:
             test "$dedupe_count" = "2"
             echo "Transactional outbox checkout smoke test: OK (2 channels, 2 unique dedupe keys)"
           fi
+      - name: Verify encrypted off-site backup workflow
+        run: |
+          bash -n scripts/publish-encrypted-backup.sh
+          bash -n scripts/restore-encrypted-postgres.sh
+          node scripts/verify-encrypted-backup.mjs
+      - name: Verify PostgreSQL backup and restore end to end
+        shell: bash
+        run: |
+          export BACKUP_DIR="$RUNNER_TEMP/mes-store-backups"
+          mkdir -p "$BACKUP_DIR"
+          baseline_events="$(docker compose -f infra/docker/docker-compose.yml exec -T postgres psql -U mes_store -d mes_store -Atc "SELECT COUNT(*) FROM notification_delivery_events" | tr -d '[:space:]')"
+          notification_id="$(docker compose -f infra/docker/docker-compose.yml exec -T postgres psql -U mes_store -d mes_store -Atc "SELECT id FROM notification_outbox ORDER BY id LIMIT 1" | tr -d '[:space:]')"
+          test -n "$notification_id"
+          bash scripts/backup-postgres.sh
+          archive="$(find "$BACKUP_DIR" -maxdepth 1 -type f -name 'mes-store-*.dump' | sort | head -n 1)"
+          test -n "$archive"
+          docker compose -f infra/docker/docker-compose.yml exec -T postgres psql -U mes_store -d mes_store -v ON_ERROR_STOP=1 <<SQL
+          INSERT INTO notification_delivery_events (id, "notificationId", provider, "providerEventId", status, "occurredAt")
+          VALUES ('ci-restore-marker', '$notification_id', 'ci_restore_test', 'ci-restore-marker', 'test_marker', NOW());
+          SQL
+          RESTORE_DATABASE_NAME=mes_store CONFIRM_DATABASE_RESTORE=YES BACKUP_DIR="$BACKUP_DIR" bash scripts/restore-postgres.sh "$archive"
+          marker_rows="$(docker compose -f infra/docker/docker-compose.yml exec -T postgres psql -U mes_store -d mes_store -Atc "SELECT COUNT(*) FROM notification_delivery_events WHERE id = 'ci-restore-marker'" | tr -d '[:space:]')"
+          test "$marker_rows" = "0"
+          restored_events="$(docker compose -f infra/docker/docker-compose.yml exec -T postgres psql -U mes_store -d mes_store -Atc "SELECT COUNT(*) FROM notification_delivery_events" | tr -d '[:space:]')"
+          test "$restored_events" = "$baseline_events"
+          tables="$(docker compose -f infra/docker/docker-compose.yml exec -T postgres psql -U mes_store -d mes_store -Atc "SELECT COUNT(*) FROM pg_tables WHERE schemaname='public' AND tablename IN ('notification_outbox','notification_delivery_attempts','notification_delivery_events')")"
+          test "$tables" = "3"
+          echo "PostgreSQL backup/restore round-trip: PASS"
       - name: Show container logs on failure
         if: failure()
         run: docker compose -f infra/docker/docker-compose.yml logs --no-color
