@@ -60,19 +60,30 @@ if [[ "$TABLE_COUNT" -lt "${#REQUIRED_TABLES[@]}" ]]; then
   exit 1
 fi
 
+# Use catalog-generated, safely quoted identifiers; do not rely on psql variable interpolation.
+TABLE_IDENTIFIERS="$(psql_source -Atc "SELECT format('%I', tablename) FROM pg_tables WHERE schemaname='public' ORDER BY tablename")"
+TABLE_SQL_NAMES=()
+while IFS= read -r table_ident; do
+  [[ -n "$table_ident" ]] && TABLE_SQL_NAMES+=("$table_ident")
+done <<< "$TABLE_IDENTIFIERS"
+if [[ "${#TABLE_SQL_NAMES[@]}" -ne "$TABLE_COUNT" ]]; then
+  echo "Table identifier enumeration mismatch"
+  exit 1
+fi
+
 echo "Public tables discovered: ${TABLE_NAMES[*]}"
-for table in "${TABLE_NAMES[@]}"; do
-  source_sig="$(psql_source -v table_name="$table" -Atc "SELECT COUNT(*) || ':' || COALESCE(md5(string_agg(to_jsonb(t)::text, chr(10) ORDER BY to_jsonb(t)::text)), md5('')) FROM :\"table_name\" AS t")"
-  restored_sig="$(psql_restored -v table_name="$table" -Atc "SELECT COUNT(*) || ':' || COALESCE(md5(string_agg(to_jsonb(t)::text, chr(10) ORDER BY to_jsonb(t)::text)), md5('')) FROM :\"table_name\" AS t")"
+for table_ident in "${TABLE_SQL_NAMES[@]}"; do
+  source_sig="$(psql_source -Atc "SELECT COUNT(*) || ':' || COALESCE(md5(string_agg(to_jsonb(t)::text, chr(10) ORDER BY to_jsonb(t)::text)), md5('')) FROM $table_ident AS t")"
+  restored_sig="$(psql_restored -Atc "SELECT COUNT(*) || ':' || COALESCE(md5(string_agg(to_jsonb(t)::text, chr(10) ORDER BY to_jsonb(t)::text)), md5('')) FROM $table_ident AS t")"
   if [[ "$source_sig" != "$restored_sig" ]]; then
-    echo "DATA INTEGRITY MISMATCH in public.$table"
+    echo "DATA INTEGRITY MISMATCH in public.$table_ident"
     echo "SOURCE:   $source_sig"
     echo "RESTORED: $restored_sig"
     exit 1
   fi
 done
 
-# Compare all public sequences, including sequence names and both state fields.
+# Compare every public sequence name and its last_value/is_called state.
 SOURCE_SEQUENCES="$(psql_source -Atc "SELECT sequencename FROM pg_sequences WHERE schemaname='public' ORDER BY sequencename")"
 RESTORED_SEQUENCES="$(psql_restored -Atc "SELECT sequencename FROM pg_sequences WHERE schemaname='public' ORDER BY sequencename")"
 if [[ "$SOURCE_SEQUENCES" != "$RESTORED_SEQUENCES" ]]; then
@@ -88,14 +99,24 @@ SEQUENCE_NAMES=()
 while IFS= read -r sequence; do
   [[ -n "$sequence" ]] && SEQUENCE_NAMES+=("$sequence")
 done <<< "$SOURCE_SEQUENCES"
+SEQUENCE_COUNT="${#SEQUENCE_NAMES[@]}"
+
+SEQUENCE_IDENTIFIERS="$(psql_source -Atc "SELECT format('%I', sequencename) FROM pg_sequences WHERE schemaname='public' ORDER BY sequencename")"
+SEQUENCE_SQL_NAMES=()
+while IFS= read -r sequence_ident; do
+  [[ -n "$sequence_ident" ]] && SEQUENCE_SQL_NAMES+=("$sequence_ident")
+done <<< "$SEQUENCE_IDENTIFIERS"
+if [[ "${#SEQUENCE_SQL_NAMES[@]}" -ne "$SEQUENCE_COUNT" ]]; then
+  echo "Sequence identifier enumeration mismatch"
+  exit 1
+fi
 
 echo "Public sequences discovered: ${SEQUENCE_NAMES[*]:-none}"
-SEQUENCE_COUNT="${#SEQUENCE_NAMES[@]}"
-for sequence in "${SEQUENCE_NAMES[@]}"; do
-  source_seq="$(psql_source -v sequence_name="$sequence" -Atc "SELECT last_value || ':' || is_called FROM :\"sequence_name\"")"
-  restored_seq="$(psql_restored -v sequence_name="$sequence" -Atc "SELECT last_value || ':' || is_called FROM :\"sequence_name\"")"
+for sequence_ident in "${SEQUENCE_SQL_NAMES[@]}"; do
+  source_seq="$(psql_source -Atc "SELECT last_value || ':' || is_called FROM $sequence_ident")"
+  restored_seq="$(psql_restored -Atc "SELECT last_value || ':' || is_called FROM $sequence_ident")"
   if [[ "$source_seq" != "$restored_seq" ]]; then
-    echo "SEQUENCE STATE MISMATCH in public.$sequence"
+    echo "SEQUENCE STATE MISMATCH in public.$sequence_ident"
     echo "SOURCE:   $source_seq"
     echo "RESTORED: $restored_seq"
     exit 1
