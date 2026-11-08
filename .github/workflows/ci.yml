@@ -31,6 +31,11 @@ jobs:
         run: npm install --no-audit --no-fund
       - name: Validate notification provider preflight script syntax
         run: node --check scripts/verify-notification-providers.mjs
+      - name: Verify PostgreSQL backup and restore safeguards
+        run: |
+          bash -n scripts/backup-postgres.sh
+          bash -n scripts/restore-postgres.sh
+          node scripts/verify-backup-restore.mjs
       - name: Validate workspace and store configuration
         run: |
           node -e "for (const f of ['package.json','apps/api/package.json','apps/web/package.json','apps/admin/package.json']) JSON.parse(require('fs').readFileSync(f,'utf8')); console.log('Workspace JSON: OK')"
