@@ -41,3 +41,28 @@
 - CI is configured to run on the remediation branch and its PR target.
 - A passing CI run is required before these changes can be called verified.
 - Live payment, Meta, Resend, production secrets, deployment configuration, backup restoration, and external penetration tests were not executed by this source-only review.
+
+
+## Follow-up hardening (2026-11-08)
+
+- Added a PostgreSQL-backed fixed-window rate limiter shared by API replicas: login 10/15m, registration 5/hour, checkout 30/15m, and provider webhooks 300/min. Responses over the limit include HTTP 429 and `Retry-After`. Only SHA-256 bucket keys are persisted, not raw IP values.
+- Added an explicit dry-run-first order PII redaction command. It requires an owner-approved `ORDER_PII_RETENTION_DAYS` between 30 and 3650; writes additionally require `--apply` and `ORDER_PII_RETENTION_CONFIRM=REDACT_TERMINAL_ORDER_PII`. It excludes non-terminal orders and orders with pending/processing notification jobs. It retains financial/order-item history and does not erase user profiles, address book entries, backups, logs or provider records.
+- Unexpected rejected promises from individual outbox worker tasks are now logged with the notification identifier and a sanitized error class.
+- The previous CI failure on PR #11 was isolated to a syntax error in `scripts/verify-motion-embeds.mjs`; the workflow's type-check, tests, build, Docker stack, commerce E2E, k6 and PostgreSQL restore steps had succeeded on that run. The verifier path handling has been corrected and hardened against repository path traversal.
+
+### Remaining release gates
+
+- Approve retention duration and customer-erasure process with qualified local counsel before enabling destructive retention runs.
+- Configure a precise trusted-proxy hop count or equivalent edge controls when deployed behind a reverse proxy. Do not trust arbitrary forwarded IP headers.
+- Add MFA, secure HttpOnly/BFF sessions, session revocation and fine-grained admin permissions.
+- Configure encrypted off-site backups, PITR, immutable retention, RPO/RTO and production restore drills.
+- Perform live provider preflight and controlled test sends only after real secrets and owner-controlled test destinations are configured.
+- Complete independent external penetration testing. CI is not a penetration test or compliance certification.
+
+
+## Notification Center and operational observability follow-up
+
+- The ADMIN/SUPER_ADMIN-protected `/api/admin/notifications/metrics` endpoint now reports queue counts, stale worker leases, oldest pending age, attempt failure rate, average/P95 send latency, and threshold-based warning/critical alerts.
+- The admin `/notifications` page exposes filters, pagination, attempts, provider events, manual retry for terminal DEAD records, and live Outbox operational metrics. The admin dashboard links to this route.
+- Admin Next.js responses now include a restrictive Content-Security-Policy and security headers. CI verifies the route, CSP header, and authenticated metrics response.
+- Alerts are visible inside the authenticated admin UI only. External paging/delivery is still a deployment integration gate and is not claimed as configured.

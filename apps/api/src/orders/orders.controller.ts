@@ -1,9 +1,11 @@
-import { BadRequestException, Body, Controller, Headers, Param, ParseUUIDPipe, Post } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Headers, Param, ParseUUIDPipe, Post, UseGuards } from '@nestjs/common';
+import { DistributedRateLimitGuard } from '../auth/distributed-rate-limit.guard';
 import { CheckoutDto } from './orders.dto';
 import { AuthService } from '../auth/auth.service';
 import { OrdersService } from './orders.service';
 
 @Controller('orders')
+@UseGuards(DistributedRateLimitGuard)
 export class OrdersController {
   constructor(private readonly orders: OrdersService, private readonly auth: AuthService) {}
 

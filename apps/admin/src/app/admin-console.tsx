@@ -184,7 +184,7 @@ export default function AdminConsole() {
 
   return (
     <main className="admin-shell" dir="rtl">
-      <header className="admin-header"><div><span className="eyebrow">MES STORE</span><h1>مركز إدارة المتجر</h1></div><button className="secondary" onClick={logout}>تسجيل الخروج</button></header>
+      <header className="admin-header"><div><span className="eyebrow">MES STORE</span><h1>مركز إدارة المتجر</h1><a className="admin-notifications-link" href="/notifications">مركز الإشعارات ←</a></div><button className="secondary" onClick={logout}>تسجيل الخروج</button></header>
       {error && <p className="error">{error}</p>}
       <section className="stats">
         <article><small>المنتجات النشطة</small><strong>{overview?.products ?? '—'}</strong></article>

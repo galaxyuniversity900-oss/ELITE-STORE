@@ -1,9 +1,11 @@
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
+const scriptDir = path.dirname(fileURLToPath(import.meta.url));
+const root = path.resolve(scriptDir, '..');
 const read = (file) => readFileSync(new URL(file, import.meta.url), 'utf8');
-const root = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
 const config = JSON.parse(read('../data/motion-embeds.json'));
 const html = read('../ELITE.html');
 const runtime = read('../assets/js/mes-motion-embed.js');
@@ -23,6 +25,18 @@ assert.ok(runtime.includes('await Promise.allSettled(Array.from({ length: worker
 assert.ok(runtime.includes('Entry failed independently:'), 'A failed entry must not stop other motion entries');
 assert.ok(runtime.includes('if (!selector || !source || !allowed.includes(item.type))'), 'Invalid sources must be rejected before URL parsing');
 
+function resolveRepositoryAsset(url, label) {
+  const decodedPath = decodeURIComponent(url.pathname);
+  const relativePath = decodedPath.replace(/^\/+/, '');
+  const assetPath = path.resolve(root, relativePath);
+  const relative = path.relative(root, assetPath);
+  assert.ok(
+    relative && relative !== '..' && !relative.startsWith('..' + path.sep) && !path.isAbsolute(relative),
+    label + ' must stay inside the repository',
+  );
+  return assetPath;
+}
+
 const extensions = {
   video: ['mp4', 'webm'], gif: ['gif'], webp: ['webp'], svg: ['svg'], lottie: ['json']
 };
@@ -40,14 +54,12 @@ for (const item of config.items) {
   assert.equal(parsed.origin, 'https://mes-store.invalid', 'Motion source must be a relative same-origin path');
   const ext = parsed.pathname.split('.').pop().toLowerCase();
   assert.ok(extensions[item.type].includes(ext), 'File extension does not match motion type: ' + item.id);
-  const assetPath = path.resolve(root, decodeURIComponent(parsed.pathname.replace(/^\//, '')));
-  assert.ok(assetPath.startsWith(root + path.sep), 'Motion asset must stay inside the repository');
+  const assetPath = resolveRepositoryAsset(parsed, 'Motion asset');
   if (item.enabled !== false) assert.ok(existsSync(assetPath), 'Enabled motion asset is missing: ' + item.src);
   if (item.poster) {
     const posterUrl = new URL(item.poster, 'https://mes-store.invalid/');
     assert.equal(posterUrl.origin, 'https://mes-store.invalid', 'Poster must be same-origin');
-    const posterPath = path.resolve(root, decodeURIComponent(posterUrl.pathname.replace(/^\\//, '')));
-    assert.ok(posterPath.startsWith(root + path.sep), 'Poster must stay inside the repository');
+    const posterPath = resolveRepositoryAsset(posterUrl, 'Poster');
     if (item.enabled !== false) assert.ok(existsSync(posterPath), 'Enabled motion poster is missing: ' + item.poster);
   }
 }

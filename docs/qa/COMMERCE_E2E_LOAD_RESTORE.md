@@ -34,3 +34,15 @@ This validates logical dump/restore consistency for the disposable CI database. 
 ## Running locally
 
 Start the full stack with the required disposable environment variables, then run the three commands above. Never point the restore test at a production database. The workflow tears down the disposable Compose volumes after verification.
+
+
+## API abuse controls and privacy retention
+
+- PostgreSQL-backed fixed-window throttles are shared across API replicas for login, registration, checkout and signed provider webhook routes. HTTP 429 responses include `Retry-After`.
+- `npm run privacy:orders:retention` runs a dry-run by default and requires an owner-approved `ORDER_PII_RETENTION_DAYS` (30–3650).
+- Destructive execution additionally requires `--apply` and `ORDER_PII_RETENTION_CONFIRM=REDACT_TERMINAL_ORDER_PII`.
+- The retention tool excludes orders with pending/processing notification jobs and preserves financial/order-item history. It is not a complete customer-erasure or backup-deletion workflow.
+
+- CI exercises the retention command against the disposable database in dry-run mode only; it does not redact or mutate records.
+- CI also asserts that an over-limit authentication request returns HTTP 429 with a Retry-After header.
+- The Notification Center page and authenticated metrics endpoint are smoke-tested, including the admin Content-Security-Policy response header.

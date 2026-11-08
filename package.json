@@ -29,7 +29,8 @@
     "qa:commerce:e2e": "node scripts/verify-commerce-e2e.mjs",
     "qa:storefront:load": "docker run --rm --network host -v \"$PWD/scripts/load:/scripts:ro\" grafana/k6:0.56.0 run --env BASE_URL=http://127.0.0.1:4000/api /scripts/storefront-load.js",
     "qa:postgres:restore": "bash scripts/verify-postgres-restore.sh",
-    "verify:motion-embeds": "node --check assets/js/mes-motion-embed.js && node scripts/verify-motion-embeds.mjs"
+    "verify:motion-embeds": "node --check assets/js/mes-motion-embed.js && node scripts/verify-motion-embeds.mjs",
+    "privacy:orders:retention": "node scripts/retention/redact-order-pii.mjs"
   },
   "devDependencies": {
     "prisma": "6.19.0",
