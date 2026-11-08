@@ -40,6 +40,8 @@ jobs:
           test -s prisma/migrations/20261102080000_initial_commerce/migration.sql
           test -s prisma/migrations/20261102110000_commerce_integrity_checks/migration.sql
           grep -q 'orders_total_reconciliation_check' prisma/migrations/20261102110000_commerce_integrity_checks/migration.sql
+      - name: Verify responsive product media pipeline
+        run: node scripts/verify-product-media-pipeline.mjs
       - name: Type-check workspaces
         run: npm run lint
       - name: Run automated tests
