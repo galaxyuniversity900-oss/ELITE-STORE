@@ -11,13 +11,13 @@ describe('NotificationWebhookController', () => {
     jest.clearAllMocks();
     controller = new NotificationWebhookController(outbox as never);
     process.env.WHATSAPP_APP_SECRET = 'meta-test-secret';
-    process.env.RESEND_WEBHOOK_SECRET = \`whsec_\${Buffer.from('resend-test-secret').toString('base64')}\`;
+    process.env.RESEND_WEBHOOK_SECRET = `whsec_${Buffer.from('resend-test-secret').toString('base64')}`;
   });
 
   it('accepts a correctly signed Meta webhook and records message delivery status', async () => {
     const body = { entry: [{ changes: [{ value: { statuses: [{ id: 'wamid.123', status: 'delivered', timestamp: String(Math.floor(Date.now() / 1000) - 60) }] } }] }] };
     const rawBody = Buffer.from(JSON.stringify(body));
-    const signature = \`sha256=\${createHmac('sha256', process.env.WHATSAPP_APP_SECRET!).update(rawBody).digest('hex')}\`;
+    const signature = `sha256=${createHmac('sha256', process.env.WHATSAPP_APP_SECRET!).update(rawBody).digest('hex')}`;
     outbox.recordProviderStatus.mockResolvedValue({ recorded: true });
     await expect(controller.receiveWhatsApp({ rawBody } as never, signature, body)).resolves.toEqual({ received: true });
     expect(outbox.recordProviderStatus).toHaveBeenCalledWith(
@@ -36,7 +36,7 @@ describe('NotificationWebhookController', () => {
   it('rejects stale WhatsApp status callbacks before persistence', async () => {
     const body = { entry: [{ changes: [{ value: { statuses: [{ id: 'wamid.old', status: 'delivered', timestamp: '1' }] } }] }] };
     const rawBody = Buffer.from(JSON.stringify(body));
-    const signature = \`sha256=\${createHmac('sha256', process.env.WHATSAPP_APP_SECRET!).update(rawBody).digest('hex')}\`;
+    const signature = `sha256=${createHmac('sha256', process.env.WHATSAPP_APP_SECRET!).update(rawBody).digest('hex')}`;
     await expect(controller.receiveWhatsApp({ rawBody } as never, signature, body)).rejects.toBeInstanceOf(UnauthorizedException);
     expect(outbox.recordProviderStatus).not.toHaveBeenCalled();
   });
@@ -44,7 +44,7 @@ describe('NotificationWebhookController', () => {
   it('rejects future-dated WhatsApp status callbacks', async () => {
     const body = { entry: [{ changes: [{ value: { statuses: [{ id: 'wamid.future', status: 'delivered', timestamp: String(Math.floor(Date.now() / 1000) + 3600) }] } }] }] };
     const rawBody = Buffer.from(JSON.stringify(body));
-    const signature = \`sha256=\${createHmac('sha256', process.env.WHATSAPP_APP_SECRET!).update(rawBody).digest('hex')}\`;
+    const signature = `sha256=${createHmac('sha256', process.env.WHATSAPP_APP_SECRET!).update(rawBody).digest('hex')}`;
     await expect(controller.receiveWhatsApp({ rawBody } as never, signature, body)).rejects.toBeInstanceOf(UnauthorizedException);
     expect(outbox.recordProviderStatus).not.toHaveBeenCalled();
   });
@@ -52,7 +52,7 @@ describe('NotificationWebhookController', () => {
   it('returns a retryable error when a provider callback races message ID persistence', async () => {
     const body = { entry: [{ changes: [{ value: { statuses: [{ id: 'wamid.not-indexed', status: 'sent', timestamp: String(Math.floor(Date.now() / 1000)) }] } }] }] };
     const rawBody = Buffer.from(JSON.stringify(body));
-    const signature = \`sha256=\${createHmac('sha256', process.env.WHATSAPP_APP_SECRET!).update(rawBody).digest('hex')}\`;
+    const signature = `sha256=${createHmac('sha256', process.env.WHATSAPP_APP_SECRET!).update(rawBody).digest('hex')}`;
     outbox.recordProviderStatus.mockResolvedValue({ recorded: false, reason: 'message_not_found' });
     await expect(controller.receiveWhatsApp({ rawBody } as never, signature, body)).rejects.toBeInstanceOf(ServiceUnavailableException);
   });
@@ -62,9 +62,9 @@ describe('NotificationWebhookController', () => {
     const rawBody = Buffer.from(JSON.stringify(body));
     const eventId = 'evt_resend_123';
     const timestamp = String(Math.floor(Date.now() / 1000));
-    const signature = createHmac('sha256', Buffer.from('resend-test-secret')).update(\`\${eventId}.\${timestamp}.\${rawBody.toString('utf8')}\`).digest('base64');
+    const signature = createHmac('sha256', Buffer.from('resend-test-secret')).update(`${eventId}.${timestamp}.${rawBody.toString('utf8')}`).digest('base64');
     outbox.recordProviderStatus.mockResolvedValue({ recorded: true });
-    await expect(controller.receiveResend({ rawBody } as never, eventId, timestamp, \`v1,\${signature}\`, body)).resolves.toEqual({ received: true });
+    await expect(controller.receiveResend({ rawBody } as never, eventId, timestamp, `v1,${signature}`, body)).resolves.toEqual({ received: true });
     expect(outbox.recordProviderStatus).toHaveBeenCalledWith(
       NotificationChannel.EMAIL, 'resend', 'resend-email-123', 'delivered', eventId,
       new Date(body.created_at), { eventType: 'email.delivered' },
