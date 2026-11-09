@@ -29,6 +29,7 @@ jobs:
         run: |
           go install github.com/aquasecurity/trivy/cmd/trivy@v0.76.2
           echo "$HOME/go/bin" >> "$GITHUB_PATH"
+          export PATH="$HOME/go/bin:$PATH"
           trivy version
       - name: Scan API image
         run: trivy image --exit-code 1 --severity CRITICAL,HIGH --ignore-unfixed mes-store/api:${{ github.sha }}
