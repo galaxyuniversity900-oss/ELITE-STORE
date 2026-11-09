@@ -54,11 +54,19 @@ export class NotificationWebhookController {
         statuses.push(...(change?.value?.statuses ?? []));
       }
     }
+    if (statuses.length > 100) throw new BadRequestException('Too many webhook status events');
     for (const item of statuses) {
       if (!item.id || !item.status) continue;
+      if (item.timestamp === undefined || item.timestamp === null || String(item.timestamp).trim() === '') {
+        throw new UnauthorizedException('Missing WhatsApp webhook event timestamp');
+      }
       const timestamp = Number(item.timestamp);
-      const occurredAt = Number.isFinite(timestamp) ? new Date(timestamp * 1000) : new Date();
-      const eventId = `${item.id}:${item.status}:${item.timestamp ?? occurredAt.getTime()}`;
+      const nowSeconds = Date.now() / 1000;
+      if (!Number.isFinite(timestamp) || timestamp <= 0 || timestamp > nowSeconds + 300 || timestamp < nowSeconds - 7 * 24 * 60 * 60) {
+        throw new UnauthorizedException('Expired or invalid WhatsApp webhook event timestamp');
+      }
+      const occurredAt = new Date(timestamp * 1000);
+      const eventId = `${item.id}:${item.status}:${timestamp}`;
       const metadata = item.errors?.length
         ? { errorCodes: item.errors.map((error) => error.code).filter(Boolean) }
         : undefined;
