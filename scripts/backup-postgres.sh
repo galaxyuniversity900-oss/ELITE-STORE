@@ -13,7 +13,7 @@ chmod 700 "$BACKUP_DIR"
 # cannot overwrite one another (including the restore safety backup).
 ARCHIVE="$BACKUP_DIR/mes-store-$STAMP-$-$RANDOM.dump"
 TMP="$ARCHIVE.partial"
-while [[ -e "$ARCHIVE" || -e "$TMP" ]]; do
+while [[ -e "$ARCHIVE" || -e "$TMP" || -e "$ARCHIVE.sha256" || -e "$ARCHIVE.manifest" ]]; do
   ARCHIVE="$BACKUP_DIR/mes-store-$STAMP-$-$RANDOM.dump"
   TMP="$ARCHIVE.partial"
 done
