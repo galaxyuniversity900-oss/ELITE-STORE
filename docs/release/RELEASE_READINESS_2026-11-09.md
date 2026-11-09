@@ -52,13 +52,13 @@ All entries below were open when queried. “Checks” refers to check runs asso
 | #13 | `d3afb1a3` | `main` | Yes | Yes | Verify passed before this audit update. |
 | #14 | `23326830` | `main` | Yes | Yes | Verify passed; SEO not integrated. |
 | #15 | `481e6577` | `main` | Yes | Yes | Verify passed; demo commerce gate only, not a real provider integration. |
-| #16 | `7a835242` | `main` | Yes | Yes | Both verify checks passed; backup/restore runbook remains draft. |
+| #16 | `dc4ac96d` | `main` | Yes | Yes | Motion check passed; CI verify was in progress after the same-second backup filename fix. |
 | #17 | `81931d4e` | `main` | Yes | Yes | CI verify passed; dependency-review failed because GitHub Dependency Graph is not enabled for this repository. |
 | #18 | `404b2c1d` | `main` | Yes | Yes | Verify passed; catalogue validation is not integrated. |
 | #19 | `97b8385f` | `main` | Yes | Yes | Verify passed; container healthchecks remain draft. |
 | #20 | `c937b734` | `main` | Yes | Yes | Verify and dependency audit/SBOM passed; attestation job correctly skipped on PR. |
 | #21 | `19cbb511` | `main` | Yes | Yes | New image scan and main CI were **in progress** at audit capture after a PATH fix; prior exact head failed because `trivy` was not on the current step PATH. |
-| #22 | `9fe72d1a` | `main` | Yes | Yes | Both verify checks passed; strict CORS/webhook replay changes remain draft. |
+| #22 | `cffdea50` | `main` | Yes | Yes | New verify checks in progress after rejecting missing Meta timestamps; prior exact-head checks passed. |
 | #23 | `77fd4138` | `main` | Yes | Yes | Both verify checks passed; admin audit trail remains draft. |
 | #24 | `1306d011` | `main` | Yes | Yes | Both verify checks passed; catalogue search/filtering remains draft. |
 | #25 | `1795dfe6` | `main` | Yes | Yes | Verify and secret-scan checks passed; secret-scanning workflow remains draft. |
@@ -68,13 +68,14 @@ All entries below were open when queried. “Checks” refers to check runs asso
 | #29 | `e2d2062b` | `main` | Yes | Yes | Both verify checks passed; server-rendered product SEO remains draft. |
 | #30 | `d130679f` | `main` | Yes | Yes | Both verify checks passed; shared database rate limits remain draft. |
 | #31 | `68b27f7e` | `main` | Yes | Yes | Both verify checks passed; media pipeline has no approved source photos to process. |
-| #32 | `04085fef` | `ops/production-backup-restore` | Yes | No | New verify run was **in progress** after adding explicit restore-count diagnostics; prior exact head failed the end-to-end restore assertion. |
+| #32 | `04085fef` | `ops/production-backup-restore` | Yes | No | Verify failed: initial and safety backups collided within the same second; child branch is 13 ahead / 18 behind its current base. |
 | #33 | `2096ebcd` | `main` | Yes | Yes | Both verify checks passed; automated browser accessibility smoke test remains draft. |
 
 ### Exact failure evidence and remediation state
 
 - PR #21 previous head `2a1bd6d4`: [image scan run 42474862414](https://github.com/galaxyuniversity900-oss/ELITE-STORE/actions/runs/42474862414) failed at the Trivy install step with `trivy: command not found`. The workflow now exports `$HOME/go/bin` into the current step's PATH. New head: `19cbb51107449e3fd016ff03d79c453eacf6910e`; [image scan run 42590404224](https://github.com/galaxyuniversity900-oss/ELITE-STORE/actions/runs/42590404224) and [main CI run 42590404580](https://github.com/galaxyuniversity900-oss/ELITE-STORE/actions/runs/42590404580) were in progress at capture. No scan pass is claimed yet.
-- PR #32 previous head `99e97ce2`: [verify run 42474876576](https://github.com/galaxyuniversity900-oss/ELITE-STORE/actions/runs/42474876576) passed lint, tests, builds, API/admin smoke, outbox smoke, and encrypted-backup preflight, but failed the PostgreSQL restore round-trip step. The workflow now prints baseline event count, marker count, restored event count, and required table count before assertions. New head: `04085fefd7cdd26d15ae5e9ca8125ba078fd005e`; [verify run 42590432436](https://github.com/galaxyuniversity900-oss/ELITE-STORE/actions/runs/42590432436) was in progress at capture. No restore pass is claimed yet.
+- PR #32: [verify run 42590432436](https://github.com/galaxyuniversity900-oss/ELITE-STORE/actions/runs/42590432436) failed the PostgreSQL restore round-trip after lint, tests, builds, API/admin smoke, outbox smoke, and encrypted-backup preflight passed. The log shows the initial backup and restore safety backup both used `mes-store-20261109T090652Z.dump`; the second backup overwrote the pre-marker archive because filenames had only second-level precision. This explains why the marker survived restore. Parent PR #16 now has the evidence-backed fix at `dc4ac96d52784d8c498233b241fcccbd1a727a88`, adding process ID and Bash randomness to archive names; its new CI verify run `42591011471` was in progress at capture. PR #32 remains 18 commits behind its updated base and must incorporate the parent fix before a clean retest.
+- PR #22: the previous webhook branch accepted a missing WhatsApp status timestamp by substituting the current time, which bypassed the replay-age check and generated a fresh event key on each replay. The branch now rejects missing/blank timestamps and canonicalizes the event key from the parsed timestamp; a regression test was added. New head `cffdea5023b947d6e8f83ea756d1861b2862b383`; both new verify checks were in progress at capture. No pass is claimed yet.
 - PR #17 exact head `81931d4e`: [Dependency Review run 42472748341](https://github.com/galaxyuniversity900-oss/ELITE-STORE/actions/runs/42472748341) failed because Dependency Graph is disabled. This audit did not change repository settings. Owner must enable the repository Dependency Graph or choose an explicitly equivalent owner-approved control before treating this gate as satisfied.
 
 ## 4. Stacked-branch dependency map
@@ -87,7 +88,7 @@ The following base branches had advanced beyond the base SHA recorded by their c
 | #8 | `607c3bee` | `45d46aca` | Depends on #5; base advanced; PR is dirty. |
 | #11 | `0753967c` | `eec6c1ec` | Depends on #10; base advanced; PR is dirty. |
 | #12 | `7aaec355` | `ed769017` | Depends on #11; base advanced; PR is dirty. |
-| #32 | `d24c1eab` | `7a835242` | Depends on #16; base advanced; PR is dirty. |
+| #32 | `d24c1eab` | `dc4ac96d` | Depends on #16; 13 ahead / 18 behind; child does not yet contain the parent backup fix. |
 
 Do not force-push or merge dirty/draft branches. Reconcile each stack in dependency order with reviewed merge/rebase commits, then re-fetch PR metadata and run all required checks on the resulting exact heads. PR #5/#8 and PR #10/#11/#12 are separate stacks; PR #32 depends on PR #16.
 
