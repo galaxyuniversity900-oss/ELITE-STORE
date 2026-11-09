@@ -9,8 +9,14 @@ SERVICE="${POSTGRES_SERVICE:-postgres}"
 STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
 mkdir -p "$BACKUP_DIR"
 chmod 700 "$BACKUP_DIR"
-ARCHIVE="$BACKUP_DIR/mes-store-$STAMP.dump"
+# Include process-local entropy so two backups started in the same second
+# cannot overwrite one another (including the restore safety backup).
+ARCHIVE="$BACKUP_DIR/mes-store-$STAMP-$-$RANDOM.dump"
 TMP="$ARCHIVE.partial"
+while [[ -e "$ARCHIVE" || -e "$TMP" ]]; do
+  ARCHIVE="$BACKUP_DIR/mes-store-$STAMP-$-$RANDOM.dump"
+  TMP="$ARCHIVE.partial"
+done
 trap 'rm -f "$TMP"' EXIT
 
 command -v docker >/dev/null || { echo "ERROR: docker is required." >&2; exit 1; }
