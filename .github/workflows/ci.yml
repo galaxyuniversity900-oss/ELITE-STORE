@@ -130,7 +130,10 @@ jobs:
           restored_events="$(docker compose -f infra/docker/docker-compose.yml exec -T postgres psql -U mes_store -d mes_store -Atc "SELECT COUNT(*) FROM notification_delivery_events" | tr -d '[:space:]')"
           test "$restored_events" = "$baseline_events"
           tables="$(docker compose -f infra/docker/docker-compose.yml exec -T postgres psql -U mes_store -d mes_store -Atc "SELECT COUNT(*) FROM pg_tables WHERE schemaname='public' AND tablename IN ('notification_outbox','notification_delivery_attempts','notification_delivery_events')")"
-          test "$tables" = "3"
+          echo "Restore verification counts: baseline_events=$baseline_events marker_rows=$marker_rows restored_events=$restored_events tables=$tables"
+          test "$marker_rows" = "0" || { echo "FAIL: post-backup marker remains after restore"; exit 1; }
+          test "$restored_events" = "$baseline_events" || { echo "FAIL: restored event count differs from backup baseline"; exit 1; }
+          test "$tables" = "3" || { echo "FAIL: expected 3 notification tables after restore"; exit 1; }
           echo "PostgreSQL backup/restore round-trip: PASS"
       - name: Show container logs on failure
         if: failure()
