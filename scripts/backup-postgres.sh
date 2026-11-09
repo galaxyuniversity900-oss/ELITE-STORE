@@ -11,10 +11,10 @@ mkdir -p "$BACKUP_DIR"
 chmod 700 "$BACKUP_DIR"
 # Include process-local entropy so two backups started in the same second
 # cannot overwrite one another (including the restore safety backup).
-ARCHIVE="$BACKUP_DIR/mes-store-$STAMP-$-$RANDOM.dump"
+ARCHIVE="$BACKUP_DIR/mes-store-$STAMP-${BASHPID}-$RANDOM.dump"
 TMP="$ARCHIVE.partial"
 while [[ -e "$ARCHIVE" || -e "$TMP" || -e "$ARCHIVE.sha256" || -e "$ARCHIVE.manifest" ]]; do
-  ARCHIVE="$BACKUP_DIR/mes-store-$STAMP-$-$RANDOM.dump"
+  ARCHIVE="$BACKUP_DIR/mes-store-$STAMP-${BASHPID}-$RANDOM.dump"
   TMP="$ARCHIVE.partial"
 done
 trap 'rm -f "$TMP"' EXIT
