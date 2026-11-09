@@ -33,6 +33,14 @@ describe('NotificationWebhookController', () => {
     expect(outbox.recordProviderStatus).not.toHaveBeenCalled();
   });
 
+  it('rejects WhatsApp status callbacks with a missing timestamp', async () => {
+    const body = { entry: [{ changes: [{ value: { statuses: [{ id: 'wamid.missing-time', status: 'delivered' }] } }] }] };
+    const rawBody = Buffer.from(JSON.stringify(body));
+    const signature = `sha256=${createHmac('sha256', process.env.WHATSAPP_APP_SECRET!).update(rawBody).digest('hex')}`;
+    await expect(controller.receiveWhatsApp({ rawBody } as never, signature, body)).rejects.toBeInstanceOf(UnauthorizedException);
+    expect(outbox.recordProviderStatus).not.toHaveBeenCalled();
+  });
+
   it('rejects stale WhatsApp status callbacks before persistence', async () => {
     const body = { entry: [{ changes: [{ value: { statuses: [{ id: 'wamid.old', status: 'delivered', timestamp: '1' }] } }] }] };
     const rawBody = Buffer.from(JSON.stringify(body));
