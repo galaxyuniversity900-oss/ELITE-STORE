@@ -32,6 +32,20 @@ services:
       timeout: 5s
       retries: 5
 
+  migrate:
+    profiles: ["migration"]
+    build:
+      context: ../..
+      dockerfile: infra/docker/Dockerfile.api
+      target: build
+    restart: "no"
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-mes_store}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-mes_store}?schema=public
+    command: ["npm", "run", "db:migrate:deploy"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+
   api:
     build:
       context: ../..
@@ -59,7 +73,6 @@ services:
       RESEND_API_KEY: ${RESEND_API_KEY:-}
       RESEND_FROM_EMAIL: ${RESEND_FROM_EMAIL:-}
       RESEND_WEBHOOK_SECRET: ${RESEND_WEBHOOK_SECRET:-}
-    command: ["sh", "-c", "npm run db:migrate:deploy && npm run db:seed && npm run build --workspace=@mes-store/api && test -f apps/api/dist/main.js && exec npm run start --workspace=@mes-store/api"]
     ports:
       - "${HOST_BIND_ADDRESS:-127.0.0.1}:${API_PORT:-4000}:4000"
     depends_on:
