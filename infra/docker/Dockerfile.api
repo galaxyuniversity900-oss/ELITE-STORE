@@ -6,10 +6,13 @@ COPY packages ./packages
 COPY prisma ./prisma
 COPY data ./data
 COPY scripts ./scripts
-RUN npm install --no-audit --no-fund
-RUN npm run db:generate
-RUN npm run build --workspace=@mes-store/api \
-    && test -f apps/api/dist/main.js
+RUN npm install --no-audit --no-fund \
+    && npm run db:generate \
+    && npm run build --workspace=@mes-store/api \
+    && test -f apps/api/dist/main.js \
+    && npm prune --omit=dev --no-audit --no-fund \
+    && rm -rf /usr/local/lib/node_modules/npm \
+    && rm -f /usr/local/bin/npm /usr/local/bin/npx
 ENV NODE_ENV=production
 EXPOSE 4000
-CMD ["npm", "run", "start", "--workspace=@mes-store/api"]
+CMD ["node", "apps/api/dist/main.js"]
