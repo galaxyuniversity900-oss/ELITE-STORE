@@ -50,8 +50,14 @@ jobs:
         run: test -s apps/api/dist/main.js
       - name: Validate Docker Compose configuration
         run: docker compose -f infra/docker/docker-compose.yml config --quiet
-      - name: Start full Docker stack
-        run: docker compose --parallel 1 -f infra/docker/docker-compose.yml up -d --build
+      - name: Start database services
+        run: docker compose --parallel 1 -f infra/docker/docker-compose.yml up -d postgres redis
+      - name: Apply database migrations in a disposable one-off container
+        run: docker compose --profile migration -f infra/docker/docker-compose.yml run --build --rm migrate
+      - name: Seed disposable CI database
+        run: npm run db:generate && npm run db:seed
+      - name: Start application containers
+        run: docker compose --parallel 1 -f infra/docker/docker-compose.yml up -d --build api web admin
       - name: Wait for API, web and admin readiness
         shell: bash
         run: |
