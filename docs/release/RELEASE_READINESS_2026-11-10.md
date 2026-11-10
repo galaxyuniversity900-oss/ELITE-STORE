@@ -35,7 +35,7 @@ The table records current live PR heads, base branches, draft state, mergeabilit
 | #24 | `feature/catalog-search-filtering` | `1306d011e442bc7549ab6c0927ba3fb903bcd676` | `main` | Yes | Yes | CI #42473499605 PASS; motion #42473499632 PASS |
 | #23 | `security/admin-audit-trail` | `77fd413837a5813b4787f806228aaace497401c4` | `main` | Yes | Yes | CI #42473261300 PASS; motion #42473261464 PASS |
 | #22 | `security/api-webhook-boundaries` | `cffdea5023b947d6e8f83ea756d1861b2862b383` | `main` | Yes | Yes | CI #42591190871 PASS; motion #42591190754 PASS |
-| #21 | `security/docker-image-scanning` | `82a69699618a681ac3a0a46228838675399a7f22` | `main` | Yes | Yes | CI #42785331633 IN PROGRESS; image scan #42785331650 IN PROGRESS; motion #42785331711 IN PROGRESS |
+| #21 | `security/docker-image-scanning` | `b1c1d02362a8711a623127ee2cdf394560b9f36b` | `main` | Yes | Yes | CI #42785949343 IN PROGRESS; image scan #42785949700 IN PROGRESS; motion #42785949315 PASS |
 | #20 | `security/sbom-build-provenance` | `c937b7340b2006062fa81460a5a75b8a853cdfb9` | `main` | Yes | Yes | CI #42473417723 PASS; motion #42473417779 PASS; SBOM #42473417719 PASS |
 | #19 | `ops/container-healthchecks-hardening` | `97b8385faa98f32387edda8cf769245a7555a1e7` | `main` | Yes | Yes | CI #42472712268 PASS; motion #42472712257 PASS |
 | #18 | `quality/product-catalog-validation` | `404b2c1d0c0f876f3fb7d528726be4a90f61c42f` | `main` | Yes | Yes | CI #42474709417 PASS; motion #42474709266 PASS |
@@ -43,7 +43,7 @@ The table records current live PR heads, base branches, draft state, mergeabilit
 | #16 | `ops/production-backup-restore` | `c461341c6c924898fa51685e26d2a4221256f0fd` | `main` | Yes | Yes | CI #42591473541 PASS; motion #42591473353 PASS |
 | #15 | `production/real-commerce-gates` | `481e6577428ed5ef65487ec4c4d60d76b0c13404` | `main` | Yes | Yes | CI #42472249851 PASS; motion #42472249858 PASS |
 | #14 | `seo/production-discovery-basics` | `233268301c74abc22913bef4a4d66bbd550e32a6` | `main` | Yes | Yes | CI #42467558412 PASS; motion #42467558384 PASS |
-| #13 | `release/2026-11-08-readiness-audit` | `48fc9c8e236e603b175beb264a906bf32939d7b5` | `main` | Yes | Yes | CI #42591532268 PASS; motion #42591532005 PASS (pre-audit-document commit) |
+| #13 | `release/2026-11-08-readiness-audit` | `211ab541fad07fbb2765f5d3e8e4988e42a1523b` | `main` | Yes | Yes | CI #42785555272 IN PROGRESS; motion #42785555242 PASS (head before this report refresh) |
 | #12 | `hardening/production-readiness-followups` | `dc66416b6a4f4c885518df5948158ed291c0549e` | `qa/commerce-e2e-load-restore` | Yes | No | No run found for exact head |
 | #11 | `qa/commerce-e2e-load-restore` | `ed7690172c3ed67cbb9df087e6f1faf29b9ec017` | `security/commerce-webhook-admin-hardening` | Yes | No | No run found for exact head |
 | #10 | `security/commerce-webhook-admin-hardening` | `eec6c1ec844cb042f7d96411c966f69ed29ca002` | `main` | Yes | Yes | CI #42465582599 PASS |
@@ -85,15 +85,18 @@ The failed Trivy API-image scan reported **22 HIGH, 0 CRITICAL** findings. The l
 Evidence-backed changes committed to the existing PR #21 branch:
 - Root npm overrides pin `multer 2.5.0`, `ip-address 10.3.1`, and `path-to-regexp 8.4.0`, matching the fixed versions reported by the scan.
 - API, storefront and admin Docker builds now prune development dependencies after their build completes.
-- Runtime containers no longer invoke npm; API starts through Node directly and Next.js apps start through the local Next binary.
-- Bundled npm/npx files are removed from the final image filesystem to avoid shipping the build-time package manager and its unrelated global dependency tree.
+- Runtime containers no longer invoke npm; API starts through Node directly and Next.js apps start through the local Next binary. Bundled npm/npx files are removed from the final image filesystem.
+- The API Dockerfile now separates the full build/migration stage from the production runtime stage; only pruned production dependencies and compiled files enter the final API image.
+- Docker Compose exposes an opt-in `migration` profile that runs Prisma migrations in a one-off builder container. API startup no longer runs migrations or product seeding on every restart.
+- CI now starts disposable PostgreSQL/Redis, runs the migration profile, seeds only the disposable CI database, then starts API/web/admin containers.
+- Added `docs/operations/CONTAINER_RUNTIME_RELEASE.md` describing the explicit migration and runtime boundary.
 
-Latest branch head: `82a69699618a681ac3a0a46228838675399a7f22`.
+Latest branch head: `b1c1d02362a8711a623127ee2cdf394560b9f36b`.
 
 New exact-head runs:
-- [Docker Image Security Scan #42785331650](https://github.com/galaxyuniversity900-oss/ELITE-STORE/actions/runs/42785331650) — **IN PROGRESS**
-- [MES STORE CI #42785331633](https://github.com/galaxyuniversity900-oss/ELITE-STORE/actions/runs/42785331633) — **IN PROGRESS**
-- [Store and Garment Motion Checks #42785331711](https://github.com/galaxyuniversity900-oss/ELITE-STORE/actions/runs/42785331711) — **IN PROGRESS**
+- [Docker Image Security Scan #42785949700](https://github.com/galaxyuniversity900-oss/ELITE-STORE/actions/runs/42785949700) — **IN PROGRESS**
+- [MES STORE CI #42785949343](https://github.com/galaxyuniversity900-oss/ELITE-STORE/actions/runs/42785949343) — **IN PROGRESS**
+- [Store and Garment Motion Checks #42785949315](https://github.com/galaxyuniversity900-oss/ELITE-STORE/actions/runs/42785949315) — **PASS**
 
 These changes are not certified until the new scan and full CI complete on the exact head above. If additional runtime dependencies remain vulnerable, patch only after reviewing the new Trivy report; do not suppress findings or lower the severity threshold.
 
@@ -197,7 +200,7 @@ No real secrets were read, created, changed or printed. No production database o
 **Do not release. Do not merge to `main`.** Any merge to `main` triggers GitHub Pages deployment and requires a separate explicit go-live confirmation.
 
 Recommended order:
-1. Complete PR #21 CI/image scan on `82a69699618a681ac3a0a46228838675399a7f22`; remediate remaining findings without suppressing them.
+1. Complete PR #21 CI/image scan on `b1c1d02362a8711a623127ee2cdf394560b9f36b`; remediate remaining findings without suppressing them.
 2. Have the repository owner enable Dependency Graph, then rerun PR #17's Dependency Review.
 3. Keep PR #16 as the backup/restore parent; reconcile PR #32 against its latest parent without force-push and rerun its full checks.
 4. Rebuild the Notification Center stack from current main in dependency order; do not merge PR #5/#8 while their bases are diverged.
