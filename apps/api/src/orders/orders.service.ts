@@ -104,7 +104,7 @@ export class OrdersService {
           discountTotal = promotion.type === 'PERCENTAGE'
             ? subtotal.mul(promotion.value).div(100).toDecimalPlaces(2)
             : new Prisma.Decimal(promotion.value);
-          if (promotion.maxDiscount && discountTotal.greaterThan(promotion.maxDiscount)) {
+          if (promotion.maxDiscount !== null && discountTotal.greaterThan(promotion.maxDiscount)) {
             discountTotal = new Prisma.Decimal(promotion.maxDiscount);
           }
           if (discountTotal.greaterThan(subtotal)) discountTotal = subtotal;
