@@ -1,5 +1,6 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import { OrderStatus, Prisma, ProductStatus, UserRole } from '@prisma/client';
+import { OrderStatus, Prisma, ProductRelationType, ProductStatus, UserRole } from '@prisma/client';
+import { CreateProductRelationDto, CreateProductVariantDto, CreateSizeGuideDto, UpdateProductVariantDto, UpdateSizeGuideDto } from './admin.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateProductDto, UpdateProductDto } from './admin.dto';
 
@@ -58,6 +59,125 @@ export class AdminService {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') throw new NotFoundException('Product not found');
       throw error;
     }
+  }
+
+
+  listProductVariants(productId: string) {
+    return this.prisma.productVariant.findMany({
+      where: { productId },
+      orderBy: [{ isActive: 'desc' }, { size: 'asc' }, { color: 'asc' }],
+    });
+  }
+
+  createProductVariant(productId: string, input: CreateProductVariantDto) {
+    return this.prisma.productVariant.create({
+      data: {
+        productId,
+        sku: input.sku.trim(),
+        size: input.size?.trim(),
+        color: input.color?.trim(),
+        attributes: input.attributes as Prisma.InputJsonValue | undefined,
+        priceOverride: input.priceOverride === undefined ? undefined : new Prisma.Decimal(input.priceOverride),
+        stockQuantity: input.stockQuantity,
+        isActive: input.isActive ?? true,
+      },
+    });
+  }
+
+  async updateProductVariant(id: string, input: UpdateProductVariantDto) {
+    const data: Prisma.ProductVariantUpdateInput = {};
+    if (input.sku !== undefined) data.sku = input.sku.trim();
+    if (input.size !== undefined) data.size = input.size;
+    if (input.color !== undefined) data.color = input.color;
+    if (input.attributes !== undefined) data.attributes = input.attributes as Prisma.InputJsonValue;
+    if (input.priceOverride !== undefined) data.priceOverride = input.priceOverride === null ? null : new Prisma.Decimal(input.priceOverride);
+    if (input.stockQuantity !== undefined) data.stockQuantity = input.stockQuantity;
+    if (input.isActive !== undefined) data.isActive = input.isActive;
+    try {
+      return await this.prisma.productVariant.update({ where: { id }, data });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') throw new NotFoundException('Product variant not found');
+      throw error;
+    }
+  }
+
+
+
+  async listProductRelations(sourceProductId: string, relationType?: ProductRelationType) {
+    return this.prisma.productRelation.findMany({
+      where: {
+        sourceProductId,
+        ...(relationType ? { relationType } : {}),
+        relatedProduct: { status: ProductStatus.ACTIVE },
+      },
+      include: { relatedProduct: { include: { images: { orderBy: { sortOrder: 'asc' } }, category: true } } },
+      orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
+    });
+  }
+
+  async createProductRelation(sourceProductId: string, input: CreateProductRelationDto) {
+    if (sourceProductId === input.relatedProductId) throw new BadRequestException('A product cannot be related to itself');
+    const products = await this.prisma.product.count({
+      where: { id: { in: [sourceProductId, input.relatedProductId] }, status: ProductStatus.ACTIVE },
+    });
+    if (products !== 2) throw new NotFoundException('Both active products must exist');
+    return this.prisma.productRelation.create({
+      data: {
+        sourceProductId,
+        relatedProductId: input.relatedProductId,
+        relationType: input.relationType ?? ProductRelationType.COMPLETE_THE_LOOK,
+        sortOrder: input.sortOrder ?? 0,
+      },
+      include: { relatedProduct: { include: { images: { orderBy: { sortOrder: 'asc' } }, category: true } } },
+    });
+  }
+
+  async removeProductRelation(sourceProductId: string, relationId: string) {
+    const result = await this.prisma.productRelation.deleteMany({ where: { id: relationId, sourceProductId } });
+    return { removed: result.count === 1 };
+  }
+
+  listSizeGuides(categoryId?: string) {
+    return this.prisma.sizeGuide.findMany({
+      where: categoryId ? { categoryId } : {},
+      orderBy: [{ categoryId: 'asc' }, { name: 'asc' }],
+    });
+  }
+
+  createSizeGuide(categoryId: string, input: CreateSizeGuideDto) {
+    return this.prisma.sizeGuide.create({
+      data: {
+        categoryId,
+        name: input.name.trim(),
+        measurementUnit: input.measurementUnit?.trim() || 'cm',
+        measurements: input.measurements as Prisma.InputJsonValue,
+        fitAdvice: input.fitAdvice?.trim(),
+        isActive: input.isActive ?? true,
+      },
+    });
+  }
+
+  async updateSizeGuide(id: string, input: UpdateSizeGuideDto) {
+    const data: Prisma.SizeGuideUpdateInput = {};
+    if (input.name !== undefined) data.name = input.name.trim();
+    if (input.measurementUnit !== undefined) data.measurementUnit = input.measurementUnit.trim();
+    if (input.measurements !== undefined) data.measurements = input.measurements as Prisma.InputJsonValue;
+    if (input.fitAdvice !== undefined) data.fitAdvice = input.fitAdvice;
+    if (input.isActive !== undefined) data.isActive = input.isActive;
+    try {
+      return await this.prisma.sizeGuide.update({ where: { id }, data });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') throw new NotFoundException('Size guide not found');
+      throw error;
+    }
+  }
+
+  async archiveSizeGuide(id: string) {
+    return this.updateSizeGuide(id, { isActive: false });
+  }
+
+  async archiveProductVariant(id: string) {
+    return this.updateProductVariant(id, { isActive: false });
   }
 
   async archiveProduct(id: string) {

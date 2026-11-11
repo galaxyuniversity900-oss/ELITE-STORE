@@ -13,6 +13,12 @@ enum UserRole {
   SUPER_ADMIN
 }
 
+enum ProductRelationType {
+  COMPLETE_THE_LOOK
+  SIMILAR
+  PAIR_WITH
+}
+
 enum ProductStatus {
   DRAFT
   ACTIVE
@@ -113,6 +119,7 @@ model Category {
   imageUrl    String?
   isActive    Boolean    @default(true)
   products    Product[]
+  sizeGuides  SizeGuide[]
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
 
@@ -134,14 +141,72 @@ model Product {
   categoryId      String?
   category        Category?     @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   images          ProductImage[]
+  variants        ProductVariant[]
   cartItems       CartItem[]
   orderItems      OrderItem[]
+  outgoingRelations ProductRelation[] @relation("ProductRelationSource")
+  incomingRelations ProductRelation[] @relation("ProductRelationTarget")
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 
   @@index([status, categoryId])
   @@index([name])
   @@map("products")
+}
+
+
+
+model SizeGuide {
+  id               String   @id @default(cuid())
+  categoryId       String
+  name             String
+  measurementUnit  String   @default("cm")
+  measurements     Json
+  fitAdvice        String?
+  isActive         Boolean  @default(true)
+  category         Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@unique([categoryId, name])
+  @@index([categoryId, isActive])
+  @@map("size_guides")
+}
+
+model ProductVariant {
+  id             String   @id @default(cuid())
+  productId      String
+  sku            String   @unique
+  size           String?
+  color           String?
+  attributes      Json?
+  priceOverride   Decimal? @db.Decimal(12, 2)
+  stockQuantity   Int      @default(0)
+  isActive        Boolean  @default(true)
+  product         Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([productId, isActive])
+  @@index([size, color])
+  @@map("product_variants")
+}
+
+
+model ProductRelation {
+  id               String              @id @default(cuid())
+  sourceProductId  String
+  relatedProductId String
+  relationType     ProductRelationType @default(COMPLETE_THE_LOOK)
+  sortOrder        Int                 @default(0)
+  sourceProduct    Product             @relation("ProductRelationSource", fields: [sourceProductId], references: [id], onDelete: Cascade)
+  relatedProduct   Product             @relation("ProductRelationTarget", fields: [relatedProductId], references: [id], onDelete: Cascade)
+  createdAt        DateTime            @default(now())
+
+  @@unique([sourceProductId, relatedProductId, relationType])
+  @@index([sourceProductId, relationType, sortOrder])
+  @@index([relatedProductId, relationType])
+  @@map("product_relations")
 }
 
 model ProductImage {
