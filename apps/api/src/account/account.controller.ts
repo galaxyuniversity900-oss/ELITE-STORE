@@ -21,12 +21,20 @@ class ConsentPreferenceDto {
   @IsBoolean() granted!: boolean;
 }
 
+
+class ErasureRequestDto {
+  @IsOptional() @IsString() @MaxLength(1000) reason?: string;
+}
+
 type AccountRequest = { user: { id: string; email: string; role: string } };
 
 @Controller('account')
 @UseGuards(AuthGuard)
 export class AccountController {
   constructor(private readonly account: AccountService) {}
+  @Get('export') exportPersonalData(@Req() req: AccountRequest) { return this.account.exportPersonalData(req.user.id); }
+  @Post('erasure-requests') requestErasure(@Req() req: AccountRequest, @Body() input: ErasureRequestDto) { return this.account.requestErasure(req.user.id, input.reason); }
+  @Get('erasure-requests') erasureRequests(@Req() req: AccountRequest) { return this.account.listDataSubjectRequests(req.user.id); }
   @Get('me') me(@Req() req: AccountRequest) { return this.account.profile(req.user.id); }
   @Get('consents') consents(@Req() req: AccountRequest) { return this.account.consents(req.user.id); }
   @Post('consents') setConsent(@Req() req: AccountRequest, @Body() input: ConsentPreferenceDto) { return this.account.setConsent(req.user.id, input); }
