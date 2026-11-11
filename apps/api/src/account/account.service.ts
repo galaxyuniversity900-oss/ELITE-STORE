@@ -1,5 +1,5 @@
-import { Injectable, NotFoundException, ServiceUnavailableException } from '@nestjs/common';
-import { ConsentType, DataSubjectRequestStatus, Prisma } from '@prisma/client';
+import { BadRequestException, ConflictException, Injectable, NotFoundException, ServiceUnavailableException } from '@nestjs/common';
+import { ConsentType, DataSubjectRequestStatus, OrderStatus, Prisma, ReturnRequestStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -11,6 +11,41 @@ export class AccountService {
     return user;
   }
 
+
+
+  async requestReturn(userId: string, orderNumber: string, reason: string) {
+    const order = await this.prisma.order.findFirst({
+      where: { orderNumber, userId },
+      select: { id: true, status: true },
+    });
+    if (!order) throw new NotFoundException('Order not found');
+    if (order.status !== OrderStatus.DELIVERED) {
+      throw new BadRequestException('Return requests are available only for delivered orders');
+    }
+    const existing = await this.prisma.returnRequest.findUnique({ where: { orderId: order.id } });
+    if (existing) return existing;
+    try {
+      return await this.prisma.returnRequest.create({
+        data: { userId, orderId: order.id, reason: reason.trim() },
+        select: { id: true, orderId: true, status: true, reason: true, requestedAt: true },
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        const duplicate = await this.prisma.returnRequest.findUnique({ where: { orderId: order.id } });
+        if (duplicate) return duplicate;
+        throw new ConflictException('A return request already exists for this order');
+      }
+      throw error;
+    }
+  }
+
+  listReturnRequests(userId: string) {
+    return this.prisma.returnRequest.findMany({
+      where: { userId },
+      select: { id: true, orderId: true, status: true, reason: true, requestedAt: true, reviewedAt: true, resolvedAt: true, order: { select: { orderNumber: true } } },
+      orderBy: { requestedAt: 'desc' },
+    });
+  }
 
   async exportPersonalData(userId: string) {
     const user = await this.prisma.user.findUnique({
