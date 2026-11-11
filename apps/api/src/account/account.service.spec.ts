@@ -147,7 +147,7 @@ describe('AccountService consent preferences', () => {
     }));
   });
 
-  it('removes only the requested customer's wishlist entry', async () => {
+  it("removes only the requested customer's wishlist entry", async () => {
     const prisma = { wishlistItem: { deleteMany: jest.fn().mockResolvedValue({ count: 1 }) } };
     const service = new AccountService(prisma as never);
 
