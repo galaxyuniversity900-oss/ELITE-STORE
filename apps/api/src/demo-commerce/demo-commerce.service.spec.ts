@@ -85,4 +85,46 @@ describe('DemoCommerceService order lifecycle integration', () => {
       },
     });
   });
+
+  it('prevents a successful demo payment from being downgraded', async () => {
+    const order = {
+      id: 'order-paid', orderNumber: 'MES-PAID', customerPhone: '01000000000',
+      status: OrderStatus.CONFIRMED, paymentMethod: 'DEMO_CARD', grandTotal: '100.00',
+      currency: 'EGP', payments: [{ id: 'payment-paid', status: PaymentStatus.PAID }],
+    };
+    const tx = {
+      order: { findUnique: jest.fn().mockResolvedValue(order) },
+      payment: { update: jest.fn() },
+      orderStatusEvent: { create: jest.fn() },
+    };
+    const prisma = {
+      order: { findUnique: jest.fn().mockResolvedValue(order) },
+      $transaction: jest.fn((work: (client: unknown) => unknown) => work(tx)),
+    };
+    const service = new DemoCommerceService(prisma as never);
+
+    await expect(service.simulatePayment('MES-PAID', {
+      phone: '01000000000', outcome: 'failed',
+    })).rejects.toBeInstanceOf(BadRequestException);
+    expect(tx.payment.update).not.toHaveBeenCalled();
+  });
+
+  it('treats repeated shipment status callbacks as idempotent', async () => {
+    const shipment = {
+      id: 'shipment-done', orderId: 'order-done', status: 'DELIVERED',
+      order: { customerPhone: '01000000000', status: OrderStatus.DELIVERED },
+    };
+    const prisma = {
+      shipment: { findUnique: jest.fn().mockResolvedValue(shipment) },
+      $transaction: jest.fn(),
+    };
+    const service = new DemoCommerceService(prisma as never);
+
+    const result = await service.updateShipment('MES-TRK-DONE', {
+      phone: '01000000000', status: 'DELIVERED', description: 'Duplicate', location: 'Test',
+    });
+
+    expect(result.shipment).toEqual(shipment);
+    expect(prisma.$transaction).not.toHaveBeenCalled();
+  });
 });
