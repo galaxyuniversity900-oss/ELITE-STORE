@@ -143,6 +143,25 @@ model ConsentPreference {
   @@map("consent_preferences")
 }
 
+
+model ReturnRequest {
+  id          String              @id @default(cuid())
+  userId      String
+  orderId     String              @unique
+  status      ReturnRequestStatus @default(PENDING)
+  reason      String
+  requestedAt DateTime            @default(now())
+  reviewedAt  DateTime?
+  resolvedAt  DateTime?
+  user        User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  order       Order               @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  @@index([userId, status, requestedAt])
+  @@map("return_requests")
+}
+
 model Address {
   id          String   @id @default(cuid())
   userId      String
@@ -276,6 +295,7 @@ model Order {
   items             OrderItem[]
   payments          Payment[]
   notifications     NotificationOutbox[]
+  returnRequest     ReturnRequest?
   createdAt         DateTime    @default(now())
   updatedAt         DateTime    @updatedAt
 
