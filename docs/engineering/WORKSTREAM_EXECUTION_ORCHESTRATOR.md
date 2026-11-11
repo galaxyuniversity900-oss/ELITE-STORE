@@ -113,7 +113,7 @@ No wave authorizes deployment, external provider sends, charges, refunds, payout
 | #35 | `commerce/order-state-audit` | `b58c1f5141276e5b067f5ca09c11f25579edc76f` | `main` | append-only order transition audit; demo payment/dispatch/delivery use audited transitions; MES STORE CI and motion checks passed |
 | #36 | `commerce/payment-reconciliation-readonly` | `5368aff971b896e22e38f8a22a2c250e4998040e` | `commerce/order-state-audit` | read-only consistency report; stacked PR base means no PR-triggered workflow run returned yet |
 | #37 | `catalog/product-variants-foundation` | `c60e77b98b58e9a0384c243e893967f0727f6695` | `main` | product variant admin foundation; tests/type-check/build passed, Docker stack smoke in progress |
-| #38 | `privacy/customer-consent-preferences` | `5746a583f5f9861e221367a636502e08bde8f760` | `main` | consent, export and erasure request intake; MES STORE CI running at last poll |
+| #38 | `privacy/customer-consent-preferences` | `9493a3ffe204e46e9446c5ff865988328055609d` | `main` | consent, personal data export, erasure request and returns intake; CI re-running on expanded scope |
 | #39 | `shipping/zones-and-rules` | `b753f3b76d198b69f0ed33d30109d8679d7e6e31` | `main` | shipping rules and checkout integration; CI queued/running at last poll |
 | #33 | `qa/accessibility-mobile-rtl` | `2096ebcdd0dee996db85ab279e8f0b87e07033a9` | `main` | WCAG/mobile RTL checks; not visual regression |
 
