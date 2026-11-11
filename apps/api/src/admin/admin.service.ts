@@ -66,7 +66,7 @@ export class AdminService {
 
   listOrders(page = 1, limit = 50) {
     return this.prisma.order.findMany({
-      include: { items: true, payments: true },
+      include: { items: true, payments: true, statusEvents: { orderBy: { createdAt: 'desc' } } },
       orderBy: { createdAt: 'desc' },
       skip: (page - 1) * limit,
       take: limit,
