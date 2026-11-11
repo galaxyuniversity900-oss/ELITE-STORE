@@ -17,3 +17,12 @@ Set `CONSENT_POLICY_VERSION` in the API environment to the identifier of the cur
 - `GET /account/erasure-requests` lists only the authenticated customer's requests.
 
 An erasure request is not an immediate deletion command. It must be reviewed for applicable statutory retention, active disputes, fraud prevention and accounting obligations. This implementation records and deduplicates the request; it does not yet provide an admin approval/rejection workflow or execute anonymization/deletion. Do not represent a pending request as completed.
+
+## Customer return request intake
+
+- `POST /account/orders/:orderNumber/return-requests` accepts a reason for an order owned by the authenticated customer.
+- Only delivered orders are eligible.
+- `GET /account/return-requests` returns the customer's own request history.
+- A unique order constraint prevents multiple return requests for the same order.
+
+This is request intake only. It does not approve a return, create a shipping label, mark a payment refunded, or move money. Admin review, item-level inspection, policy-window enforcement and verified payment-provider refund execution remain separate work.
