@@ -58,7 +58,7 @@ All head SHAs below were re-fetched from the live PR objects during this audit. 
 | #29 | `main` | `feature/product-seo-detail-pages` | `e2d2062b4e4e10b681baca32a56d4c2bc6088c79` | Yes | Yes | CI PASS [42473934663](https://github.com/galaxyuniversity900-oss/ELITE-STORE/actions/runs/42473934663); Motion PASS [42473934674](https://github.com/galaxyuniversity900-oss/ELITE-STORE/actions/runs/42473934674) |
 | #30 | `main` | `security/distributed-api-rate-limits` | `d130679f101dc3b2c8c5b44892b15251159fe6db` | Yes | Yes | CI PASS [42474333447](https://github.com/galaxyuniversity900-oss/ELITE-STORE/actions/runs/42474333447); Motion PASS [42474333400](https://github.com/galaxyuniversity900-oss/ELITE-STORE/actions/runs/42474333400) |
 | #31 | `main` | `media/product-optimization-cdn` | `68b27f7e4e786dd6ed539994d82a482ec0810813` | Yes | Yes | CI PASS [42474731413](https://github.com/galaxyuniversity900-oss/ELITE-STORE/actions/runs/42474731413); Motion PASS [42474731421](https://github.com/galaxyuniversity900-oss/ELITE-STORE/actions/runs/42474731421) |
-| #32 | `ops/production-backup-restore` | `ops/encrypted-offsite-backups` | `542150a12225e1bfc5db1b2c108e45ba0b4a8277` | Yes | No | CI IN PROGRESS [42991435426](https://github.com/galaxyuniversity900-oss/ELITE-STORE/actions/runs/42991435426) |
+| #32 | `ops/production-backup-restore` | `ops/encrypted-offsite-backups` | `542150a12225e1bfc5db1b2c108e45ba0b4a8277` | Yes | No | CI PASS [42991435426](https://github.com/galaxyuniversity900-oss/ELITE-STORE/actions/runs/42991435426) |
 | #33 | `main` | `qa/accessibility-mobile-rtl` | `2096ebcdd0dee996db85ab279e8f0b87e07033a9` | Yes | Yes | CI PASS [42474718616](https://github.com/galaxyuniversity900-oss/ELITE-STORE/actions/runs/42474718616); Motion PASS [42474718603](https://github.com/galaxyuniversity900-oss/ELITE-STORE/actions/runs/42474718603) |
 
 ## Dependency and mergeability analysis
@@ -97,7 +97,7 @@ Updated PR #32 to head `542150a12225e1bfc5db1b2c108e45ba0b4a8277`:
 - Check archive, partial file, checksum and manifest paths for collisions before writing.
 - Add static regression assertions for the same-second collision guard.
 
-The new head's static safeguard, type-check, tests, build and Compose validation steps passed. Full Docker startup and the end-to-end restore check were still in progress at audit close. The PR remains unmergeable because its head is not integrated with its base branch.
+The new head passed the complete CI run, including Docker startup, API/web/admin readiness, encrypted-backup preflight and PostgreSQL backup/restore round-trip. The run confirmed two distinct same-second archive names and reported baseline_events=0, marker_rows=0, restored_events=0, tables=3. The PR remains unmergeable because its head is not integrated with its base branch.
 
 ## Confirmed main-branch product and storefront gaps
 
