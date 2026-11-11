@@ -29,7 +29,7 @@ Content-Type: application/json
 
 Checkout accepts optional `paymentMethod` and `shippingMethod` fields. The server calculates the selected demo shipping fee; browser-submitted totals are not trusted. These are sample rates, not carrier quotes.
 
-To create a demo dispatch for a confirmed/processing order:
+To create a demo dispatch for an order already in `PROCESSING` state:
 
 ```http
 POST /api/demo-commerce/orders/{orderNumber}/dispatch
@@ -38,7 +38,7 @@ Content-Type: application/json
 { "phone": "the-phone-used-at-checkout" }
 ```
 
-This creates a `DEMO_COURIER` shipment and a `MES-TRK-*` tracking number. No courier is contacted and no physical label is purchased.
+This creates a `DEMO_COURIER` shipment and a `MES-TRK-*` tracking number. No courier is contacted and no physical label is purchased. Order state changes caused by simulated payment, dispatch and delivery are recorded in the append-only `order_status_events` audit table in the same database transaction. A dispatch cannot skip the `CONFIRMED → PROCESSING → SHIPPED` lifecycle. Repeated identical shipment status callbacks are idempotent, and a successful demo payment cannot be downgraded to failed.
 
 Demo shipment events can be added through `POST /api/demo-commerce/shipments/{trackingNumber}/status` using the checkout phone, one of `PICKED_UP`, `IN_TRANSIT`, `OUT_FOR_DELIVERY`, `DELIVERED` or `DELIVERY_ATTEMPT_FAILED`, plus a description and location. These endpoints are intentionally demo-only and must be replaced with authenticated staff actions and signed carrier webhooks before production.
 

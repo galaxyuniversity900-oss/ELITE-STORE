@@ -37,6 +37,13 @@ enum PaymentStatus {
   REFUNDED
 }
 
+enum InventoryReservationStatus {
+  ACTIVE
+  CONSUMED
+  RELEASED
+  EXPIRED
+}
+
 enum CartStatus {
   ACTIVE
   CONVERTED
@@ -134,6 +141,7 @@ model Product {
   categoryId      String?
   category        Category?     @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   images          ProductImage[]
+  inventoryReservations InventoryReservation[]
   cartItems       CartItem[]
   orderItems      OrderItem[]
   createdAt       DateTime      @default(now())
@@ -142,6 +150,27 @@ model Product {
   @@index([status, categoryId])
   @@index([name])
   @@map("products")
+}
+
+
+model InventoryReservation {
+  id          String                     @id @default(cuid())
+  orderId     String
+  productId   String
+  quantity    Int
+  status      InventoryReservationStatus @default(ACTIVE)
+  expiresAt   DateTime
+  consumedAt  DateTime?
+  releasedAt  DateTime?
+  order       Order                      @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product     Product                    @relation(fields: [productId], references: [id], onDelete: Restrict)
+  createdAt   DateTime                   @default(now())
+  updatedAt   DateTime                   @updatedAt
+
+  @@index([status, expiresAt])
+  @@index([orderId, status])
+  @@index([productId, status])
+  @@map("inventory_reservations")
 }
 
 model ProductImage {
@@ -215,6 +244,8 @@ model Order {
   items             OrderItem[]
   payments          Payment[]
   notifications     NotificationOutbox[]
+  statusEvents      OrderStatusEvent[]
+  inventoryReservations InventoryReservation[]
   createdAt         DateTime    @default(now())
   updatedAt         DateTime    @updatedAt
 
@@ -358,4 +389,20 @@ model NotificationDeliveryEvent {
   @@unique([provider, providerEventId])
   @@index([notificationId, occurredAt])
   @@map("notification_delivery_events")
+}
+
+
+model OrderStatusEvent {
+  id        String      @id @default(cuid())
+  orderId   String
+  fromStatus OrderStatus
+  toStatus   OrderStatus
+  actorId   String?
+  reason    String?
+  order     Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  createdAt DateTime    @default(now())
+
+  @@index([orderId, createdAt])
+  @@index([actorId, createdAt])
+  @@map("order_status_events")
 }
