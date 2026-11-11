@@ -110,7 +110,10 @@ No wave authorizes deployment, external provider sends, charges, refunds, payout
 | #29–#31 | see PR titles in GitHub | inspect live metadata before changes | `main` | SEO product pages, distributed rate limits, media/CDN |
 | #32 | `ops/encrypted-offsite-backups` | `542150a12225e1bfc5db1b2c108e45ba0b4a8277` | `ops/production-backup-restore` | stacked; no PR-triggered runs returned |
 | #34 | `orchestration/commerce-workstreams-2026-11` | `1ad1fb5261be5d49c7a2bb0e053f5878de0da4d8` | `main` | orchestration ledger; MES STORE CI and garment-motion checks passed on this exact SHA |
-| #35 | `commerce/order-state-audit` | `b58c1f5141276e5b067f5ca09c11f25579edc76f` | `main` | append-only order transition audit; demo payment/dispatch/delivery now use audited transactional transitions; CI running at last poll |
+| #35 | `commerce/order-state-audit` | `b58c1f5141276e5b067f5ca09c11f25579edc76f` | `main` | append-only order transition audit; demo payment/dispatch/delivery use audited transitions; MES STORE CI and motion checks passed |
+| #36 | `commerce/payment-reconciliation-readonly` | `5368aff971b896e22e38f8a22a2c250e4998040e` | `commerce/order-state-audit` | read-only consistency report; stacked PR base means no PR-triggered workflow run returned yet |
+| #37 | `catalog/product-variants-foundation` | `c60e77b98b58e9a0384c243e893967f0727f6695` | `main` | product variant admin foundation; tests/type-check/build passed, Docker stack smoke in progress |
+| #38 | `privacy/customer-consent-preferences` | `3ade7f8ce2976cb550746b0b625dcb61fdb601eb` | `main` | versioned customer consent API; MES STORE CI queued/running at last poll |
 | #33 | `qa/accessibility-mobile-rtl` | `2096ebcdd0dee996db85ab279e8f0b87e07033a9` | `main` | WCAG/mobile RTL checks; not visual regression |
 
 **CI evidence caveat:** the connector returned completed-success runs for PR #10, #24 and #28 at the exact recorded SHAs; it returned no PR-triggered run records for #11, #12 and #32. This is not proof that no other workflow exists or that those branches cannot be tested. Re-fetch all workflow evidence immediately before any review decision.
