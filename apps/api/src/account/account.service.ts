@@ -1,5 +1,5 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException, ServiceUnavailableException } from '@nestjs/common';
-import { ConsentType, DataSubjectRequestStatus, OrderStatus, Prisma, ReturnRequestStatus } from '@prisma/client';
+import { ConsentType, DataSubjectRequestStatus, OrderStatus, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
