@@ -37,6 +37,14 @@ enum PaymentStatus {
   REFUNDED
 }
 
+enum DataSubjectRequestStatus {
+  PENDING
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+  COMPLETED
+}
+
 enum ConsentType {
   MARKETING_EMAIL
   MARKETING_WHATSAPP
@@ -83,6 +91,7 @@ model User {
   carts        Cart[]
   orders       Order[]
   consentPreferences ConsentPreference[]
+  dataSubjectRequests DataSubjectRequest[]
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
@@ -90,6 +99,23 @@ model User {
   @@map("users")
 }
 
+
+
+model DataSubjectRequest {
+  id          String                    @id @default(cuid())
+  userId      String
+  status      DataSubjectRequestStatus   @default(PENDING)
+  reason      String?
+  requestedAt DateTime                  @default(now())
+  reviewedAt  DateTime?
+  completedAt DateTime?
+  user        User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime                  @default(now())
+  updatedAt   DateTime                  @updatedAt
+
+  @@index([userId, status, requestedAt])
+  @@map("data_subject_requests")
+}
 
 model ConsentPreference {
   id            String      @id @default(cuid())
