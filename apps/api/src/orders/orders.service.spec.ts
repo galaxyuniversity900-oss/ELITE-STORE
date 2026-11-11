@@ -69,6 +69,7 @@ describe('OrdersService', () => {
         update: jest.fn().mockResolvedValue({}),
       },
       product: { updateMany: jest.fn().mockResolvedValue({ count: 1 }) },
+      inventoryReservation: { create: jest.fn().mockResolvedValue({ id: 'reservation-1' }) },
       order: {
         findUnique: jest.fn().mockResolvedValue(null),
         create: jest.fn().mockImplementation(({ data }) => Promise.resolve({
