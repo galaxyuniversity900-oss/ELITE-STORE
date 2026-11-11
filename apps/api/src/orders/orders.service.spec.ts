@@ -98,6 +98,14 @@ describe('OrdersService', () => {
       where: expect.objectContaining({ id: 'product-1', stockQuantity: { gte: 2 } }),
       data: { stockQuantity: { decrement: 2 } },
     }));
+    expect(tx.inventoryReservation.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        orderId: 'order-1',
+        productId: 'product-1',
+        quantity: 2,
+        expiresAt: expect.any(Date),
+      }),
+    });
     const orderData = tx.order.create.mock.calls[0][0].data;
     expect(orderData.checkoutSessionId).toBe('session-id');
     expect(orderData.idempotencyKey).toBe('checkout-test-0001');
