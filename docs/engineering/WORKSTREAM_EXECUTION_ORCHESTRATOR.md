@@ -109,8 +109,8 @@ No wave authorizes deployment, external provider sends, charges, refunds, payout
 | #28 | `test/commerce-inventory-pricing-integrity` | `e21a6fa508e8358aedfe80c5c611856c629660a3` | `main` | atomic inventory/pricing test; CI and motion checks observed successful |
 | #29–#31 | see PR titles in GitHub | inspect live metadata before changes | `main` | SEO product pages, distributed rate limits, media/CDN |
 | #32 | `ops/encrypted-offsite-backups` | `542150a12225e1bfc5db1b2c108e45ba0b4a8277` | `ops/production-backup-restore` | stacked; no PR-triggered runs returned |
-| #34 | `orchestration/commerce-workstreams-2026-11` | `0af5a7d4f25c5636a6dcfcab02a77e526859e422` | `main` | orchestration ledger; garment-motion checks passed; MES STORE CI was still running at last poll |
-| #35 | `commerce/order-state-audit` | `f18ba4aaf77fc80ee3f07eb175a716baae28d5c1` | `main` | append-only order transition audit; CI queued at last poll |
+| #34 | `orchestration/commerce-workstreams-2026-11` | `1ad1fb5261be5d49c7a2bb0e053f5878de0da4d8` | `main` | orchestration ledger; MES STORE CI and garment-motion checks passed on this exact SHA |
+| #35 | `commerce/order-state-audit` | `b58c1f5141276e5b067f5ca09c11f25579edc76f` | `main` | append-only order transition audit; demo payment/dispatch/delivery now use audited transactional transitions; CI running at last poll |
 | #33 | `qa/accessibility-mobile-rtl` | `2096ebcdd0dee996db85ab279e8f0b87e07033a9` | `main` | WCAG/mobile RTL checks; not visual regression |
 
 **CI evidence caveat:** the connector returned completed-success runs for PR #10, #24 and #28 at the exact recorded SHAs; it returned no PR-triggered run records for #11, #12 and #32. This is not proof that no other workflow exists or that those branches cannot be tested. Re-fetch all workflow evidence immediately before any review decision.
