@@ -1,5 +1,5 @@
 import { BadRequestException } from '@nestjs/common';
-import { OrderStatus } from '@prisma/client';
+import { OrderStatus, ProductRelationType } from '@prisma/client';
 import { AdminService } from './admin.service';
 
 describe('AdminService order lifecycle', () => {
@@ -75,6 +75,36 @@ describe('AdminService size guides', () => {
     expect(prisma.sizeGuide.update).toHaveBeenCalledWith({
       where: { id: 'size-guide-2' }, data: { isActive: false },
     });
+  });
+});
+
+describe('AdminService curated product relations', () => {
+  it('rejects self-referencing product relations', async () => {
+    const service = new AdminService({} as never);
+    await expect(service.createProductRelation('product-1', {
+      relatedProductId: 'product-1',
+    })).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it('creates a complete-the-look relation only between active products', async () => {
+    const relation = { id: 'relation-1', sourceProductId: 'product-1', relatedProductId: 'product-2' };
+    const prisma = {
+      product: { count: jest.fn().mockResolvedValue(2) },
+      productRelation: { create: jest.fn().mockResolvedValue(relation) },
+    };
+    const service = new AdminService(prisma as never);
+
+    const result = await service.createProductRelation('product-1', { relatedProductId: 'product-2' });
+
+    expect(result).toEqual(relation);
+    expect(prisma.productRelation.create).toHaveBeenCalledWith(expect.objectContaining({
+      data: {
+        sourceProductId: 'product-1',
+        relatedProductId: 'product-2',
+        relationType: ProductRelationType.COMPLETE_THE_LOOK,
+        sortOrder: 0,
+      },
+    }));
   });
 });
 });
