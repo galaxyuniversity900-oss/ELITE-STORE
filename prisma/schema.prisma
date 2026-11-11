@@ -134,6 +134,7 @@ model Product {
   categoryId      String?
   category        Category?     @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   images          ProductImage[]
+  variants        ProductVariant[]
   cartItems       CartItem[]
   orderItems      OrderItem[]
   createdAt       DateTime      @default(now())
@@ -142,6 +143,26 @@ model Product {
   @@index([status, categoryId])
   @@index([name])
   @@map("products")
+}
+
+
+model ProductVariant {
+  id             String   @id @default(cuid())
+  productId      String
+  sku            String   @unique
+  size           String?
+  color           String?
+  attributes      Json?
+  priceOverride   Decimal? @db.Decimal(12, 2)
+  stockQuantity   Int      @default(0)
+  isActive        Boolean  @default(true)
+  product         Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([productId, isActive])
+  @@index([size, color])
+  @@map("product_variants")
 }
 
 model ProductImage {
