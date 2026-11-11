@@ -47,4 +47,34 @@ describe('AdminService product variants', () => {
       where: { id: 'variant-2' }, data: { isActive: false },
     });
   });
+
+describe('AdminService size guides', () => {
+  it('creates a category size guide with structured measurements', async () => {
+    const guide = { id: 'size-guide-1', categoryId: 'category-1', name: 'Mens tops' };
+    const prisma = { sizeGuide: { create: jest.fn().mockResolvedValue(guide) } };
+    const service = new AdminService(prisma as never);
+
+    const result = await service.createSizeGuide('category-1', {
+      name: ' Mens tops ', measurements: { M: { chest: 102, length: 70 } },
+    });
+
+    expect(result).toEqual(guide);
+    expect(prisma.sizeGuide.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        categoryId: 'category-1', name: 'Mens tops', measurementUnit: 'cm', isActive: true,
+      }),
+    });
+  });
+
+  it('archives a size guide without deleting the guide record', async () => {
+    const prisma = { sizeGuide: { update: jest.fn().mockResolvedValue({ id: 'size-guide-2', isActive: false }) } };
+    const service = new AdminService(prisma as never);
+
+    await service.archiveSizeGuide('size-guide-2');
+
+    expect(prisma.sizeGuide.update).toHaveBeenCalledWith({
+      where: { id: 'size-guide-2' }, data: { isActive: false },
+    });
+  });
+});
 });
