@@ -4,7 +4,7 @@ import { AuthGuard } from '../auth/auth.guard';
 import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
 import { AdminService } from './admin.service';
-import { CreateProductDto, CreateProductVariantDto, UpdateOrderStatusDto, UpdateProductDto, UpdateProductVariantDto } from './admin.dto';
+import { CreateProductDto, CreateProductVariantDto, CreateSizeGuideDto, UpdateOrderStatusDto, UpdateProductDto, UpdateProductVariantDto, UpdateSizeGuideDto } from './admin.dto';
 
 @Controller('admin')
 @UseGuards(AuthGuard, RolesGuard)
@@ -50,6 +50,27 @@ export class AdminController {
   @Delete('product-variants/:id')
   archiveProductVariant(@Param('id') id: string) {
     return this.admin.archiveProductVariant(id);
+  }
+
+
+  @Get('size-guides')
+  sizeGuides(@Query('categoryId') categoryId?: string) {
+    return this.admin.listSizeGuides(categoryId);
+  }
+
+  @Post('categories/:categoryId/size-guides')
+  createSizeGuide(@Param('categoryId') categoryId: string, @Body() input: CreateSizeGuideDto) {
+    return this.admin.createSizeGuide(categoryId, input);
+  }
+
+  @Patch('size-guides/:id')
+  updateSizeGuide(@Param('id') id: string, @Body() input: UpdateSizeGuideDto) {
+    return this.admin.updateSizeGuide(id, input);
+  }
+
+  @Delete('size-guides/:id')
+  archiveSizeGuide(@Param('id') id: string) {
+    return this.admin.archiveSizeGuide(id);
   }
 
   @Get('orders')
