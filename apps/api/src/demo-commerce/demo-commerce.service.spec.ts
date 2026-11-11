@@ -1,5 +1,5 @@
 import { BadRequestException } from '@nestjs/common';
-import { OrderStatus, PaymentStatus } from '@prisma/client';
+import { OrderStatus } from '@prisma/client';
 import { DemoCommerceService } from './demo-commerce.service';
 
 describe('DemoCommerceService order lifecycle integration', () => {
