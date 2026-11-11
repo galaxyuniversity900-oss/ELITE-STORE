@@ -133,7 +133,22 @@ export class OrdersService {
           include: { items: true, payments: true },
         });
 
-        // Order + WhatsApp + email outbox rows commit or roll back together.
+        // Stock was atomically decremented above; record its hold for expiry/release/consumption.
+        const reservationExpiresAt = new Date(Date.now() + 30 * 60 * 1000);
+        for (const item of cart.items) {
+          if (item.product.stockQuantity !== null) {
+            await tx.inventoryReservation.create({
+              data: {
+                orderId: order.id,
+                productId: item.productId,
+                quantity: item.quantity,
+                expiresAt: reservationExpiresAt,
+              },
+            });
+          }
+        }
+
+        // Order + inventory holds + WhatsApp + email outbox rows commit or roll back together.
         await this.notifications.enqueueOrderCreated(tx, order);
 
         await tx.cart.update({
