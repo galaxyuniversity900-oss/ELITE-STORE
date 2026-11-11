@@ -26,3 +26,12 @@ An erasure request is not an immediate deletion command. It must be reviewed for
 - A unique order constraint prevents multiple return requests for the same order.
 
 This is request intake only. It does not approve a return, create a shipping label, mark a payment refunded, or move money. Admin review, item-level inspection, policy-window enforcement and verified payment-provider refund execution remain separate work.
+
+## Customer wishlist
+
+Authenticated endpoints:
+- `GET /account/wishlist`
+- `POST /account/wishlist/:productId` (idempotent upsert; active products only)
+- `DELETE /account/wishlist/:productId` (customer-scoped deletion)
+
+Wishlist entries are private to the authenticated customer and cascade when the user or product is deleted. The API is available; storefront wishlist controls and saved-collection grouping remain a frontend follow-up.
