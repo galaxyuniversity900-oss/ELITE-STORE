@@ -1,5 +1,5 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException, ServiceUnavailableException } from '@nestjs/common';
-import { ConsentType, DataSubjectRequestStatus, OrderStatus, Prisma, ProductStatus } from '@prisma/client';
+import { ConsentType, DataSubjectRequestStatus, OrderStatus, Prisma, ProductStatus, SupportTicketStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -13,6 +13,50 @@ export class AccountService {
 
 
 
+
+
+  async createSupportTicket(userId: string, input: { subject: string; category: string; orderId?: string; body: string }) {
+    if (input.orderId) {
+      const order = await this.prisma.order.findFirst({ where: { id: input.orderId, userId }, select: { id: true } });
+      if (!order) throw new NotFoundException('Order not found');
+    }
+    return this.prisma.supportTicket.create({
+      data: {
+        userId,
+        orderId: input.orderId,
+        subject: input.subject.trim(),
+        category: input.category.trim(),
+        messages: { create: { senderId: userId, body: input.body.trim(), isInternal: false } },
+      },
+      include: { messages: { where: { isInternal: false }, orderBy: { createdAt: 'asc' } } },
+    });
+  }
+
+  listSupportTickets(userId: string) {
+    return this.prisma.supportTicket.findMany({
+      where: { userId },
+      include: { messages: { where: { isInternal: false }, orderBy: { createdAt: 'asc' } }, order: { select: { orderNumber: true } } },
+      orderBy: { updatedAt: 'desc' },
+    });
+  }
+
+  async replySupportTicket(userId: string, ticketId: string, body: string) {
+    const ticket = await this.prisma.supportTicket.findFirst({
+      where: { id: ticketId, userId, status: { notIn: [SupportTicketStatus.RESOLVED, SupportTicketStatus.CLOSED] } },
+      select: { id: true },
+    });
+    if (!ticket) throw new NotFoundException('Open support ticket not found');
+    return this.prisma.$transaction(async (tx) => {
+      const message = await tx.supportTicketMessage.create({
+        data: { ticketId, senderId: userId, body: body.trim(), isInternal: false },
+      });
+      await tx.supportTicket.update({
+        where: { id: ticketId },
+        data: { status: SupportTicketStatus.IN_PROGRESS },
+      });
+      return message;
+    });
+  }
 
   wishlist(userId: string) {
     return this.prisma.wishlistItem.findMany({
