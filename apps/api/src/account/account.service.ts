@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException, ServiceUnavailableException } from '@nestjs/common';
-import { ConsentType } from '@prisma/client';
+import { ConsentType, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -9,6 +9,62 @@ export class AccountService {
     const user = await this.prisma.user.findUnique({ where: { id: userId }, select: { id: true, email: true, firstName: true, lastName: true, phone: true, emailVerifiedAt: true, createdAt: true } });
     if (!user) throw new NotFoundException('Customer account not found');
     return user;
+  }
+
+
+  async exportPersonalData(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        phone: true,
+        emailVerifiedAt: true,
+        createdAt: true,
+        addresses: true,
+        consentPreferences: {
+          select: { consentType: true, granted: true, policyVersion: true, source: true, decidedAt: true },
+          orderBy: { consentType: 'asc' },
+        },
+        orders: {
+          orderBy: { createdAt: 'desc' },
+          select: {
+            orderNumber: true, status: true, subtotal: true, discountTotal: true,
+            shippingTotal: true, grandTotal: true, currency: true, paymentMethod: true,
+            shippingMethod: true, customerName: true, customerEmail: true,
+            customerPhone: true, shippingAddress: true, notes: true, createdAt: true,
+            items: true,
+            payments: { select: { provider: true, providerReference: true, status: true, amount: true, currency: true, paidAt: true, createdAt: true } },
+            shipment: { select: { provider: true, service: true, trackingNumber: true, status: true, estimatedDays: true, shippedAt: true, deliveredAt: true } },
+          },
+        },
+      },
+    });
+    if (!user) throw new NotFoundException('Customer account not found');
+    return { exportFormat: 'MES_STORE_ACCOUNT_JSON_V1', exportedAt: new Date().toISOString(), data: user };
+  }
+
+  async requestErasure(userId: string, reason?: string) {
+    return this.prisma.$transaction(async (tx) => {
+      const existing = await tx.dataSubjectRequest.findFirst({
+        where: { userId, status: { in: ['PENDING', 'UNDER_REVIEW', 'APPROVED'] } },
+        orderBy: { requestedAt: 'desc' },
+      });
+      if (existing) return existing;
+      return tx.dataSubjectRequest.create({
+        data: { userId, reason: reason?.trim() || null },
+      });
+    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+  }
+
+  listDataSubjectRequests(userId: string) {
+    return this.prisma.dataSubjectRequest.findMany({
+      where: { userId },
+      select: { id: true, status: true, reason: true, requestedAt: true, reviewedAt: true, completedAt: true },
+      orderBy: { requestedAt: 'desc' },
+    });
   }
 
   consents(userId: string) {
