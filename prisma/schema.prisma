@@ -215,6 +215,7 @@ model Order {
   items             OrderItem[]
   payments          Payment[]
   notifications     NotificationOutbox[]
+  statusEvents      OrderStatusEvent[]
   createdAt         DateTime    @default(now())
   updatedAt         DateTime    @updatedAt
 
@@ -358,4 +359,20 @@ model NotificationDeliveryEvent {
   @@unique([provider, providerEventId])
   @@index([notificationId, occurredAt])
   @@map("notification_delivery_events")
+}
+
+
+model OrderStatusEvent {
+  id        String      @id @default(cuid())
+  orderId   String
+  fromStatus OrderStatus
+  toStatus   OrderStatus
+  actorId   String?
+  reason    String?
+  order     Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  createdAt DateTime    @default(now())
+
+  @@index([orderId, createdAt])
+  @@index([actorId, createdAt])
+  @@map("order_status_events")
 }

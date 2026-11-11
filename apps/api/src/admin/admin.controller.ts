@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
 import { OrderStatus, UserRole } from '@prisma/client';
 import { AuthGuard } from '../auth/auth.guard';
 import { Roles } from '../auth/roles.decorator';
@@ -37,8 +37,8 @@ export class AdminController {
   }
 
   @Patch('orders/:id/status')
-  updateOrderStatus(@Param('id') id: string, @Body() input: UpdateOrderStatusDto) {
-    return this.admin.updateOrderStatus(id, input.status as OrderStatus);
+  updateOrderStatus(@Param('id') id: string, @Body() input: UpdateOrderStatusDto, @Req() request: { user?: { id: string } }) {
+    return this.admin.updateOrderStatus(id, input.status as OrderStatus, request.user?.id);
   }
 
   private page(value: string) { return Math.max(1, Number.parseInt(value, 10) || 1); }

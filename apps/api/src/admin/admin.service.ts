@@ -66,14 +66,14 @@ export class AdminService {
 
   listOrders(page = 1, limit = 50) {
     return this.prisma.order.findMany({
-      include: { items: true, payments: true },
+      include: { items: true, payments: true, statusEvents: { orderBy: { createdAt: 'desc' } } },
       orderBy: { createdAt: 'desc' },
       skip: (page - 1) * limit,
       take: limit,
     });
   }
 
-  async updateOrderStatus(id: string, next: OrderStatus) {
+  async updateOrderStatus(id: string, next: OrderStatus, actorId?: string) {
     if (next === OrderStatus.REFUNDED) throw new BadRequestException('Refunds require a verified payment-provider workflow');
     return this.prisma.$transaction(async (tx) => {
       const order = await tx.order.findUnique({ where: { id }, include: { items: true } });
@@ -103,6 +103,9 @@ export class AdminService {
           }
         }
       }
+      await tx.orderStatusEvent.create({
+        data: { orderId: id, fromStatus: order.status, toStatus: next, actorId },
+      });
       return tx.order.findUnique({ where: { id }, include: { items: true, payments: true } });
     }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
   }
