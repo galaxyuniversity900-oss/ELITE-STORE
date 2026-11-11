@@ -55,6 +55,9 @@ export class DemoCommerceService {
         throw new BadRequestException('Payment cannot be simulated for this order state');
       }
       const previous = current.payments[0];
+      if (previous?.status === PaymentStatus.PAID && status !== PaymentStatus.PAID) {
+        throw new BadRequestException('A successful payment simulation cannot be downgraded');
+      }
       const payment = previous
         ? await tx.payment.update({
             where: { id: previous.id },
@@ -115,6 +118,7 @@ export class DemoCommerceService {
   async updateShipment(trackingNumber: string, input: { phone: string; status: string; description: string; location: string }) {
     const shipment = await this.prisma.shipment.findUnique({ where: { trackingNumber }, include: { order: true } });
     if (!shipment || shipment.order.customerPhone !== input.phone) throw new NotFoundException('Shipment not found');
+    if (shipment.status === input.status) return { demo: true, shipment };
     const allowed: Record<string, string[]> = {
       PICKED_UP: ['IN_TRANSIT', 'OUT_FOR_DELIVERY', 'DELIVERY_ATTEMPT_FAILED'],
       IN_TRANSIT: ['OUT_FOR_DELIVERY', 'DELIVERY_ATTEMPT_FAILED'],
