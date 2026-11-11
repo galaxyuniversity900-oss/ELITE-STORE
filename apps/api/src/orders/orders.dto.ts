@@ -51,6 +51,11 @@ export class CheckoutDto {
 
   @IsOptional()
   @IsString()
+  @MaxLength(32)
+  promotionCode?: string;
+
+  @IsOptional()
+  @IsString()
   @MaxLength(1000)
   notes?: string;
 }
