@@ -7,6 +7,57 @@ import { CreateProductDto, UpdateProductDto } from './admin.dto';
 export class AdminService {
   constructor(private readonly prisma: PrismaService) {}
 
+
+  async commerceInsights(from?: string, to?: string) {
+    const end = to ? new Date(to) : new Date();
+    const start = from ? new Date(from) : new Date(end.getTime() - 30 * 24 * 60 * 60 * 1000);
+    if (!Number.isFinite(start.getTime()) || !Number.isFinite(end.getTime()) || start > end) {
+      throw new BadRequestException('Invalid analytics date range');
+    }
+    if (end.getTime() - start.getTime() > 366 * 24 * 60 * 60 * 1000) {
+      throw new BadRequestException('Analytics date range cannot exceed 366 days');
+    }
+    const createdAt = { gte: start, lte: end };
+    const [orderCount, revenueByStatusAndCurrency, topProducts] = await this.prisma.$transaction([
+      this.prisma.order.count({ where: { createdAt } }),
+      this.prisma.order.groupBy({
+        by: ['status', 'currency'],
+        where: { createdAt },
+        _count: { _all: true },
+        _sum: { grandTotal: true },
+      }),
+      this.prisma.orderItem.groupBy({
+        by: ['sku', 'productName'],
+        where: {
+          order: {
+            createdAt,
+            status: { notIn: [OrderStatus.CANCELLED, OrderStatus.REFUNDED] },
+          },
+        },
+        _sum: { quantity: true, lineTotal: true },
+        orderBy: { _sum: { lineTotal: 'desc' } },
+        take: 10,
+      }),
+    ]);
+    return {
+      period: { from: start.toISOString(), to: end.toISOString() },
+      orderCount,
+      revenueByStatusAndCurrency: revenueByStatusAndCurrency.map((row) => ({
+        status: row.status,
+        currency: row.currency,
+        orders: row._count._all,
+        grossOrderValue: row._sum.grandTotal?.toString() ?? '0',
+      })),
+      topProducts: topProducts.map((row) => ({
+        sku: row.sku,
+        productName: row.productName,
+        units: row._sum.quantity ?? 0,
+        grossLineValue: row._sum.lineTotal?.toString() ?? '0',
+      })),
+      privacy: 'AGGREGATED_NO_CUSTOMER_IDENTIFIERS',
+    };
+  }
+
   async overview() {
     const [products, orders, pendingOrders, customers] = await this.prisma.$transaction([
       this.prisma.product.count({ where: { status: ProductStatus.ACTIVE } }),
