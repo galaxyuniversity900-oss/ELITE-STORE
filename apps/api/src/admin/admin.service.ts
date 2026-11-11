@@ -1,5 +1,5 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import { OrderStatus, Prisma, ProductStatus, UserRole } from '@prisma/client';
+import { InventoryReservationStatus, OrderStatus, Prisma, ProductStatus, UserRole } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateProductDto, UpdateProductDto } from './admin.dto';
 
@@ -94,14 +94,37 @@ export class AdminService {
       const changed = await tx.order.updateMany({ where: { id, status: order.status }, data: { status: next } });
       if (changed.count !== 1) throw new ConflictException('Order changed concurrently; reload and retry');
       if (next === OrderStatus.CANCELLED) {
-        for (const item of order.items) {
-          if (item.productId) {
+        const reservations = await tx.inventoryReservation.findMany({
+          where: { orderId: id, status: InventoryReservationStatus.ACTIVE },
+        });
+        if (reservations.length > 0) {
+          for (const reservation of reservations) {
             await tx.product.updateMany({
-              where: { id: item.productId, stockQuantity: { not: null } },
-              data: { stockQuantity: { increment: item.quantity } },
+              where: { id: reservation.productId, stockQuantity: { not: null } },
+              data: { stockQuantity: { increment: reservation.quantity } },
             });
           }
+          await tx.inventoryReservation.updateMany({
+            where: { orderId: id, status: InventoryReservationStatus.ACTIVE },
+            data: { status: InventoryReservationStatus.RELEASED, releasedAt: new Date() },
+          });
+        } else {
+          // Legacy orders created before reservation tracking retain their historical restore path.
+          for (const item of order.items) {
+            if (item.productId) {
+              await tx.product.updateMany({
+                where: { id: item.productId, stockQuantity: { not: null } },
+                data: { stockQuantity: { increment: item.quantity } },
+              });
+            }
+          }
         }
+      }
+      if (next === OrderStatus.CONFIRMED) {
+        await tx.inventoryReservation.updateMany({
+          where: { orderId: id, status: InventoryReservationStatus.ACTIVE },
+          data: { status: InventoryReservationStatus.CONSUMED, consumedAt: new Date() },
+        });
       }
       await tx.orderStatusEvent.create({
         data: { orderId: id, fromStatus: order.status, toStatus: next, actorId },
