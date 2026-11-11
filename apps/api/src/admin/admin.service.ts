@@ -1,6 +1,6 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import { OrderStatus, Prisma, ProductStatus, UserRole } from '@prisma/client';
-import { CreateProductVariantDto, CreateSizeGuideDto, UpdateProductVariantDto, UpdateSizeGuideDto } from './admin.dto';
+import { OrderStatus, Prisma, ProductRelationType, ProductStatus, UserRole } from '@prisma/client';
+import { CreateProductRelationDto, CreateProductVariantDto, CreateSizeGuideDto, UpdateProductVariantDto, UpdateSizeGuideDto } from './admin.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateProductDto, UpdateProductDto } from './admin.dto';
 
@@ -101,6 +101,41 @@ export class AdminService {
     }
   }
 
+
+
+  async listProductRelations(sourceProductId: string, relationType?: ProductRelationType) {
+    return this.prisma.productRelation.findMany({
+      where: {
+        sourceProductId,
+        ...(relationType ? { relationType } : {}),
+        relatedProduct: { status: ProductStatus.ACTIVE },
+      },
+      include: { relatedProduct: { include: { images: { orderBy: { sortOrder: 'asc' } }, category: true } } },
+      orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
+    });
+  }
+
+  async createProductRelation(sourceProductId: string, input: CreateProductRelationDto) {
+    if (sourceProductId === input.relatedProductId) throw new BadRequestException('A product cannot be related to itself');
+    const products = await this.prisma.product.count({
+      where: { id: { in: [sourceProductId, input.relatedProductId] }, status: ProductStatus.ACTIVE },
+    });
+    if (products !== 2) throw new NotFoundException('Both active products must exist');
+    return this.prisma.productRelation.create({
+      data: {
+        sourceProductId,
+        relatedProductId: input.relatedProductId,
+        relationType: input.relationType ?? ProductRelationType.COMPLETE_THE_LOOK,
+        sortOrder: input.sortOrder ?? 0,
+      },
+      include: { relatedProduct: { include: { images: { orderBy: { sortOrder: 'asc' } }, category: true } } },
+    });
+  }
+
+  async removeProductRelation(sourceProductId: string, relationId: string) {
+    const result = await this.prisma.productRelation.deleteMany({ where: { id: relationId, sourceProductId } });
+    return { removed: result.count === 1 };
+  }
 
   listSizeGuides(categoryId?: string) {
     return this.prisma.sizeGuide.findMany({
