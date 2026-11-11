@@ -128,4 +128,91 @@ describe('OrdersService', () => {
     expect(tx.order.findUnique).toHaveBeenCalledTimes(1);
     expect(notifications.enqueueOrderCreated).not.toHaveBeenCalled();
   });
+
+  it('applies a capped percentage promotion and redeems it atomically with checkout', async () => {
+    const promotion = {
+      id: 'promo-1', code: 'SAVE10', type: 'PERCENTAGE',
+      value: new Prisma.Decimal('10.00'), minSubtotal: new Prisma.Decimal('100.00'),
+      maxDiscount: new Prisma.Decimal('15.00'), usageCount: 0, usageLimit: 10,
+      startsAt: null, expiresAt: null, isActive: true,
+    };
+    const tx = {
+      order: {
+        findUnique: jest.fn().mockResolvedValue(null),
+        create: jest.fn().mockImplementation(({ data }) => Promise.resolve({
+          id: 'order-promo', orderNumber: data.orderNumber, items: data.items.create, payments: data.payments.create,
+        })),
+      },
+      cart: {
+        findUnique: jest.fn().mockResolvedValue({
+          id: 'cart-promo', status: CartStatus.ACTIVE,
+          items: [{
+            productId: 'product-promo', quantity: 2,
+            product: {
+              id: 'product-promo', name: 'Classic Shirt', sku: 'SHIRT-PROMO',
+              status: ProductStatus.ACTIVE, stockQuantity: 5, price: new Prisma.Decimal('100.00'),
+            },
+          }],
+        }),
+        update: jest.fn(),
+      },
+      product: { updateMany: jest.fn().mockResolvedValue({ count: 1 }) },
+      promotion: {
+        findUnique: jest.fn().mockResolvedValue(promotion),
+        updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+      },
+      promotionRedemption: { create: jest.fn().mockResolvedValue({ id: 'redemption-1' }) },
+    };
+    const prisma = { $transaction: jest.fn((work: (client: unknown) => unknown) => work(tx)) };
+    const service = new OrdersService(prisma as never, notifications as never);
+
+    await service.checkout('session-promo', 'promotion-test-0001', {
+      ...input, promotionCode: ' save10 ',
+    });
+
+    const orderData = tx.order.create.mock.calls[0][0].data;
+    expect(orderData.discountTotal.toString()).toBe('15');
+    expect(orderData.grandTotal.toString()).toBe('230');
+    expect(tx.promotion.updateMany).toHaveBeenCalledWith({
+      where: { id: 'promo-1', isActive: true, usageCount: 0 },
+      data: { usageCount: { increment: 1 } },
+    });
+    expect(tx.promotionRedemption.create).toHaveBeenCalledWith({
+      data: { promotionId: 'promo-1', orderId: 'order-promo', discountAmount: expect.any(Prisma.Decimal) },
+    });
+  });
+
+  it('rejects expired or exhausted promotion codes before creating an order', async () => {
+    const promotion = {
+      id: 'promo-expired', code: 'OLD', type: 'FIXED',
+      value: new Prisma.Decimal('20'), minSubtotal: new Prisma.Decimal('0'),
+      maxDiscount: null, usageCount: 5, usageLimit: 5,
+      startsAt: null, expiresAt: null, isActive: true,
+    };
+    const tx = {
+      order: { findUnique: jest.fn().mockResolvedValue(null), create: jest.fn() },
+      cart: {
+        findUnique: jest.fn().mockResolvedValue({
+          id: 'cart-expired', status: CartStatus.ACTIVE,
+          items: [{
+            productId: 'product-expired', quantity: 1,
+            product: {
+              id: 'product-expired', name: 'Shirt', sku: 'SHIRT-OLD',
+              status: ProductStatus.ACTIVE, stockQuantity: 5, price: new Prisma.Decimal('100'),
+            },
+          }],
+        }),
+      },
+      product: { updateMany: jest.fn().mockResolvedValue({ count: 1 }) },
+      promotion: { findUnique: jest.fn().mockResolvedValue(promotion) },
+    };
+    const prisma = { $transaction: jest.fn((work: (client: unknown) => unknown) => work(tx)) };
+    const service = new OrdersService(prisma as never, notifications as never);
+
+    await expect(service.checkout('session-old', 'promotion-test-0002', {
+      ...input, promotionCode: 'OLD',
+    })).rejects.toBeInstanceOf(BadRequestException);
+    expect(tx.order.create).not.toHaveBeenCalled();
+    expect(notifications.enqueueOrderCreated).not.toHaveBeenCalled();
+  });
 });
