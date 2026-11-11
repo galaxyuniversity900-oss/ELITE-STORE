@@ -88,7 +88,27 @@ export class OrdersService {
         const shippingMethod = input.shippingMethod ?? 'DEMO_STANDARD';
         const shippingFees: Record<string, number> = { DEMO_STANDARD: 45, DEMO_EXPRESS: 75, DEMO_PICKUP: 0 };
         const shippingTotal = new Prisma.Decimal(shippingFees[shippingMethod] ?? 45);
-        const discountTotal = new Prisma.Decimal(0);
+        let promotion: { id: string; code: string; type: 'PERCENTAGE' | 'FIXED'; value: Prisma.Decimal; minSubtotal: Prisma.Decimal; maxDiscount: Prisma.Decimal | null; usageCount: number; usageLimit: number | null; startsAt: Date | null; expiresAt: Date | null; isActive: boolean } | null = null;
+        let discountTotal = new Prisma.Decimal(0);
+        const promotionCode = input.promotionCode?.trim().toUpperCase();
+        if (promotionCode) {
+          promotion = await tx.promotion.findUnique({ where: { code: promotionCode } });
+          const now = new Date();
+          if (!promotion || !promotion.isActive
+            || (promotion.startsAt && promotion.startsAt > now)
+            || (promotion.expiresAt && promotion.expiresAt <= now)
+            || subtotal.lessThan(promotion.minSubtotal)
+            || (promotion.usageLimit !== null && promotion.usageCount >= promotion.usageLimit)) {
+            throw new BadRequestException('Promotion code is invalid, inactive, expired, or not eligible for this cart');
+          }
+          discountTotal = promotion.type === 'PERCENTAGE'
+            ? subtotal.mul(promotion.value).div(100).toDecimalPlaces(2)
+            : new Prisma.Decimal(promotion.value);
+          if (promotion.maxDiscount && discountTotal.greaterThan(promotion.maxDiscount)) {
+            discountTotal = new Prisma.Decimal(promotion.maxDiscount);
+          }
+          if (discountTotal.greaterThan(subtotal)) discountTotal = subtotal;
+        }
         const grandTotal = subtotal.add(shippingTotal).sub(discountTotal);
         const orderNumber = `MES-${Date.now()}-${randomUUID().slice(0, 8).toUpperCase()}`;
 
@@ -132,6 +152,23 @@ export class OrdersService {
           },
           include: { items: true, payments: true },
         });
+
+        if (promotion) {
+          const claimed = await tx.promotion.updateMany({
+            where: {
+              id: promotion.id,
+              isActive: true,
+              usageCount: promotion.usageCount,
+            },
+            data: { usageCount: { increment: 1 } },
+          });
+          if (claimed.count !== 1) {
+            throw new BadRequestException('Promotion usage changed concurrently; retry checkout');
+          }
+          await tx.promotionRedemption.create({
+            data: { promotionId: promotion.id, orderId: order.id, discountAmount: discountTotal },
+          });
+        }
 
         // Order + WhatsApp + email outbox rows commit or roll back together.
         await this.notifications.enqueueOrderCreated(tx, order);
