@@ -7,84 +7,94 @@ const batchSize = Math.max(1, Math.min(500, Number.parseInt(process.env.INVENTOR
 async function main() {
   const due = await prisma.inventoryReservation.findMany({
     where: { status: InventoryReservationStatus.ACTIVE, expiresAt: { lte: now } },
-    orderBy: [{ expiresAt: 'asc' }, { id: 'asc' }],
+    orderBy: [{ expiresAt: 'asc' }, { orderId: 'asc' }],
     take: batchSize,
-    select: { id: true, orderId: true },
+    select: { orderId: true },
   });
+  const orderIds = [...new Set(due.map((item) => item.orderId))];
 
-  let expired = 0;
-  let consumed = 0;
-  let skipped = 0;
+  let expiredOrders = 0;
+  let releasedReservations = 0;
+  let consumedReservations = 0;
+  let skippedOrders = 0;
 
-  for (const candidate of due) {
+  for (const orderId of orderIds) {
     try {
       const result = await prisma.$transaction(async (tx) => {
-        const reservation = await tx.inventoryReservation.findUnique({
-          where: { id: candidate.id },
-          include: { order: { select: { status: true } } },
+        const order = await tx.order.findUnique({ where: { id: orderId }, select: { status: true } });
+        const reservations = await tx.inventoryReservation.findMany({
+          where: { orderId, status: InventoryReservationStatus.ACTIVE, expiresAt: { lte: now } },
         });
-        if (!reservation || reservation.status !== InventoryReservationStatus.ACTIVE || reservation.expiresAt > now) {
-          return 'SKIPPED' as const;
-        }
+        if (!order || reservations.length === 0) return { kind: 'SKIPPED' as const, count: 0 };
 
-        if (reservation.order.status !== OrderStatus.PENDING) {
-          const status = reservation.order.status === OrderStatus.CANCELLED
+        if (order.status !== OrderStatus.PENDING) {
+          const nextStatus = order.status === OrderStatus.CANCELLED
             ? InventoryReservationStatus.RELEASED
             : InventoryReservationStatus.CONSUMED;
           const changed = await tx.inventoryReservation.updateMany({
-            where: { id: reservation.id, status: InventoryReservationStatus.ACTIVE },
-            data: status === InventoryReservationStatus.CONSUMED
-              ? { status, consumedAt: now }
-              : { status, releasedAt: now },
+            where: { orderId, status: InventoryReservationStatus.ACTIVE, expiresAt: { lte: now } },
+            data: nextStatus === InventoryReservationStatus.CONSUMED
+              ? { status: nextStatus, consumedAt: now }
+              : { status: nextStatus, releasedAt: now },
           });
-          return changed.count === 1 ? (status === InventoryReservationStatus.CONSUMED ? 'CONSUMED' as const : 'SKIPPED' as const) : 'SKIPPED' as const;
+          return {
+            kind: nextStatus === InventoryReservationStatus.CONSUMED ? 'CONSUMED' as const : 'SKIPPED' as const,
+            count: changed.count,
+          };
         }
-
-        const released = await tx.inventoryReservation.updateMany({
-          where: { id: reservation.id, status: InventoryReservationStatus.ACTIVE, expiresAt: { lte: now } },
-          data: { status: InventoryReservationStatus.EXPIRED, releasedAt: now },
-        });
-        if (released.count !== 1) return 'SKIPPED' as const;
 
         const cancelled = await tx.order.updateMany({
-          where: { id: reservation.orderId, status: OrderStatus.PENDING },
+          where: { id: orderId, status: OrderStatus.PENDING },
           data: { status: OrderStatus.CANCELLED },
         });
-        if (cancelled.count !== 1) {
-          throw new Error('Order state changed while expiring its inventory reservation; transaction rolled back');
-        }
+        if (cancelled.count !== 1) throw new Error('Order state changed while expiring reservations; transaction rolled back');
 
-        await tx.product.updateMany({
-          where: { id: reservation.productId, stockQuantity: { not: null } },
-          data: { stockQuantity: { increment: reservation.quantity } },
+        const released = await tx.inventoryReservation.updateMany({
+          where: { orderId, status: InventoryReservationStatus.ACTIVE, expiresAt: { lte: now } },
+          data: { status: InventoryReservationStatus.EXPIRED, releasedAt: now },
         });
+        if (released.count !== reservations.length) throw new Error('Reservation set changed during expiry; transaction rolled back');
+
+        for (const reservation of reservations) {
+          await tx.product.updateMany({
+            where: { id: reservation.productId, stockQuantity: { not: null } },
+            data: { stockQuantity: { increment: reservation.quantity } },
+          });
+        }
         await tx.orderStatusEvent.create({
           data: {
-            orderId: reservation.orderId,
+            orderId,
             fromStatus: OrderStatus.PENDING,
             toStatus: OrderStatus.CANCELLED,
             reason: 'INVENTORY_RESERVATION_EXPIRED',
           },
         });
-        return 'EXPIRED' as const;
+        return { kind: 'EXPIRED' as const, count: released.count };
       }, { isolationLevel: 'Serializable' });
 
-      if (result === 'EXPIRED') expired += 1;
-      else if (result === 'CONSUMED') consumed += 1;
-      else skipped += 1;
+      if (result.kind === 'EXPIRED') {
+        expiredOrders += 1;
+        releasedReservations += result.count;
+      } else if (result.kind === 'CONSUMED') {
+        consumedReservations += result.count;
+      } else {
+        skippedOrders += 1;
+      }
     } catch (error) {
-      skipped += 1;
-      process.stderr.write(`reservation ${candidate.id}: ${error instanceof Error ? error.message : 'unknown error'}\n`);
+      skippedOrders += 1;
+      process.stderr.write(`order ${orderId}: ${error instanceof Error ? error.message : 'unknown error'}\n`);
     }
   }
 
   process.stdout.write(JSON.stringify({
     mode: 'INVENTORY_RESERVATION_EXPIRY',
     dryRun: false,
-    scanned: due.length,
-    expired,
-    consumed,
-    skipped,
+    scannedReservations: due.length,
+    scannedOrders: orderIds.length,
+    expiredOrders,
+    releasedReservations,
+    consumedReservations,
+    skippedOrders,
     checkedAt: now.toISOString(),
   }) + '\n');
 }
