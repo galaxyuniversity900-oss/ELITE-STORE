@@ -1,5 +1,5 @@
-import { ServiceUnavailableException } from '@nestjs/common';
-import { ConsentType } from '@prisma/client';
+import { BadRequestException, ServiceUnavailableException } from '@nestjs/common';
+import { ConsentType, OrderStatus } from '@prisma/client';
 import { AccountService } from './account.service';
 
 describe('AccountService consent preferences', () => {
@@ -88,5 +88,40 @@ describe('AccountService consent preferences', () => {
     expect(tx.dataSubjectRequest.create).toHaveBeenCalledWith({
       data: { userId: 'user-5', reason: 'Delete my profile' },
     });
+  });
+
+  it('allows a customer return request only for their delivered order', async () => {
+    const request = { id: 'return-1', orderId: 'order-1', status: 'PENDING', reason: 'Wrong size' };
+    const prisma = {
+      order: { findFirst: jest.fn().mockResolvedValue({ id: 'order-1', status: OrderStatus.DELIVERED }) },
+      returnRequest: {
+        findUnique: jest.fn().mockResolvedValue(null),
+        create: jest.fn().mockResolvedValue(request),
+      },
+    };
+    const service = new AccountService(prisma as never);
+
+    const result = await service.requestReturn('user-1', 'MES-1', ' Wrong size ');
+
+    expect(result).toEqual(request);
+    expect(prisma.order.findFirst).toHaveBeenCalledWith({
+      where: { orderNumber: 'MES-1', userId: 'user-1' },
+      select: { id: true, status: true },
+    });
+    expect(prisma.returnRequest.create).toHaveBeenCalledWith(expect.objectContaining({
+      data: { userId: 'user-1', orderId: 'order-1', reason: 'Wrong size' },
+    }));
+  });
+
+  it('rejects return requests for orders that are not delivered', async () => {
+    const prisma = {
+      order: { findFirst: jest.fn().mockResolvedValue({ id: 'order-2', status: OrderStatus.PROCESSING }) },
+      returnRequest: { findUnique: jest.fn(), create: jest.fn() },
+    };
+    const service = new AccountService(prisma as never);
+
+    await expect(service.requestReturn('user-2', 'MES-2', 'Damaged'))
+      .rejects.toBeInstanceOf(BadRequestException);
+    expect(prisma.returnRequest.create).not.toHaveBeenCalled();
   });
 });
