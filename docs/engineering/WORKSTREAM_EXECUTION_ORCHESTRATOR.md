@@ -113,7 +113,8 @@ No wave authorizes deployment, external provider sends, charges, refunds, payout
 | #35 | `commerce/order-state-audit` | `b58c1f5141276e5b067f5ca09c11f25579edc76f` | `main` | append-only order transition audit; demo payment/dispatch/delivery use audited transitions; MES STORE CI and motion checks passed |
 | #36 | `commerce/payment-reconciliation-readonly` | `5368aff971b896e22e38f8a22a2c250e4998040e` | `commerce/order-state-audit` | read-only consistency report; stacked PR base means no PR-triggered workflow run returned yet |
 | #37 | `catalog/product-variants-foundation` | `c60e77b98b58e9a0384c243e893967f0727f6695` | `main` | product variant admin foundation; tests/type-check/build passed, Docker stack smoke in progress |
-| #38 | `privacy/customer-consent-preferences` | `3ade7f8ce2976cb550746b0b625dcb61fdb601eb` | `main` | versioned customer consent API; MES STORE CI queued/running at last poll |
+| #38 | `privacy/customer-consent-preferences` | `5746a583f5f9861e221367a636502e08bde8f760` | `main` | consent, export and erasure request intake; MES STORE CI running at last poll |
+| #39 | `shipping/zones-and-rules` | `b753f3b76d198b69f0ed33d30109d8679d7e6e31` | `main` | shipping rules and checkout integration; CI queued/running at last poll |
 | #33 | `qa/accessibility-mobile-rtl` | `2096ebcdd0dee996db85ab279e8f0b87e07033a9` | `main` | WCAG/mobile RTL checks; not visual regression |
 
 **CI evidence caveat:** the connector returned completed-success runs for PR #10, #24 and #28 at the exact recorded SHAs; it returned no PR-triggered run records for #11, #12 and #32. This is not proof that no other workflow exists or that those branches cannot be tested. Re-fetch all workflow evidence immediately before any review decision.
