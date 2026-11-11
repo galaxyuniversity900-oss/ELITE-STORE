@@ -1,4 +1,5 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ServiceUnavailableException } from '@nestjs/common';
+import { ConsentType } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -9,6 +10,38 @@ export class AccountService {
     if (!user) throw new NotFoundException('Customer account not found');
     return user;
   }
+
+  consents(userId: string) {
+    return this.prisma.consentPreference.findMany({
+      where: { userId },
+      orderBy: { consentType: 'asc' },
+      select: { consentType: true, granted: true, policyVersion: true, source: true, decidedAt: true, updatedAt: true },
+    });
+  }
+
+  async setConsent(userId: string, input: { consentType: ConsentType; granted: boolean }) {
+    const policyVersion = process.env.CONSENT_POLICY_VERSION?.trim();
+    if (!policyVersion) throw new ServiceUnavailableException('Consent policy version is not configured');
+    return this.prisma.consentPreference.upsert({
+      where: { userId_consentType: { userId, consentType: input.consentType } },
+      create: {
+        userId,
+        consentType: input.consentType,
+        granted: input.granted,
+        policyVersion,
+        source: 'ACCOUNT_SETTINGS',
+        decidedAt: new Date(),
+      },
+      update: {
+        granted: input.granted,
+        policyVersion,
+        source: 'ACCOUNT_SETTINGS',
+        decidedAt: new Date(),
+      },
+      select: { consentType: true, granted: true, policyVersion: true, source: true, decidedAt: true, updatedAt: true },
+    });
+  }
+
   orders(userId: string) {
     return this.prisma.order.findMany({
       where: { userId },
