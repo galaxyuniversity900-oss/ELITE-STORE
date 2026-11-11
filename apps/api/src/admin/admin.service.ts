@@ -1,11 +1,48 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import { OrderStatus, Prisma, ProductStatus, UserRole } from '@prisma/client';
+import { OrderStatus, Prisma, ProductStatus, SupportTicketPriority, SupportTicketStatus, UserRole } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreateProductDto, UpdateProductDto } from './admin.dto';
+import { AdminSupportReplyDto, CreateProductDto, UpdateProductDto, UpdateSupportTicketDto } from './admin.dto';
 
 @Injectable()
 export class AdminService {
   constructor(private readonly prisma: PrismaService) {}
+
+
+  listSupportTickets(status?: SupportTicketStatus, priority?: SupportTicketPriority) {
+    return this.prisma.supportTicket.findMany({
+      where: { ...(status ? { status } : {}), ...(priority ? { priority } : {}) },
+      include: {
+        customer: { select: { id: true, firstName: true, lastName: true, email: true } },
+        order: { select: { orderNumber: true, status: true } },
+        messages: { orderBy: { createdAt: 'asc' } },
+      },
+      orderBy: [{ priority: 'desc' }, { updatedAt: 'desc' }],
+      take: 200,
+    });
+  }
+
+  async updateSupportTicket(id: string, input: UpdateSupportTicketDto) {
+    const ticket = await this.prisma.supportTicket.findUnique({ where: { id }, select: { id: true } });
+    if (!ticket) throw new NotFoundException('Support ticket not found');
+    return this.prisma.supportTicket.update({ where: { id }, data: input });
+  }
+
+  async replySupportTicket(adminId: string, id: string, input: AdminSupportReplyDto) {
+    const ticket = await this.prisma.supportTicket.findUnique({ where: { id }, select: { id: true } });
+    if (!ticket) throw new NotFoundException('Support ticket not found');
+    return this.prisma.$transaction(async (tx) => {
+      const message = await tx.supportTicketMessage.create({
+        data: { ticketId: id, senderId: adminId, body: input.body.trim(), isInternal: input.isInternal ?? false },
+      });
+      if (!input.isInternal) {
+        await tx.supportTicket.update({
+          where: { id },
+          data: { status: SupportTicketStatus.WAITING_CUSTOMER },
+        });
+      }
+      return message;
+    });
+  }
 
   async overview() {
     const [products, orders, pendingOrders, customers] = await this.prisma.$transaction([
