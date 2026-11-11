@@ -13,6 +13,12 @@ enum UserRole {
   SUPER_ADMIN
 }
 
+enum ProductRelationType {
+  COMPLETE_THE_LOOK
+  SIMILAR
+  PAIR_WITH
+}
+
 enum ProductStatus {
   DRAFT
   ACTIVE
@@ -138,6 +144,8 @@ model Product {
   variants        ProductVariant[]
   cartItems       CartItem[]
   orderItems      OrderItem[]
+  outgoingRelations ProductRelation[] @relation("ProductRelationSource")
+  incomingRelations ProductRelation[] @relation("ProductRelationTarget")
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 
@@ -182,6 +190,23 @@ model ProductVariant {
   @@index([productId, isActive])
   @@index([size, color])
   @@map("product_variants")
+}
+
+
+model ProductRelation {
+  id               String              @id @default(cuid())
+  sourceProductId  String
+  relatedProductId String
+  relationType     ProductRelationType @default(COMPLETE_THE_LOOK)
+  sortOrder        Int                 @default(0)
+  sourceProduct    Product             @relation("ProductRelationSource", fields: [sourceProductId], references: [id], onDelete: Cascade)
+  relatedProduct   Product             @relation("ProductRelationTarget", fields: [relatedProductId], references: [id], onDelete: Cascade)
+  createdAt        DateTime            @default(now())
+
+  @@unique([sourceProductId, relatedProductId, relationType])
+  @@index([sourceProductId, relationType, sortOrder])
+  @@index([relatedProductId, relationType])
+  @@map("product_relations")
 }
 
 model ProductImage {
