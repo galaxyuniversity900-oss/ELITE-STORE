@@ -1,10 +1,10 @@
 import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Query, UseGuards } from '@nestjs/common';
-import { OrderStatus, UserRole } from '@prisma/client';
+import { OrderStatus, ProductRelationType, UserRole } from '@prisma/client';
 import { AuthGuard } from '../auth/auth.guard';
 import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
 import { AdminService } from './admin.service';
-import { CreateProductDto, CreateProductVariantDto, CreateSizeGuideDto, UpdateOrderStatusDto, UpdateProductDto, UpdateProductVariantDto, UpdateSizeGuideDto } from './admin.dto';
+import { CreateProductDto, CreateProductRelationDto, CreateProductVariantDto, CreateSizeGuideDto, UpdateOrderStatusDto, UpdateProductDto, UpdateProductVariantDto, UpdateSizeGuideDto } from './admin.dto';
 
 @Controller('admin')
 @UseGuards(AuthGuard, RolesGuard)
@@ -52,6 +52,22 @@ export class AdminController {
     return this.admin.archiveProductVariant(id);
   }
 
+
+
+  @Get('products/:id/relations')
+  productRelations(@Param('id') id: string, @Query('type') type?: ProductRelationType) {
+    return this.admin.listProductRelations(id, type);
+  }
+
+  @Post('products/:id/relations')
+  createProductRelation(@Param('id') id: string, @Body() input: CreateProductRelationDto) {
+    return this.admin.createProductRelation(id, input);
+  }
+
+  @Delete('products/:id/relations/:relationId')
+  removeProductRelation(@Param('id') id: string, @Param('relationId') relationId: string) {
+    return this.admin.removeProductRelation(id, relationId);
+  }
 
   @Get('size-guides')
   sizeGuides(@Query('categoryId') categoryId?: string) {
