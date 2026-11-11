@@ -4,7 +4,7 @@ import { AuthGuard } from '../auth/auth.guard';
 import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
 import { AdminService } from './admin.service';
-import { CreateProductDto, UpdateOrderStatusDto, UpdateProductDto } from './admin.dto';
+import { CreateProductDto, CreateProductVariantDto, UpdateOrderStatusDto, UpdateProductDto, UpdateProductVariantDto } from './admin.dto';
 
 @Controller('admin')
 @UseGuards(AuthGuard, RolesGuard)
@@ -30,6 +30,27 @@ export class AdminController {
 
   @Delete('products/:id')
   archiveProduct(@Param('id') id: string) { return this.admin.archiveProduct(id); }
+
+
+  @Get('products/:id/variants')
+  productVariants(@Param('id') id: string) {
+    return this.admin.listProductVariants(id);
+  }
+
+  @Post('products/:id/variants')
+  createProductVariant(@Param('id') id: string, @Body() input: CreateProductVariantDto) {
+    return this.admin.createProductVariant(id, input);
+  }
+
+  @Patch('product-variants/:id')
+  updateProductVariant(@Param('id') id: string, @Body() input: UpdateProductVariantDto) {
+    return this.admin.updateProductVariant(id, input);
+  }
+
+  @Delete('product-variants/:id')
+  archiveProductVariant(@Param('id') id: string) {
+    return this.admin.archiveProductVariant(id);
+  }
 
   @Get('orders')
   orders(@Query('page') page = '1', @Query('limit') limit = '50') {
