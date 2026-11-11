@@ -1,5 +1,5 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException, ServiceUnavailableException } from '@nestjs/common';
-import { ConsentType, DataSubjectRequestStatus, OrderStatus, Prisma } from '@prisma/client';
+import { ConsentType, DataSubjectRequestStatus, OrderStatus, Prisma, ProductStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -12,6 +12,34 @@ export class AccountService {
   }
 
 
+
+
+  wishlist(userId: string) {
+    return this.prisma.wishlistItem.findMany({
+      where: { userId },
+      include: { product: { include: { images: { orderBy: { sortOrder: 'asc' } }, category: true } } },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async addWishlistItem(userId: string, productId: string) {
+    const product = await this.prisma.product.findFirst({
+      where: { id: productId, status: ProductStatus.ACTIVE },
+      select: { id: true },
+    });
+    if (!product) throw new NotFoundException('Product not found');
+    return this.prisma.wishlistItem.upsert({
+      where: { userId_productId: { userId, productId } },
+      create: { userId, productId },
+      update: {},
+      include: { product: { include: { images: { orderBy: { sortOrder: 'asc' } }, category: true } } },
+    });
+  }
+
+  async removeWishlistItem(userId: string, productId: string) {
+    const result = await this.prisma.wishlistItem.deleteMany({ where: { userId, productId } });
+    return { removed: result.count === 1 };
+  }
 
   async requestReturn(userId: string, orderNumber: string, reason: string) {
     const order = await this.prisma.order.findFirst({
