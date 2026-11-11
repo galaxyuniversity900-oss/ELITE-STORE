@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Req, UseGuards } from '@nestjs/common';
 import { ConsentType } from '@prisma/client';
 import { IsBoolean, IsEnum, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
 import { AuthGuard } from '../auth/auth.guard';
@@ -37,6 +37,9 @@ type AccountRequest = { user: { id: string; email: string; role: string } };
 @UseGuards(AuthGuard)
 export class AccountController {
   constructor(private readonly account: AccountService) {}
+  @Get('wishlist') wishlist(@Req() req: AccountRequest) { return this.account.wishlist(req.user.id); }
+  @Post('wishlist/:productId') addWishlistItem(@Req() req: AccountRequest, @Param('productId') productId: string) { return this.account.addWishlistItem(req.user.id, productId); }
+  @Delete('wishlist/:productId') removeWishlistItem(@Req() req: AccountRequest, @Param('productId') productId: string) { return this.account.removeWishlistItem(req.user.id, productId); }
   @Get('return-requests') returnRequests(@Req() req: AccountRequest) { return this.account.listReturnRequests(req.user.id); }
   @Post('orders/:orderNumber/return-requests') requestReturn(@Req() req: AccountRequest, @Param('orderNumber') orderNumber: string, @Body() input: ReturnRequestDto) { return this.account.requestReturn(req.user.id, orderNumber, input.reason); }
   @Get('export') exportPersonalData(@Req() req: AccountRequest) { return this.account.exportPersonalData(req.user.id); }
