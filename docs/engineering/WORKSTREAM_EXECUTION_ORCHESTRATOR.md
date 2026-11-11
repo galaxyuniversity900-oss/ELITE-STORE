@@ -112,7 +112,7 @@ No wave authorizes deployment, external provider sends, charges, refunds, payout
 | #34 | `orchestration/commerce-workstreams-2026-11` | `1ad1fb5261be5d49c7a2bb0e053f5878de0da4d8` | `main` | orchestration ledger; MES STORE CI and garment-motion checks passed on this exact SHA |
 | #35 | `commerce/order-state-audit` | `b58c1f5141276e5b067f5ca09c11f25579edc76f` | `main` | append-only order transition audit; demo payment/dispatch/delivery use audited transitions; MES STORE CI and motion checks passed |
 | #36 | `commerce/payment-reconciliation-readonly` | `5368aff971b896e22e38f8a22a2c250e4998040e` | `commerce/order-state-audit` | read-only consistency report; stacked PR base means no PR-triggered workflow run returned yet |
-| #37 | `catalog/product-variants-foundation` | `0774eeb79dad77736ca229c90c4b2fd3d0870de3` | `main` | product variants plus category size guides; expanded exact-head CI running (variant-only predecessor passed) |
+| #37 | `catalog/product-variants-foundation` | `defbba9b17cc08ad292b7c8ff7aac128eeeae1f4` | `main` | variants, size guides and curated Complete-the-Look relations; expanded exact-head CI running |
 | #38 | `privacy/customer-consent-preferences` | `9493a3ffe204e46e9446c5ff865988328055609d` | `main` | consent, personal data export, erasure request and returns intake; CI re-running on expanded scope |
 | #39 | `shipping/zones-and-rules` | `b753f3b76d198b69f0ed33d30109d8679d7e6e31` | `main` | shipping rules and checkout integration; CI queued/running at last poll |
 | #33 | `qa/accessibility-mobile-rtl` | `2096ebcdd0dee996db85ab279e8f0b87e07033a9` | `main` | WCAG/mobile RTL checks; not visual regression |
