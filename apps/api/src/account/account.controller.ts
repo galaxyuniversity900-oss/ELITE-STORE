@@ -1,5 +1,6 @@
 import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
-import { IsBoolean, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
+import { ConsentType } from '@prisma/client';
+import { IsBoolean, IsEnum, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
 import { AuthGuard } from '../auth/auth.guard';
 import { AccountService } from './account.service';
 
@@ -14,6 +15,12 @@ class AddressDto {
   @IsOptional() @IsString() @MaxLength(60) label?: string;
   @IsOptional() @IsBoolean() isDefault?: boolean;
 }
+
+class ConsentPreferenceDto {
+  @IsEnum(ConsentType) consentType!: ConsentType;
+  @IsBoolean() granted!: boolean;
+}
+
 type AccountRequest = { user: { id: string; email: string; role: string } };
 
 @Controller('account')
@@ -21,6 +28,8 @@ type AccountRequest = { user: { id: string; email: string; role: string } };
 export class AccountController {
   constructor(private readonly account: AccountService) {}
   @Get('me') me(@Req() req: AccountRequest) { return this.account.profile(req.user.id); }
+  @Get('consents') consents(@Req() req: AccountRequest) { return this.account.consents(req.user.id); }
+  @Post('consents') setConsent(@Req() req: AccountRequest, @Body() input: ConsentPreferenceDto) { return this.account.setConsent(req.user.id, input); }
   @Get('orders') orders(@Req() req: AccountRequest) { return this.account.orders(req.user.id); }
   @Get('addresses') addresses(@Req() req: AccountRequest) { return this.account.addresses(req.user.id); }
   @Post('addresses') addAddress(@Req() req: AccountRequest, @Body() input: AddressDto) { return this.account.addAddress(req.user.id, input); }
