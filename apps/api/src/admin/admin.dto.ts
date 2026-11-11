@@ -1,4 +1,4 @@
-import { OrderStatus, ProductStatus } from '@prisma/client';
+import { OrderStatus, ProductRelationType, ProductStatus } from '@prisma/client';
 import { IsBoolean, IsEnum, IsInt, IsNumber, IsObject, IsOptional, IsString, Max, MaxLength, Min, MinLength } from 'class-validator';
 
 export class CreateProductDto {
@@ -64,4 +64,10 @@ export class UpdateSizeGuideDto {
   @IsOptional() @IsObject() measurements?: Record<string, unknown>;
   @IsOptional() @IsString() @MaxLength(4000) fitAdvice?: string | null;
   @IsOptional() @IsBoolean() isActive?: boolean;
+}
+
+export class CreateProductRelationDto {
+  @IsString() @MinLength(2) relatedProductId!: string;
+  @IsOptional() @IsEnum(ProductRelationType) relationType?: ProductRelationType;
+  @IsOptional() @IsInt() @Min(0) sortOrder?: number;
 }
