@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Req, UseGuards } from '@nestjs/common';
 import { ConsentType } from '@prisma/client';
 import { IsBoolean, IsEnum, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
 import { AuthGuard } from '../auth/auth.guard';
@@ -26,12 +26,19 @@ class ErasureRequestDto {
   @IsOptional() @IsString() @MaxLength(1000) reason?: string;
 }
 
+
+class ReturnRequestDto {
+  @IsString() @MinLength(5) @MaxLength(2000) reason!: string;
+}
+
 type AccountRequest = { user: { id: string; email: string; role: string } };
 
 @Controller('account')
 @UseGuards(AuthGuard)
 export class AccountController {
   constructor(private readonly account: AccountService) {}
+  @Get('return-requests') returnRequests(@Req() req: AccountRequest) { return this.account.listReturnRequests(req.user.id); }
+  @Post('orders/:orderNumber/return-requests') requestReturn(@Req() req: AccountRequest, @Param('orderNumber') orderNumber: string, @Body() input: ReturnRequestDto) { return this.account.requestReturn(req.user.id, orderNumber, input.reason); }
   @Get('export') exportPersonalData(@Req() req: AccountRequest) { return this.account.exportPersonalData(req.user.id); }
   @Post('erasure-requests') requestErasure(@Req() req: AccountRequest, @Body() input: ErasureRequestDto) { return this.account.requestErasure(req.user.id, input.reason); }
   @Get('erasure-requests') erasureRequests(@Req() req: AccountRequest) { return this.account.listDataSubjectRequests(req.user.id); }
