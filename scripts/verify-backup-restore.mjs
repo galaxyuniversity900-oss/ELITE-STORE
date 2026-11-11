@@ -12,6 +12,11 @@ for (const token of [
   'chmod 700',
   'chmod 600',
   '.partial',
+  'BASHPID',
+  '$RANDOM',
+  'while [[ -e "$ARCHIVE"',
+  '$ARCHIVE.sha256',
+  '$ARCHIVE.manifest',
 ]) assert.ok(backup.includes(token), 'Backup safeguard missing: ' + token);
 
 for (const token of [
@@ -30,6 +35,7 @@ assert.ok(compose.includes('127.0.0.1'), 'Database port should bind to loopback 
 
 console.log('PASS: PostgreSQL custom-format backup and archive validation are configured');
 console.log('PASS: backup permissions, temporary archive handling and SHA-256 manifest are configured');
+console.log('PASS: same-second backup and restore-safety archive collisions are prevented');
 console.log('PASS: restore requires explicit target confirmation and checksum validation');
 console.log('PASS: restore creates a safety backup and uses a single transaction');
 console.log('PASS: PostgreSQL persistent volume and required password configuration are present');
