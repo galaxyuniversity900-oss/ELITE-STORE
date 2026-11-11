@@ -46,7 +46,7 @@ export class AdminService {
       revenueByStatusAndCurrency: revenueByStatusAndCurrency.map((row) => ({
         status: row.status,
         currency: row.currency,
-        orders: row._count?._all ?? 0,
+        orders: row._count === true ? 0 : row._count._all ?? 0,
         grossOrderValue: row._sum?.grandTotal?.toString() ?? '0',
       })),
       topProducts: topProducts.map((row) => ({
