@@ -67,7 +67,7 @@ export class UpdateEditorialCollectionDto {
   @IsOptional() @IsString() @MinLength(2) @MaxLength(180) slug?: string;
   @IsOptional() @IsString() @MinLength(2) @MaxLength(180) title?: string;
   @IsOptional() @IsString() @MaxLength(1000) description?: string | null;
-  @IsOptional() @IsObject() body?: Record<string, unknown> | null;
+  @IsOptional() @IsObject() body?: Record<string, unknown>;
   @IsOptional() @IsString() @MaxLength(1000) heroImageUrl?: string | null;
   @IsOptional() @IsString() @MaxLength(180) seoTitle?: string | null;
   @IsOptional() @IsString() @MaxLength(320) seoDescription?: string | null;
