@@ -9,6 +9,7 @@ COPY prisma ./prisma
 RUN npm install --no-audit --no-fund \
     && npm run build --workspace=@mes-store/admin \
     && npm prune --omit=dev --no-audit --no-fund \
+    && npm cache clean --force \
     && rm -rf /usr/local/lib/node_modules/npm \
     && rm -f /usr/local/bin/npm /usr/local/bin/npx \
     && chown -R node:node /app
