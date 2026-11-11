@@ -31,12 +31,27 @@ class ReturnRequestDto {
   @IsString() @MinLength(5) @MaxLength(2000) reason!: string;
 }
 
+
+class CreateSupportTicketDto {
+  @IsString() @MinLength(4) @MaxLength(180) subject!: string;
+  @IsString() @MinLength(2) @MaxLength(60) category!: string;
+  @IsOptional() @IsString() @MaxLength(80) orderId?: string;
+  @IsString() @MinLength(5) @MaxLength(5000) body!: string;
+}
+
+class SupportTicketReplyDto {
+  @IsString() @MinLength(1) @MaxLength(5000) body!: string;
+}
+
 type AccountRequest = { user: { id: string; email: string; role: string } };
 
 @Controller('account')
 @UseGuards(AuthGuard)
 export class AccountController {
   constructor(private readonly account: AccountService) {}
+  @Get('support-tickets') supportTickets(@Req() req: AccountRequest) { return this.account.listSupportTickets(req.user.id); }
+  @Post('support-tickets') createSupportTicket(@Req() req: AccountRequest, @Body() input: CreateSupportTicketDto) { return this.account.createSupportTicket(req.user.id, input); }
+  @Post('support-tickets/:id/messages') replySupportTicket(@Req() req: AccountRequest, @Param('id') id: string, @Body() input: SupportTicketReplyDto) { return this.account.replySupportTicket(req.user.id, id, input.body); }
   @Get('wishlist') wishlist(@Req() req: AccountRequest) { return this.account.wishlist(req.user.id); }
   @Post('wishlist/:productId') addWishlistItem(@Req() req: AccountRequest, @Param('productId') productId: string) { return this.account.addWishlistItem(req.user.id, productId); }
   @Delete('wishlist/:productId') removeWishlistItem(@Req() req: AccountRequest, @Param('productId') productId: string) { return this.account.removeWishlistItem(req.user.id, productId); }
