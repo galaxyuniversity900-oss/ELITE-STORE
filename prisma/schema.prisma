@@ -259,6 +259,26 @@ model Payment {
   @@map("payments")
 }
 
+
+model ShippingRule {
+  id               String   @id @default(cuid())
+  name             String
+  country          String   @default("Egypt")
+  city             String
+  area             String?
+  shippingMethod   String
+  fee              Decimal  @db.Decimal(12, 2)
+  currency         String   @default("EGP")
+  estimatedMinDays Int      @default(1)
+  estimatedMaxDays Int      @default(5)
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([country, city, area, shippingMethod, isActive])
+  @@map("shipping_rules")
+}
+
 model Shipment {
   id              String   @id @default(cuid())
   orderId         String   @unique

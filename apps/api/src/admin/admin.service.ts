@@ -1,7 +1,7 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { OrderStatus, Prisma, ProductStatus, UserRole } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreateProductDto, UpdateProductDto } from './admin.dto';
+import { CreateProductDto, CreateShippingRuleDto, UpdateProductDto, UpdateShippingRuleDto } from './admin.dto';
 
 @Injectable()
 export class AdminService {
@@ -62,6 +62,57 @@ export class AdminService {
 
   async archiveProduct(id: string) {
     return this.updateProduct(id, { status: ProductStatus.ARCHIVED });
+  }
+
+
+  listShippingRules() {
+    return this.prisma.shippingRule.findMany({
+      orderBy: [{ country: 'asc' }, { city: 'asc' }, { area: 'asc' }, { shippingMethod: 'asc' }],
+    });
+  }
+
+  createShippingRule(input: CreateShippingRuleDto) {
+    if (input.estimatedMaxDays < input.estimatedMinDays) {
+      throw new BadRequestException('Maximum delivery days cannot be lower than minimum delivery days');
+    }
+    return this.prisma.shippingRule.create({
+      data: {
+        name: input.name.trim(),
+        country: input.country?.trim() || 'Egypt',
+        city: input.city.trim(),
+        area: input.area?.trim(),
+        shippingMethod: input.shippingMethod.trim(),
+        fee: new Prisma.Decimal(input.fee),
+        currency: (input.currency || 'EGP').toUpperCase(),
+        estimatedMinDays: input.estimatedMinDays,
+        estimatedMaxDays: input.estimatedMaxDays,
+        isActive: input.isActive ?? true,
+      },
+    });
+  }
+
+  async updateShippingRule(id: string, input: UpdateShippingRuleDto) {
+    const existing = await this.prisma.shippingRule.findUnique({ where: { id } });
+    if (!existing) throw new NotFoundException('Shipping rule not found');
+    const minDays = input.estimatedMinDays ?? existing.estimatedMinDays;
+    const maxDays = input.estimatedMaxDays ?? existing.estimatedMaxDays;
+    if (maxDays < minDays) throw new BadRequestException('Maximum delivery days cannot be lower than minimum delivery days');
+    const data: Prisma.ShippingRuleUpdateInput = {};
+    if (input.name !== undefined) data.name = input.name.trim();
+    if (input.country !== undefined) data.country = input.country.trim();
+    if (input.city !== undefined) data.city = input.city.trim();
+    if (input.area !== undefined) data.area = input.area?.trim() || null;
+    if (input.shippingMethod !== undefined) data.shippingMethod = input.shippingMethod.trim();
+    if (input.fee !== undefined) data.fee = new Prisma.Decimal(input.fee);
+    if (input.currency !== undefined) data.currency = input.currency.toUpperCase();
+    if (input.estimatedMinDays !== undefined) data.estimatedMinDays = input.estimatedMinDays;
+    if (input.estimatedMaxDays !== undefined) data.estimatedMaxDays = input.estimatedMaxDays;
+    if (input.isActive !== undefined) data.isActive = input.isActive;
+    return this.prisma.shippingRule.update({ where: { id }, data });
+  }
+
+  async archiveShippingRule(id: string) {
+    return this.updateShippingRule(id, { isActive: false });
   }
 
   listOrders(page = 1, limit = 50) {

@@ -84,10 +84,36 @@ export class OrdersService {
           });
         }
 
-        // Fixed demo rates are server-calculated and clearly labelled as simulations.
+        // Prefer configured city/area rules. Legacy demo fees remain only until the first rule is configured.
         const shippingMethod = input.shippingMethod ?? 'DEMO_STANDARD';
+        const activeShippingRules = await tx.shippingRule.count({ where: { isActive: true } });
+        let shippingRule = await tx.shippingRule.findFirst({
+          where: {
+            isActive: true,
+            country: 'Egypt',
+            city: input.city,
+            area: input.area ?? null,
+            shippingMethod,
+          },
+        });
+        if (!shippingRule && input.area) {
+          shippingRule = await tx.shippingRule.findFirst({
+            where: { isActive: true, country: 'Egypt', city: input.city, area: null, shippingMethod },
+          });
+        }
+        if (activeShippingRules > 0 && !shippingRule) {
+          throw new BadRequestException('Shipping is not configured for this destination and method');
+        }
+        if (shippingRule && shippingRule.currency !== 'EGP') {
+          throw new BadRequestException('The selected shipping rule currency is not supported by this checkout');
+        }
         const shippingFees: Record<string, number> = { DEMO_STANDARD: 45, DEMO_EXPRESS: 75, DEMO_PICKUP: 0 };
-        const shippingTotal = new Prisma.Decimal(shippingFees[shippingMethod] ?? 45);
+        const shippingTotal = shippingRule
+          ? new Prisma.Decimal(shippingRule.fee)
+          : new Prisma.Decimal(shippingFees[shippingMethod] ?? 45);
+        const shippingEstimate = shippingRule
+          ? { minDays: shippingRule.estimatedMinDays, maxDays: shippingRule.estimatedMaxDays, ruleId: shippingRule.id }
+          : { minDays: 3, maxDays: 5, ruleId: null };
         const discountTotal = new Prisma.Decimal(0);
         const grandTotal = subtotal.add(shippingTotal).sub(discountTotal);
         const orderNumber = `MES-${Date.now()}-${randomUUID().slice(0, 8).toUpperCase()}`;
@@ -115,6 +141,7 @@ export class OrdersService {
               country: 'Egypt',
               city: input.city,
               area: input.area ?? null,
+              shippingEstimate,
               street: input.street,
               building: input.building ?? null,
               apartment: input.apartment ?? null,

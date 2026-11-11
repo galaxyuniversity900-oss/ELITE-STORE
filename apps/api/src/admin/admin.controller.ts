@@ -4,7 +4,7 @@ import { AuthGuard } from '../auth/auth.guard';
 import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
 import { AdminService } from './admin.service';
-import { CreateProductDto, UpdateOrderStatusDto, UpdateProductDto } from './admin.dto';
+import { CreateProductDto, CreateShippingRuleDto, UpdateOrderStatusDto, UpdateProductDto, UpdateShippingRuleDto } from './admin.dto';
 
 @Controller('admin')
 @UseGuards(AuthGuard, RolesGuard)
@@ -30,6 +30,21 @@ export class AdminController {
 
   @Delete('products/:id')
   archiveProduct(@Param('id') id: string) { return this.admin.archiveProduct(id); }
+
+
+  @Get('shipping-rules')
+  shippingRules() { return this.admin.listShippingRules(); }
+
+  @Post('shipping-rules')
+  createShippingRule(@Body() input: CreateShippingRuleDto) { return this.admin.createShippingRule(input); }
+
+  @Patch('shipping-rules/:id')
+  updateShippingRule(@Param('id') id: string, @Body() input: UpdateShippingRuleDto) {
+    return this.admin.updateShippingRule(id, input);
+  }
+
+  @Delete('shipping-rules/:id')
+  archiveShippingRule(@Param('id') id: string) { return this.admin.archiveShippingRule(id); }
 
   @Get('orders')
   orders(@Query('page') page = '1', @Query('limit') limit = '50') {
