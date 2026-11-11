@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { OrderStatus, PaymentStatus, Prisma } from '@prisma/client';
+import { InventoryReservationStatus, OrderStatus, PaymentStatus, Prisma } from '@prisma/client';
 import { randomUUID } from 'node:crypto';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -74,6 +74,10 @@ export class DemoCommerceService {
         if (changed.count !== 1) throw new BadRequestException('Order changed concurrently; reload and retry');
         await tx.orderStatusEvent.create({
           data: { orderId: current.id, fromStatus: OrderStatus.PENDING, toStatus: OrderStatus.CONFIRMED, reason: 'DEMO_PAYMENT_SIMULATION' },
+        });
+        await tx.inventoryReservation.updateMany({
+          where: { orderId: current.id, status: InventoryReservationStatus.ACTIVE },
+          data: { status: InventoryReservationStatus.CONSUMED, consumedAt: new Date() },
         });
       }
       return { demo: true, realCharge: false, payment: { id: payment.id, reference, status, amount: payment.amount, currency: payment.currency } };
