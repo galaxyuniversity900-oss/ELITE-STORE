@@ -27,7 +27,7 @@ export class ProductsService {
   bySlug(slug: string) {
     return this.prisma.product.findFirst({
       where: { slug, status: ProductStatus.ACTIVE },
-      include: { images: { orderBy: { sortOrder: 'asc' } }, category: true },
+      include: { images: { orderBy: { sortOrder: 'asc' } }, category: { include: { sizeGuides: { where: { isActive: true } } } } },
     });
   }
 }
