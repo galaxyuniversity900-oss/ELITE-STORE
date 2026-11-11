@@ -141,6 +141,7 @@ model Product {
   categoryId      String?
   category        Category?     @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   images          ProductImage[]
+  inventoryReservations InventoryReservation[]
   cartItems       CartItem[]
   orderItems      OrderItem[]
   createdAt       DateTime      @default(now())
