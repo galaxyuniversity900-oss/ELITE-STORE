@@ -37,6 +37,13 @@ enum PaymentStatus {
   REFUNDED
 }
 
+enum ConsentType {
+  MARKETING_EMAIL
+  MARKETING_WHATSAPP
+  ANALYTICS
+  PERSONALIZATION
+}
+
 enum CartStatus {
   ACTIVE
   CONVERTED
@@ -75,11 +82,30 @@ model User {
   addresses    Address[]
   carts        Cart[]
   orders       Order[]
+  consentPreferences ConsentPreference[]
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
   @@index([role, isActive])
   @@map("users")
+}
+
+
+model ConsentPreference {
+  id            String      @id @default(cuid())
+  userId        String
+  consentType   ConsentType
+  granted       Boolean     @default(false)
+  policyVersion String
+  source        String      @default("ACCOUNT_SETTINGS")
+  decidedAt     DateTime    @default(now())
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@unique([userId, consentType])
+  @@index([consentType, granted, decidedAt])
+  @@map("consent_preferences")
 }
 
 model Address {
