@@ -37,6 +37,13 @@ enum PaymentStatus {
   REFUNDED
 }
 
+enum InventoryReservationStatus {
+  ACTIVE
+  CONSUMED
+  RELEASED
+  EXPIRED
+}
+
 enum CartStatus {
   ACTIVE
   CONVERTED
@@ -144,6 +151,27 @@ model Product {
   @@map("products")
 }
 
+
+model InventoryReservation {
+  id          String                     @id @default(cuid())
+  orderId     String
+  productId   String
+  quantity    Int
+  status      InventoryReservationStatus @default(ACTIVE)
+  expiresAt   DateTime
+  consumedAt  DateTime?
+  releasedAt  DateTime?
+  order       Order                      @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product     Product                    @relation(fields: [productId], references: [id], onDelete: Restrict)
+  createdAt   DateTime                   @default(now())
+  updatedAt   DateTime                   @updatedAt
+
+  @@index([status, expiresAt])
+  @@index([orderId, status])
+  @@index([productId, status])
+  @@map("inventory_reservations")
+}
+
 model ProductImage {
   id        String   @id @default(cuid())
   productId String
@@ -216,6 +244,7 @@ model Order {
   payments          Payment[]
   notifications     NotificationOutbox[]
   statusEvents      OrderStatusEvent[]
+  inventoryReservations InventoryReservation[]
   createdAt         DateTime    @default(now())
   updatedAt         DateTime    @updatedAt
 
