@@ -1,5 +1,6 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { OrderStatus, Prisma, ProductStatus, UserRole } from '@prisma/client';
+import { CreateProductVariantDto, UpdateProductVariantDto } from './admin.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateProductDto, UpdateProductDto } from './admin.dto';
 
@@ -58,6 +59,50 @@ export class AdminService {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') throw new NotFoundException('Product not found');
       throw error;
     }
+  }
+
+
+  listProductVariants(productId: string) {
+    return this.prisma.productVariant.findMany({
+      where: { productId },
+      orderBy: [{ isActive: 'desc' }, { size: 'asc' }, { color: 'asc' }],
+    });
+  }
+
+  createProductVariant(productId: string, input: CreateProductVariantDto) {
+    return this.prisma.productVariant.create({
+      data: {
+        productId,
+        sku: input.sku.trim(),
+        size: input.size?.trim(),
+        color: input.color?.trim(),
+        attributes: input.attributes as Prisma.InputJsonValue | undefined,
+        priceOverride: input.priceOverride === undefined ? undefined : new Prisma.Decimal(input.priceOverride),
+        stockQuantity: input.stockQuantity,
+        isActive: input.isActive ?? true,
+      },
+    });
+  }
+
+  async updateProductVariant(id: string, input: UpdateProductVariantDto) {
+    const data: Prisma.ProductVariantUpdateInput = {};
+    if (input.sku !== undefined) data.sku = input.sku.trim();
+    if (input.size !== undefined) data.size = input.size;
+    if (input.color !== undefined) data.color = input.color;
+    if (input.attributes !== undefined) data.attributes = input.attributes as Prisma.InputJsonValue;
+    if (input.priceOverride !== undefined) data.priceOverride = input.priceOverride === null ? null : new Prisma.Decimal(input.priceOverride);
+    if (input.stockQuantity !== undefined) data.stockQuantity = input.stockQuantity;
+    if (input.isActive !== undefined) data.isActive = input.isActive;
+    try {
+      return await this.prisma.productVariant.update({ where: { id }, data });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') throw new NotFoundException('Product variant not found');
+      throw error;
+    }
+  }
+
+  async archiveProductVariant(id: string) {
+    return this.updateProductVariant(id, { isActive: false });
   }
 
   async archiveProduct(id: string) {
