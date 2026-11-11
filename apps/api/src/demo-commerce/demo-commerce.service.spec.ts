@@ -16,6 +16,7 @@ describe('DemoCommerceService order lifecycle integration', () => {
       },
       payment: { create: jest.fn().mockResolvedValue({ id: 'payment-1', amount: '100.00', currency: 'EGP' }) },
       orderStatusEvent: { create: jest.fn().mockResolvedValue({ id: 'event-1' }) },
+      inventoryReservation: { updateMany: jest.fn().mockResolvedValue({ count: 1 }) },
     };
     const prisma = {
       order: { findUnique: jest.fn().mockResolvedValue(order) },
