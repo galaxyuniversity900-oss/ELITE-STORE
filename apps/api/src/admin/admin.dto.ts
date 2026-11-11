@@ -29,3 +29,29 @@ export class UpdateOrderStatusDto {
   @IsEnum(OrderStatus)
   status!: OrderStatus;
 }
+
+export class CreateShippingRuleDto {
+  @IsString() @MinLength(2) @MaxLength(120) name!: string;
+  @IsOptional() @IsString() @MaxLength(80) country?: string;
+  @IsString() @MinLength(2) @MaxLength(120) city!: string;
+  @IsOptional() @IsString() @MaxLength(120) area?: string;
+  @IsString() @MinLength(2) @MaxLength(60) shippingMethod!: string;
+  @IsNumber({ maxDecimalPlaces: 2 }) @Min(0) fee!: number;
+  @IsOptional() @IsString() @MaxLength(3) currency?: string;
+  @IsInt() @Min(0) estimatedMinDays!: number;
+  @IsInt() @Min(0) estimatedMaxDays!: number;
+  @IsOptional() @IsBoolean() isActive?: boolean;
+}
+
+export class UpdateShippingRuleDto {
+  @IsOptional() @IsString() @MinLength(2) @MaxLength(120) name?: string;
+  @IsOptional() @IsString() @MaxLength(80) country?: string;
+  @IsOptional() @IsString() @MinLength(2) @MaxLength(120) city?: string;
+  @IsOptional() @IsString() @MaxLength(120) area?: string | null;
+  @IsOptional() @IsString() @MinLength(2) @MaxLength(60) shippingMethod?: string;
+  @IsOptional() @IsNumber({ maxDecimalPlaces: 2 }) @Min(0) fee?: number;
+  @IsOptional() @IsString() @MaxLength(3) currency?: string;
+  @IsOptional() @IsInt() @Min(0) estimatedMinDays?: number;
+  @IsOptional() @IsInt() @Min(0) estimatedMaxDays?: number;
+  @IsOptional() @IsBoolean() isActive?: boolean;
+}
