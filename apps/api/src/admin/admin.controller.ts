@@ -31,6 +31,15 @@ export class AdminController {
   @Delete('products/:id')
   archiveProduct(@Param('id') id: string) { return this.admin.archiveProduct(id); }
 
+  @Get('payments/reconciliation')
+  paymentReconciliation(
+    @Query('page') page = '1',
+    @Query('limit') limit = '50',
+    @Query('provider') provider?: string,
+  ) {
+    return this.admin.reconcilePayments(this.page(page), this.limit(limit), provider?.trim() || undefined);
+  }
+
   @Get('orders')
   orders(@Query('page') page = '1', @Query('limit') limit = '50') {
     return this.admin.listOrders(this.page(page), this.limit(limit));
