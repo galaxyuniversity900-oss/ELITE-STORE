@@ -49,3 +49,19 @@ export class UpdateProductVariantDto {
   @IsOptional() @IsInt() @Min(0) stockQuantity?: number;
   @IsOptional() @IsBoolean() isActive?: boolean;
 }
+
+export class CreateSizeGuideDto {
+  @IsString() @MinLength(2) @MaxLength(120) name!: string;
+  @IsOptional() @IsString() @MaxLength(12) measurementUnit?: string;
+  @IsObject() measurements!: Record<string, unknown>;
+  @IsOptional() @IsString() @MaxLength(4000) fitAdvice?: string;
+  @IsOptional() @IsBoolean() isActive?: boolean;
+}
+
+export class UpdateSizeGuideDto {
+  @IsOptional() @IsString() @MinLength(2) @MaxLength(120) name?: string;
+  @IsOptional() @IsString() @MaxLength(12) measurementUnit?: string;
+  @IsOptional() @IsObject() measurements?: Record<string, unknown>;
+  @IsOptional() @IsString() @MaxLength(4000) fitAdvice?: string | null;
+  @IsOptional() @IsBoolean() isActive?: boolean;
+}
