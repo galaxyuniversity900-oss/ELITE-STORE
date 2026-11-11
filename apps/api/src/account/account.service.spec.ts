@@ -1,5 +1,5 @@
 import { BadRequestException, ServiceUnavailableException } from '@nestjs/common';
-import { ConsentType, OrderStatus } from '@prisma/client';
+import { ConsentType, OrderStatus, ProductStatus } from '@prisma/client';
 import { AccountService } from './account.service';
 
 describe('AccountService consent preferences', () => {
@@ -123,5 +123,37 @@ describe('AccountService consent preferences', () => {
     await expect(service.requestReturn('user-2', 'MES-2', 'Damaged'))
       .rejects.toBeInstanceOf(BadRequestException);
     expect(prisma.returnRequest.create).not.toHaveBeenCalled();
+  });
+
+  it('adds an active product to the authenticated customer wishlist idempotently', async () => {
+    const item = { id: 'wish-1', userId: 'user-7', productId: 'product-7' };
+    const prisma = {
+      product: { findFirst: jest.fn().mockResolvedValue({ id: 'product-7' }) },
+      wishlistItem: { upsert: jest.fn().mockResolvedValue(item) },
+    };
+    const service = new AccountService(prisma as never);
+
+    const result = await service.addWishlistItem('user-7', 'product-7');
+
+    expect(result).toEqual(item);
+    expect(prisma.product.findFirst).toHaveBeenCalledWith({
+      where: { id: 'product-7', status: ProductStatus.ACTIVE },
+      select: { id: true },
+    });
+    expect(prisma.wishlistItem.upsert).toHaveBeenCalledWith(expect.objectContaining({
+      where: { userId_productId: { userId: 'user-7', productId: 'product-7' } },
+      create: { userId: 'user-7', productId: 'product-7' },
+      update: {},
+    }));
+  });
+
+  it('removes only the requested customer's wishlist entry', async () => {
+    const prisma = { wishlistItem: { deleteMany: jest.fn().mockResolvedValue({ count: 1 }) } };
+    const service = new AccountService(prisma as never);
+
+    await expect(service.removeWishlistItem('user-8', 'product-8')).resolves.toEqual({ removed: true });
+    expect(prisma.wishlistItem.deleteMany).toHaveBeenCalledWith({
+      where: { userId: 'user-8', productId: 'product-8' },
+    });
   });
 });
