@@ -1,11 +1,116 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import { OrderStatus, Prisma, ProductStatus, UserRole } from '@prisma/client';
+import { ContentStatus, OrderStatus, Prisma, ProductStatus, UserRole } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreateProductDto, UpdateProductDto } from './admin.dto';
+import { CreateContentPageDto, CreateEditorialCollectionDto, CreateProductDto, EditorialCollectionItemDto, UpdateContentPageDto, UpdateEditorialCollectionDto, UpdateProductDto } from './admin.dto';
 
 @Injectable()
 export class AdminService {
   constructor(private readonly prisma: PrismaService) {}
+
+
+  listContentPages() {
+    return this.prisma.contentPage.findMany({ orderBy: { updatedAt: 'desc' } });
+  }
+
+  createContentPage(input: CreateContentPageDto) {
+    const status = input.status ?? ContentStatus.DRAFT;
+    return this.prisma.contentPage.create({
+      data: {
+        slug: input.slug.trim().toLowerCase(),
+        title: input.title.trim(),
+        excerpt: input.excerpt,
+        body: input.body as Prisma.InputJsonValue,
+        heroImageUrl: input.heroImageUrl,
+        seoTitle: input.seoTitle,
+        seoDescription: input.seoDescription,
+        status,
+        publishedAt: status === ContentStatus.PUBLISHED ? new Date() : null,
+      },
+    });
+  }
+
+  async updateContentPage(id: string, input: UpdateContentPageDto) {
+    const existing = await this.prisma.contentPage.findUnique({ where: { id } });
+    if (!existing) throw new NotFoundException('Content page not found');
+    const data: Prisma.ContentPageUpdateInput = {};
+    if (input.slug !== undefined) data.slug = input.slug.trim().toLowerCase();
+    if (input.title !== undefined) data.title = input.title.trim();
+    if (input.excerpt !== undefined) data.excerpt = input.excerpt;
+    if (input.body !== undefined) data.body = input.body as Prisma.InputJsonValue;
+    if (input.heroImageUrl !== undefined) data.heroImageUrl = input.heroImageUrl;
+    if (input.seoTitle !== undefined) data.seoTitle = input.seoTitle;
+    if (input.seoDescription !== undefined) data.seoDescription = input.seoDescription;
+    if (input.status !== undefined) {
+      data.status = input.status;
+      data.publishedAt = input.status === ContentStatus.PUBLISHED
+        ? existing.publishedAt ?? new Date()
+        : null;
+    }
+    return this.prisma.contentPage.update({ where: { id }, data });
+  }
+
+  listEditorialCollections() {
+    return this.prisma.editorialCollection.findMany({
+      include: { items: { include: { product: { include: { images: { orderBy: { sortOrder: 'asc' } } } } }, orderBy: { sortOrder: 'asc' } },
+      orderBy: { updatedAt: 'desc' },
+    });
+  }
+
+  createEditorialCollection(input: CreateEditorialCollectionDto) {
+    const status = input.status ?? ContentStatus.DRAFT;
+    return this.prisma.editorialCollection.create({
+      data: {
+        slug: input.slug.trim().toLowerCase(),
+        title: input.title.trim(),
+        description: input.description,
+        body: input.body as Prisma.InputJsonValue | undefined,
+        heroImageUrl: input.heroImageUrl,
+        seoTitle: input.seoTitle,
+        seoDescription: input.seoDescription,
+        status,
+        publishedAt: status === ContentStatus.PUBLISHED ? new Date() : null,
+      },
+    });
+  }
+
+  async updateEditorialCollection(id: string, input: UpdateEditorialCollectionDto) {
+    const existing = await this.prisma.editorialCollection.findUnique({ where: { id } });
+    if (!existing) throw new NotFoundException('Editorial collection not found');
+    const data: Prisma.EditorialCollectionUpdateInput = {};
+    if (input.slug !== undefined) data.slug = input.slug.trim().toLowerCase();
+    if (input.title !== undefined) data.title = input.title.trim();
+    if (input.description !== undefined) data.description = input.description;
+    if (input.body !== undefined) data.body = input.body as Prisma.InputJsonValue;
+    if (input.heroImageUrl !== undefined) data.heroImageUrl = input.heroImageUrl;
+    if (input.seoTitle !== undefined) data.seoTitle = input.seoTitle;
+    if (input.seoDescription !== undefined) data.seoDescription = input.seoDescription;
+    if (input.status !== undefined) {
+      data.status = input.status;
+      data.publishedAt = input.status === ContentStatus.PUBLISHED
+        ? existing.publishedAt ?? new Date()
+        : null;
+    }
+    return this.prisma.editorialCollection.update({ where: { id }, data });
+  }
+
+  async addEditorialCollectionItem(collectionId: string, input: EditorialCollectionItemDto) {
+    const product = await this.prisma.product.findFirst({
+      where: { id: input.productId, status: ProductStatus.ACTIVE },
+      select: { id: true },
+    });
+    if (!product) throw new NotFoundException('Active product not found');
+    return this.prisma.editorialCollectionItem.upsert({
+      where: { collectionId_productId: { collectionId, productId: input.productId } },
+      create: { collectionId, productId: input.productId, sortOrder: input.sortOrder ?? 0 },
+      update: { sortOrder: input.sortOrder ?? 0 },
+      include: { product: { include: { images: { orderBy: { sortOrder: 'asc' } } } } },
+    });
+  }
+
+  async removeEditorialCollectionItem(collectionId: string, productId: string) {
+    const result = await this.prisma.editorialCollectionItem.deleteMany({ where: { collectionId, productId } });
+    return { removed: result.count === 1 };
+  }
 
   async overview() {
     const [products, orders, pendingOrders, customers] = await this.prisma.$transaction([
