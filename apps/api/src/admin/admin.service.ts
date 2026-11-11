@@ -1,6 +1,6 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { OrderStatus, Prisma, ProductStatus, UserRole } from '@prisma/client';
-import { CreateProductVariantDto, UpdateProductVariantDto } from './admin.dto';
+import { CreateProductVariantDto, CreateSizeGuideDto, UpdateProductVariantDto, UpdateSizeGuideDto } from './admin.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateProductDto, UpdateProductDto } from './admin.dto';
 
@@ -99,6 +99,46 @@ export class AdminService {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') throw new NotFoundException('Product variant not found');
       throw error;
     }
+  }
+
+
+  listSizeGuides(categoryId?: string) {
+    return this.prisma.sizeGuide.findMany({
+      where: categoryId ? { categoryId } : {},
+      orderBy: [{ categoryId: 'asc' }, { name: 'asc' }],
+    });
+  }
+
+  createSizeGuide(categoryId: string, input: CreateSizeGuideDto) {
+    return this.prisma.sizeGuide.create({
+      data: {
+        categoryId,
+        name: input.name.trim(),
+        measurementUnit: input.measurementUnit?.trim() || 'cm',
+        measurements: input.measurements as Prisma.InputJsonValue,
+        fitAdvice: input.fitAdvice?.trim(),
+        isActive: input.isActive ?? true,
+      },
+    });
+  }
+
+  async updateSizeGuide(id: string, input: UpdateSizeGuideDto) {
+    const data: Prisma.SizeGuideUpdateInput = {};
+    if (input.name !== undefined) data.name = input.name.trim();
+    if (input.measurementUnit !== undefined) data.measurementUnit = input.measurementUnit.trim();
+    if (input.measurements !== undefined) data.measurements = input.measurements as Prisma.InputJsonValue;
+    if (input.fitAdvice !== undefined) data.fitAdvice = input.fitAdvice;
+    if (input.isActive !== undefined) data.isActive = input.isActive;
+    try {
+      return await this.prisma.sizeGuide.update({ where: { id }, data });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') throw new NotFoundException('Size guide not found');
+      throw error;
+    }
+  }
+
+  async archiveSizeGuide(id: string) {
+    return this.updateSizeGuide(id, { isActive: false });
   }
 
   async archiveProductVariant(id: string) {
