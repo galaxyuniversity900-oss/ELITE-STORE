@@ -1,5 +1,5 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import { OrderStatus, Prisma, ProductStatus, UserRole } from '@prisma/client';
+import { OrderStatus, PaymentStatus, Prisma, ProductStatus, UserRole } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateProductDto, UpdateProductDto } from './admin.dto';
 
@@ -62,6 +62,58 @@ export class AdminService {
 
   async archiveProduct(id: string) {
     return this.updateProduct(id, { status: ProductStatus.ARCHIVED });
+  }
+
+
+  async reconcilePayments(page = 1, limit = 50, provider?: string) {
+    const where: Prisma.PaymentWhereInput = provider ? { provider } : {};
+    const [payments, total] = await this.prisma.$transaction([
+      this.prisma.payment.findMany({
+        where,
+        include: {
+          order: { select: { id: true, orderNumber: true, status: true, grandTotal: true, currency: true, paymentMethod: true } },
+        },
+        orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      this.prisma.payment.count({ where }),
+    ]);
+
+    const rows = payments.map((payment) => {
+      const issues: string[] = [];
+      if (payment.amount.comparedTo(payment.order.grandTotal) !== 0) issues.push('AMOUNT_MISMATCH');
+      if (payment.currency !== payment.order.currency) issues.push('CURRENCY_MISMATCH');
+      if (payment.status === PaymentStatus.PAID && payment.order.status === OrderStatus.PENDING) issues.push('PAID_ORDER_PENDING');
+      if (payment.status === PaymentStatus.REFUNDED && payment.order.status !== OrderStatus.REFUNDED) issues.push('REFUND_ORDER_STATE_MISMATCH');
+      if (payment.status === PaymentStatus.PAID && !payment.providerReference) issues.push('PAID_PAYMENT_MISSING_PROVIDER_REFERENCE');
+      if (payment.order.paymentMethod === 'CASH_ON_DELIVERY' && payment.status === PaymentStatus.PAID) issues.push('COD_MARKED_PAID');
+      return {
+        paymentId: payment.id,
+        provider: payment.provider,
+        providerReference: payment.providerReference,
+        paymentStatus: payment.status,
+        amount: payment.amount.toString(),
+        currency: payment.currency,
+        paidAt: payment.paidAt,
+        order: {
+          id: payment.order.id,
+          orderNumber: payment.order.orderNumber,
+          status: payment.order.status,
+          total: payment.order.grandTotal.toString(),
+          currency: payment.order.currency,
+          paymentMethod: payment.order.paymentMethod,
+        },
+        issues,
+        reconciliationStatus: issues.length ? 'REVIEW_REQUIRED' : 'CONSISTENT',
+      };
+    });
+    const pageSummary = {
+      inspected: rows.length,
+      consistent: rows.filter((row) => row.issues.length === 0).length,
+      reviewRequired: rows.filter((row) => row.issues.length > 0).length,
+    };
+    return { mode: 'READ_ONLY', automatedCorrections: false, page, limit, total, pageSummary, rows };
   }
 
   listOrders(page = 1, limit = 50) {
