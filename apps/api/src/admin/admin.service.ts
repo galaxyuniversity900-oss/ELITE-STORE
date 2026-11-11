@@ -1,11 +1,68 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { OrderStatus, Prisma, ProductStatus, UserRole } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreateProductDto, UpdateProductDto } from './admin.dto';
+import { CreateProductDto, CreatePromotionDto, UpdateProductDto, UpdatePromotionDto } from './admin.dto';
 
 @Injectable()
 export class AdminService {
   constructor(private readonly prisma: PrismaService) {}
+
+
+  listPromotions() {
+    return this.prisma.promotion.findMany({ orderBy: { createdAt: 'desc' } });
+  }
+
+  createPromotion(input: CreatePromotionDto) {
+    if (input.type === 'PERCENTAGE' && input.value > 100) {
+      throw new BadRequestException('Percentage promotions cannot exceed 100');
+    }
+    if (input.startsAt && input.expiresAt && new Date(input.expiresAt) <= new Date(input.startsAt)) {
+      throw new BadRequestException('Promotion expiry must be after its start time');
+    }
+    return this.prisma.promotion.create({
+      data: {
+        code: input.code.trim().toUpperCase(),
+        name: input.name.trim(),
+        type: input.type,
+        value: new Prisma.Decimal(input.value),
+        minSubtotal: new Prisma.Decimal(input.minSubtotal ?? 0),
+        maxDiscount: input.maxDiscount === undefined || input.maxDiscount === null ? input.maxDiscount : new Prisma.Decimal(input.maxDiscount),
+        usageLimit: input.usageLimit,
+        startsAt: input.startsAt ? new Date(input.startsAt) : undefined,
+        expiresAt: input.expiresAt ? new Date(input.expiresAt) : undefined,
+        isActive: input.isActive ?? true,
+      },
+    });
+  }
+
+  async updatePromotion(id: string, input: UpdatePromotionDto) {
+    const existing = await this.prisma.promotion.findUnique({ where: { id } });
+    if (!existing) throw new NotFoundException('Promotion not found');
+    const type = input.type ?? existing.type;
+    const value = input.value ?? Number(existing.value);
+    const usageLimit = input.usageLimit === undefined ? existing.usageLimit : input.usageLimit;
+    const startsAt = input.startsAt === undefined ? existing.startsAt : input.startsAt ? new Date(input.startsAt) : null;
+    const expiresAt = input.expiresAt === undefined ? existing.expiresAt : input.expiresAt ? new Date(input.expiresAt) : null;
+    if (type === 'PERCENTAGE' && value > 100) throw new BadRequestException('Percentage promotions cannot exceed 100');
+    if (usageLimit !== null && usageLimit < existing.usageCount) throw new BadRequestException('Usage limit cannot be lower than the number of redemptions');
+    if (startsAt && expiresAt && expiresAt <= startsAt) throw new BadRequestException('Promotion expiry must be after its start time');
+    const data: Prisma.PromotionUpdateInput = {};
+    if (input.code !== undefined) data.code = input.code.trim().toUpperCase();
+    if (input.name !== undefined) data.name = input.name.trim();
+    if (input.type !== undefined) data.type = input.type;
+    if (input.value !== undefined) data.value = new Prisma.Decimal(input.value);
+    if (input.minSubtotal !== undefined) data.minSubtotal = new Prisma.Decimal(input.minSubtotal);
+    if (input.maxDiscount !== undefined) data.maxDiscount = input.maxDiscount === null ? null : new Prisma.Decimal(input.maxDiscount);
+    if (input.usageLimit !== undefined) data.usageLimit = input.usageLimit;
+    if (input.startsAt !== undefined) data.startsAt = startsAt;
+    if (input.expiresAt !== undefined) data.expiresAt = expiresAt;
+    if (input.isActive !== undefined) data.isActive = input.isActive;
+    return this.prisma.promotion.update({ where: { id }, data });
+  }
+
+  async deactivatePromotion(id: string) {
+    return this.updatePromotion(id, { isActive: false });
+  }
 
   async overview() {
     const [products, orders, pendingOrders, customers] = await this.prisma.$transaction([
