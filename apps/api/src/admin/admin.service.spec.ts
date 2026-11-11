@@ -1,5 +1,5 @@
 import { BadRequestException } from '@nestjs/common';
-import { OrderStatus } from '@prisma/client';
+import { OrderStatus, PaymentStatus } from '@prisma/client';
 import { AdminService } from './admin.service';
 
 describe('AdminService order lifecycle', () => {
@@ -52,7 +52,7 @@ describe('AdminService payment reconciliation', () => {
       id: 'pay-1',
       provider: 'gateway-x',
       providerReference: null,
-      status: OrderStatus.PENDING === 'PAID' ? 'PAID' : 'PAID',
+      status: PaymentStatus.PAID,
       amount: { comparedTo: jest.fn().mockReturnValue(1), toString: () => '120.00' },
       currency: 'USD',
       paidAt: new Date('2026-01-01T00:00:00.000Z'),
@@ -92,7 +92,7 @@ describe('AdminService payment reconciliation', () => {
 
   it('reports consistent payment and order records', async () => {
     const payment = {
-      id: 'pay-2', provider: 'gateway-y', providerReference: 'ref-2', status: 'PAID',
+      id: 'pay-2', provider: 'gateway-y', providerReference: 'ref-2', status: PaymentStatus.PAID,
       amount: { comparedTo: jest.fn().mockReturnValue(0), toString: () => '100.00' },
       currency: 'EGP', paidAt: new Date(),
       order: {
