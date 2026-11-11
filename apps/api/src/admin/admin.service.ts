@@ -23,6 +23,7 @@ export class AdminService {
       this.prisma.order.groupBy({
         by: ['status', 'currency'],
         where: { createdAt },
+        orderBy: [{ status: 'asc' }, { currency: 'asc' }],
         _count: { _all: true },
         _sum: { grandTotal: true },
       }),
@@ -45,14 +46,14 @@ export class AdminService {
       revenueByStatusAndCurrency: revenueByStatusAndCurrency.map((row) => ({
         status: row.status,
         currency: row.currency,
-        orders: row._count._all,
-        grossOrderValue: row._sum.grandTotal?.toString() ?? '0',
+        orders: row._count?._all ?? 0,
+        grossOrderValue: row._sum?.grandTotal?.toString() ?? '0',
       })),
       topProducts: topProducts.map((row) => ({
         sku: row.sku,
         productName: row.productName,
-        units: row._sum.quantity ?? 0,
-        grossLineValue: row._sum.lineTotal?.toString() ?? '0',
+        units: row._sum?.quantity ?? 0,
+        grossLineValue: row._sum?.lineTotal?.toString() ?? '0',
       })),
       privacy: 'AGGREGATED_NO_CUSTOMER_IDENTIFIERS',
     };
