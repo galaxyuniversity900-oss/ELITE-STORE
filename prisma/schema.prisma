@@ -37,6 +37,12 @@ enum PaymentStatus {
   REFUNDED
 }
 
+enum ContentStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
 enum CartStatus {
   ACTIVE
   CONVERTED
@@ -136,12 +142,65 @@ model Product {
   images          ProductImage[]
   cartItems       CartItem[]
   orderItems      OrderItem[]
+  editorialCollectionItems EditorialCollectionItem[]
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 
   @@index([status, categoryId])
   @@index([name])
   @@map("products")
+}
+
+
+model ContentPage {
+  id             String        @id @default(cuid())
+  slug           String        @unique
+  title          String
+  excerpt        String?
+  body           Json
+  heroImageUrl   String?
+  seoTitle       String?
+  seoDescription String?
+  status         ContentStatus @default(DRAFT)
+  publishedAt    DateTime?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@index([status, publishedAt])
+  @@map("content_pages")
+}
+
+model EditorialCollection {
+  id             String                   @id @default(cuid())
+  slug           String                   @unique
+  title          String
+  description    String?
+  body           Json?
+  heroImageUrl   String?
+  seoTitle       String?
+  seoDescription String?
+  status         ContentStatus            @default(DRAFT)
+  publishedAt    DateTime?
+  items          EditorialCollectionItem[]
+  createdAt      DateTime                 @default(now())
+  updatedAt      DateTime                 @updatedAt
+
+  @@index([status, publishedAt])
+  @@map("editorial_collections")
+}
+
+model EditorialCollectionItem {
+  id           String              @id @default(cuid())
+  collectionId String
+  productId    String
+  sortOrder    Int                 @default(0)
+  collection   EditorialCollection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  product      Product             @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdAt    DateTime            @default(now())
+
+  @@unique([collectionId, productId])
+  @@index([collectionId, sortOrder])
+  @@map("editorial_collection_items")
 }
 
 model ProductImage {
