@@ -23,12 +23,12 @@ This delta records the live GitHub state and source inspection for this run. It 
 | PR | Base branch | Exact head SHA | Draft | Mergeable | Current-head checks |
 |---:|---|---|---:|---:|---|
 | #44 | `main` | `01ae78c7139c466f135721068b4a85f2bfb66f1d` | Yes | Yes | CI PASS; Motion PASS |
-| #43 | `main` | `cafaa4ce5003d3cd7e60243d3d4ad9311b559989` | Yes | Yes | CI IN PROGRESS; Motion PASS |
-| #42 | `main` | `94cf3a508f537fec6a0dac4816d77b4bac191df9` | Yes | Yes | CI IN PROGRESS; Motion PASS |
+| #43 | `main` | `cafaa4ce5003d3cd7e60243d3d4ad9311b559989` | Yes | Yes | CI PASS; Motion PASS |
+| #42 | `main` | `94cf3a508f537fec6a0dac4816d77b4bac191df9` | Yes | Yes | CI PASS; Motion PASS |
 | #41 | `main` | `85de066e8f1b5c66cd47756c4e6c17c0b164b89d` | Yes | Yes | CI PASS; Motion PASS |
 | #40 | `main` | `b0806cf18068581d93bd40dcfc2667348b3f3bc8` | Yes | Yes | CI PASS; Motion PASS |
 | #39 | `main` | `b753f3b76d198b69f0ed33d30109d8679d7e6e31` | Yes | Yes | CI PASS; Motion PASS |
-| #38 | `main` | `fcc4185122d3e46d2f01f1d27bd9227cfc70d8a4` | Yes | Yes | CI IN PROGRESS; Motion PASS |
+| #38 | `main` | `fcc4185122d3e46d2f01f1d27bd9227cfc70d8a4` | Yes | Yes | CI PASS; Motion PASS |
 | #37 | `main` | `defbba9b17cc08ad292b7c8ff7aac128eeeae1f4` | Yes | Yes | CI PASS; Motion PASS |
 | #36 | `commerce/order-state-audit` | `5368aff971b896e22e38f8a22a2c250e4998040e` | Yes | Yes | NOT RUN / no check runs found for this head |
 | #35 | `main` | `b58c1f5141276e5b067f5ca09c11f25579edc76f` | Yes | Yes | CI PASS; Motion PASS |
@@ -67,15 +67,16 @@ This delta records the live GitHub state and source inspection for this run. It 
 - Main CI: [42465514771](https://github.com/galaxyuniversity900-oss/ELITE-STORE/actions/runs/42465514771) — PASS on `e6153433ce51c2cb2c3aeb451a02d2d867a28ba4`.
 - Main Motion: [42465514727](https://github.com/galaxyuniversity900-oss/ELITE-STORE/actions/runs/42465514727) — PASS on the same SHA.
 - Existing Pages workflow_dispatch: [43032827967](https://github.com/galaxyuniversity900-oss/ELITE-STORE/actions/runs/43032827967) — PASS on the same SHA, started 2026-11-11 13:50:48Z. This was not triggered by this run.
+- The initial release-delta commit `f52143f61d27505d3bc53bd5532184553543f6bc` passed PR #13 CI [43185541664](https://github.com/galaxyuniversity900-oss/ELITE-STORE/actions/runs/43185541664) and Motion [43185541553](https://github.com/galaxyuniversity900-oss/ELITE-STORE/actions/runs/43185541553) on that exact SHA.
 - PR #21 CI: [42992429670](https://github.com/galaxyuniversity900-oss/ELITE-STORE/actions/runs/42992429670) — PASS.
 - PR #21 Motion: [42992429610](https://github.com/galaxyuniversity900-oss/ELITE-STORE/actions/runs/42992429610) — PASS.
 - PR #21 image/config scan: [42992429581](https://github.com/galaxyuniversity900-oss/ELITE-STORE/actions/runs/42992429581) — PASS. API, storefront and Admin image builds, Trivy scans, and Docker configuration scan completed successfully under the configured CRITICAL/HIGH gate.
 - PR #16 backup/restore CI: [42591473541](https://github.com/galaxyuniversity900-oss/ELITE-STORE/actions/runs/42591473541) — PASS; restore round-trip and marker removal verified in disposable CI.
 - PR #22 webhook CI: [42591190871](https://github.com/galaxyuniversity900-oss/ELITE-STORE/actions/runs/42591190871) — PASS.
 - PR #17 Dependency Review: [42472748341](https://github.com/galaxyuniversity900-oss/ELITE-STORE/actions/runs/42472748341) — FAIL: GitHub Dependency Graph is not enabled for this repository.
-- PR #43 corrected head CI: [43185067289](https://github.com/galaxyuniversity900-oss/ELITE-STORE/actions/runs/43185067289) — IN PROGRESS on `cafaa4ce5003d3cd7e60243d3d4ad9311b559989`; Motion PASS [43185067275](https://github.com/galaxyuniversity900-oss/ELITE-STORE/actions/runs/43185067275).
-- PR #42 corrected head CI: [43185058297](https://github.com/galaxyuniversity900-oss/ELITE-STORE/actions/runs/43185058297) — IN PROGRESS on `94cf3a508f537fec6a0dac4816d77b4bac191df9`; Motion PASS [43185058417](https://github.com/galaxyuniversity900-oss/ELITE-STORE/actions/runs/43185058417).
-- PR #38 corrected head CI: [43184765152](https://github.com/galaxyuniversity900-oss/ELITE-STORE/actions/runs/43184765152) — IN PROGRESS on `fcc4185122d3e46d2f01f1d27bd9227cfc70d8a4`; Motion PASS [43184765014](https://github.com/galaxyuniversity900-oss/ELITE-STORE/actions/runs/43184765014).
+- PR #43 corrected head CI: [43185067289](https://github.com/galaxyuniversity900-oss/ELITE-STORE/actions/runs/43185067289) — PASS on `cafaa4ce5003d3cd7e60243d3d4ad9311b559989`; Motion PASS [43185067275](https://github.com/galaxyuniversity900-oss/ELITE-STORE/actions/runs/43185067275).
+- PR #42 corrected head CI: [43185058297](https://github.com/galaxyuniversity900-oss/ELITE-STORE/actions/runs/43185058297) — PASS on `94cf3a508f537fec6a0dac4816d77b4bac191df9`; Motion PASS [43185058417](https://github.com/galaxyuniversity900-oss/ELITE-STORE/actions/runs/43185058417).
+- PR #38 corrected head CI: [43184765152](https://github.com/galaxyuniversity900-oss/ELITE-STORE/actions/runs/43184765152) — PASS on `fcc4185122d3e46d2f01f1d27bd9227cfc70d8a4`; Motion PASS [43184765014](https://github.com/galaxyuniversity900-oss/ELITE-STORE/actions/runs/43184765014).
 
 ## Evidence-backed fixes committed during this run
 
@@ -84,16 +85,16 @@ Three independent fixes were committed to their existing PR branches after inspe
 1. **PR #43 — analytics aggregate typing**
    - Previous head `3651208259ed5f504ca1f9ff8d08d4ba3dcf5f22` failed at `apps/api/src/admin/admin.service.ts(49,43)`: `row._count` may be undefined.
    - First correction was too broad; exact-head CI then reported that `_all` does not exist on the `true | object` union.
-   - Current head `cafaa4ce5003d3cd7e60243d3d4ad9311b559989` narrows the union with a runtime object check. CI is still running; not yet verified PASS.
+   - Current head `cafaa4ce5003d3cd7e60243d3d4ad9311b559989` narrows the union with a runtime object check. The corrected exact-head CI and Motion checks both passed.
 
 2. **PR #42 — CMS editorial collection query**
    - Previous head `3643c7162a18471c2ca6cd740c1c5191839b23c1` failed TypeScript parsing in `apps/api/src/admin/admin.service.ts` due to malformed nested `include` braces.
    - The query was rewritten as a structured multiline Prisma include. The next exact-head run found missing `IsObject` imports in the DTO.
-   - Current head `94cf3a508f537fec6a0dac4816d77b4bac191df9` includes the missing validator import. Motion passes; CI is still running.
+   - Current head `94cf3a508f537fec6a0dac4816d77b4bac191df9` includes the missing validator import. The corrected exact-head CI and Motion checks both passed.
 
 3. **PR #38 — privacy DTO validator**
    - Previous head `fe0ddc028772c05900568bc075d1313d545e2e94` failed because `IsBoolean` was used but not imported.
-   - Current head `fcc4185122d3e46d2f01f1d27bd9227cfc70d8a4` adds the missing import. Motion passes; CI is still running.
+   - Current head `fcc4185122d3e46d2f01f1d27bd9227cfc70d8a4` adds the missing import. The corrected exact-head CI and Motion checks both passed.
 
 No fix was made by suppressing checks, changing dependencies blindly, or weakening validation.
 
