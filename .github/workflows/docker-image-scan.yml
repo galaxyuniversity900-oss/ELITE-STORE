@@ -1,0 +1,41 @@
+name: Docker Image Security Scan
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  image-scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Build API image
+        run: docker build --pull -f infra/docker/Dockerfile.api -t mes-store/api:${{ github.sha }} .
+      - name: Build storefront image
+        run: docker build --pull -f infra/docker/Dockerfile.web -t mes-store/web:${{ github.sha }} .
+      - name: Build admin image
+        run: docker build --pull -f infra/docker/Dockerfile.admin -t mes-store/admin:${{ github.sha }} .
+      - name: Install pinned Trivy CLI from Go module
+        run: |
+          go install github.com/aquasecurity/trivy/cmd/trivy@v0.76.2
+          echo "$HOME/go/bin" >> "$GITHUB_PATH"
+          export PATH="$HOME/go/bin:$PATH"
+          trivy version
+      - name: Scan API image
+        run: trivy image --exit-code 1 --severity CRITICAL,HIGH --ignore-unfixed mes-store/api:${{ github.sha }}
+      - name: Scan storefront image
+        run: trivy image --exit-code 1 --severity CRITICAL,HIGH --ignore-unfixed mes-store/web:${{ github.sha }}
+      - name: Scan admin image
+        run: trivy image --exit-code 1 --severity CRITICAL,HIGH --ignore-unfixed mes-store/admin:${{ github.sha }}
+      - name: Scan Docker and deployment configuration
+        run: trivy config --exit-code 1 --severity CRITICAL,HIGH infra/docker

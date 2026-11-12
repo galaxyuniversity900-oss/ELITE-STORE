@@ -6,8 +6,15 @@ COPY package.json turbo.json tsconfig.base.json ./
 COPY apps ./apps
 COPY packages ./packages
 COPY prisma ./prisma
-RUN npm install --no-audit --no-fund
-RUN npm run build --workspace=@mes-store/admin
+RUN npm install --no-audit --no-fund \
+    && npm run build --workspace=@mes-store/admin \
+    && npm prune --omit=dev --no-audit --no-fund \
+    && npm cache clean --force \
+    && rm -rf /usr/local/lib/node_modules/npm \
+    && rm -f /usr/local/bin/npm /usr/local/bin/npx \
+    && chown -R node:node /app
 ENV NODE_ENV=production
+USER node
+WORKDIR /app/apps/admin
 EXPOSE 3001
-CMD ["npm", "run", "start", "--workspace=@mes-store/admin", "--", "-p", "3001"]
+CMD ["../../node_modules/.bin/next", "start", "--port", "3001"]
