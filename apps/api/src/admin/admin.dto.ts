@@ -1,5 +1,5 @@
 import { OrderStatus, ProductStatus, SupportTicketPriority, SupportTicketStatus } from '@prisma/client';
-import { IsEnum, IsInt, IsNumber, IsOptional, IsString, Max, MaxLength, Min, MinLength } from 'class-validator';
+import { IsBoolean, IsEnum, IsInt, IsNumber, IsOptional, IsString, Max, MaxLength, Min, MinLength } from 'class-validator';
 
 export class CreateProductDto {
   @IsString() @MinLength(2) @MaxLength(180) name!: string;
