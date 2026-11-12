@@ -63,7 +63,7 @@ jobs:
         run: |
           ready=0
           for attempt in $(seq 1 60); do
-            if curl --silent --show-error --fail http://localhost:4000/api/health >/tmp/api-health.json 2>/tmp/api-health.err; then ready=1; break; fi
+            if curl --silent --show-error --fail http://localhost:4000/api/health/ready >/tmp/api-health.json 2>/tmp/api-health.err; then ready=1; break; fi
             echo "API is not ready yet (attempt $attempt/60)"
             docker compose -f infra/docker/docker-compose.yml logs --tail=30 api
             sleep 2
