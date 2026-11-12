@@ -47,6 +47,14 @@ services:
         condition: service_healthy
 
   api:
+    init: true
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop: [ALL]
+    pids_limit: 200
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
     build:
       context: ../..
       dockerfile: infra/docker/Dockerfile.api
@@ -80,8 +88,23 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:4000/api/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   web:
+    init: true
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop: [ALL]
+    pids_limit: 200
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+      - /app/apps/web/.next/cache:rw,noexec,nosuid,size=128m
     build:
       context: ../..
       dockerfile: infra/docker/Dockerfile.web
@@ -94,9 +117,25 @@ services:
     ports:
       - "${HOST_BIND_ADDRESS:-127.0.0.1}:${WEB_PORT:-3000}:3000"
     depends_on:
-      - api
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   admin:
+    init: true
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop: [ALL]
+    pids_limit: 200
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+      - /app/apps/admin/.next/cache:rw,noexec,nosuid,size=128m
     build:
       context: ../..
       dockerfile: infra/docker/Dockerfile.admin
@@ -108,7 +147,14 @@ services:
     ports:
       - "${HOST_BIND_ADDRESS:-127.0.0.1}:${ADMIN_PORT:-3001}:3001"
     depends_on:
-      - api
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3001/').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
 volumes:
   postgres_data:
