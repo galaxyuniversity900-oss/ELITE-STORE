@@ -51,7 +51,18 @@ export class AdminService {
 
   listEditorialCollections() {
     return this.prisma.editorialCollection.findMany({
-      include: { items: { include: { product: { include: { images: { orderBy: { sortOrder: 'asc' } } } } }, orderBy: { sortOrder: 'asc' } },
+      include: {
+        items: {
+          include: {
+            product: {
+              include: {
+                images: { orderBy: { sortOrder: 'asc' } },
+              },
+            },
+          },
+          orderBy: { sortOrder: 'asc' },
+        },
+      },
       orderBy: { updatedAt: 'desc' },
     });
   }
