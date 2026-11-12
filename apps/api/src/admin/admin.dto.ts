@@ -1,5 +1,5 @@
-import { OrderStatus, ProductStatus } from '@prisma/client';
-import { IsEnum, IsInt, IsNumber, IsOptional, IsString, Max, MaxLength, Min, MinLength } from 'class-validator';
+import { OrderStatus, ProductStatus, SupportTicketPriority, SupportTicketStatus } from '@prisma/client';
+import { IsBoolean, IsEnum, IsInt, IsNumber, IsOptional, IsString, Max, MaxLength, Min, MinLength } from 'class-validator';
 
 export class CreateProductDto {
   @IsString() @MinLength(2) @MaxLength(180) name!: string;
@@ -28,4 +28,14 @@ export class UpdateProductDto {
 export class UpdateOrderStatusDto {
   @IsEnum(OrderStatus)
   status!: OrderStatus;
+}
+
+export class UpdateSupportTicketDto {
+  @IsOptional() @IsEnum(SupportTicketStatus) status?: SupportTicketStatus;
+  @IsOptional() @IsEnum(SupportTicketPriority) priority?: SupportTicketPriority;
+}
+
+export class AdminSupportReplyDto {
+  @IsString() @MinLength(1) @MaxLength(5000) body!: string;
+  @IsOptional() @IsBoolean() isInternal?: boolean;
 }

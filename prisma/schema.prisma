@@ -37,6 +37,44 @@ enum PaymentStatus {
   REFUNDED
 }
 
+enum SupportTicketStatus {
+  OPEN
+  IN_PROGRESS
+  WAITING_CUSTOMER
+  RESOLVED
+  CLOSED
+}
+
+enum SupportTicketPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+enum ReturnRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  RECEIVED
+  COMPLETED
+}
+
+enum DataSubjectRequestStatus {
+  PENDING
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+  COMPLETED
+}
+
+enum ConsentType {
+  MARKETING_EMAIL
+  MARKETING_WHATSAPP
+  ANALYTICS
+  PERSONALIZATION
+}
+
 enum CartStatus {
   ACTIVE
   CONVERTED
@@ -75,11 +113,107 @@ model User {
   addresses    Address[]
   carts        Cart[]
   orders       Order[]
+  consentPreferences ConsentPreference[]
+  dataSubjectRequests DataSubjectRequest[]
+  returnRequests ReturnRequest[]
+  wishlistItems WishlistItem[]
+  supportTickets SupportTicket[] @relation("SupportTicketCustomer")
+  supportMessages SupportTicketMessage[] @relation("SupportMessageSender")
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
   @@index([role, isActive])
   @@map("users")
+}
+
+
+
+model DataSubjectRequest {
+  id          String                    @id @default(cuid())
+  userId      String
+  status      DataSubjectRequestStatus   @default(PENDING)
+  reason      String?
+  requestedAt DateTime                  @default(now())
+  reviewedAt  DateTime?
+  completedAt DateTime?
+  user        User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime                  @default(now())
+  updatedAt   DateTime                  @updatedAt
+
+  @@index([userId, status, requestedAt])
+  @@map("data_subject_requests")
+}
+
+model ConsentPreference {
+  id            String      @id @default(cuid())
+  userId        String
+  consentType   ConsentType
+  granted       Boolean     @default(false)
+  policyVersion String
+  source        String      @default("ACCOUNT_SETTINGS")
+  decidedAt     DateTime    @default(now())
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@unique([userId, consentType])
+  @@index([consentType, granted, decidedAt])
+  @@map("consent_preferences")
+}
+
+
+
+model SupportTicket {
+  id          String                @id @default(cuid())
+  userId      String
+  orderId     String?
+  subject     String
+  category    String
+  status      SupportTicketStatus   @default(OPEN)
+  priority    SupportTicketPriority @default(NORMAL)
+  customer    User                  @relation("SupportTicketCustomer", fields: [userId], references: [id], onDelete: Cascade)
+  order       Order?                @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  messages    SupportTicketMessage[]
+  createdAt   DateTime              @default(now())
+  updatedAt   DateTime              @updatedAt
+
+  @@index([userId, status, updatedAt])
+  @@index([status, priority, updatedAt])
+  @@index([orderId])
+  @@map("support_tickets")
+}
+
+model SupportTicketMessage {
+  id        String        @id @default(cuid())
+  ticketId  String
+  senderId  String
+  body      String
+  isInternal Boolean      @default(false)
+  ticket    SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  sender    User          @relation("SupportMessageSender", fields: [senderId], references: [id], onDelete: Restrict)
+  createdAt DateTime      @default(now())
+
+  @@index([ticketId, createdAt])
+  @@index([senderId, createdAt])
+  @@map("support_ticket_messages")
+}
+
+model ReturnRequest {
+  id          String              @id @default(cuid())
+  userId      String
+  orderId     String              @unique
+  status      ReturnRequestStatus @default(PENDING)
+  reason      String
+  requestedAt DateTime            @default(now())
+  reviewedAt  DateTime?
+  resolvedAt  DateTime?
+  user        User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  order       Order               @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  @@index([userId, status, requestedAt])
+  @@map("return_requests")
 }
 
 model Address {
@@ -136,12 +270,27 @@ model Product {
   images          ProductImage[]
   cartItems       CartItem[]
   orderItems      OrderItem[]
+  wishlistItems   WishlistItem[]
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 
   @@index([status, categoryId])
   @@index([name])
   @@map("products")
+}
+
+
+model WishlistItem {
+  id        String   @id @default(cuid())
+  userId    String
+  productId String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, productId])
+  @@index([userId, createdAt])
+  @@map("wishlist_items")
 }
 
 model ProductImage {
@@ -215,6 +364,8 @@ model Order {
   items             OrderItem[]
   payments          Payment[]
   notifications     NotificationOutbox[]
+  returnRequest     ReturnRequest?
+  supportTickets    SupportTicket[]
   createdAt         DateTime    @default(now())
   updatedAt         DateTime    @updatedAt
 
