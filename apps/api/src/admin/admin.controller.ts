@@ -12,6 +12,12 @@ import { CreateProductDto, UpdateOrderStatusDto, UpdateProductDto } from './admi
 export class AdminController {
   constructor(private readonly admin: AdminService) {}
 
+
+  @Get('analytics/commerce')
+  commerceInsights(@Query('from') from?: string, @Query('to') to?: string) {
+    return this.admin.commerceInsights(from, to);
+  }
+
   @Get('overview')
   overview() { return this.admin.overview(); }
 
